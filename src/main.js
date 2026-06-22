@@ -1,7 +1,6 @@
 import './style.css';
 import * as THREE from 'three';
 //import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import {
   createScene,
   createCamera,
@@ -14,7 +13,8 @@ import { materials } from './world/materials.js';
 import { createPlayer } from './player/player.js';
 import { createIsland } from './world/island.js';
 import { createPlayerController} from './controls/playerControls.js'
-import { loadModels } from './imported_models/models.js';
+import { loadModels, updateModels, modelColliders } from './imported_models/models.js';
+
 // --------------------------------------------------
 // 1. CANVAS
 // --------------------------------------------------
@@ -29,56 +29,23 @@ setupResize(camera, renderer);
 
 
 const clock = new THREE.Clock();
-// --------------------------------------------------
-// CAMERA CONTROLS
-// --------------------------------------------------
 
-// OrbitControls permette di muovere la camera con il mouse
-/*const controls = new OrbitControls(camera, renderer.domElement);
 
-// Punto attorno a cui la camera ruota
-controls.target.set(0, 1.2, 0);
-
-// Movimento più morbido
-controls.enableDamping = true;
-controls.dampingFactor = 0.05;
-
-// Limiti utili per non andare troppo lontano o troppo vicino
-controls.minDistance = 2;
-controls.maxDistance = 20;
-
-// Evita di finire sotto il pavimento
-controls.maxPolarAngle = Math.PI / 2.1;
-
-controls.update();
-*/
-
-// --------------------------------------------------
-// 5. LIGHTS
-// --------------------------------------------------
-
-// Luce ambiente: illumina leggermente tutto.
-// Non genera ombre, serve solo per non avere parti completamente nere.
 
 createLights(scene);
 createIsland(scene, materials);
 
-// --------------------------------------------------
-// 9. SENTIERI
-// --------------------------------------------------
 
 const playerData = createPlayer(scene, materials);
 
 const playerController = createPlayerController(
   playerData.group,
   playerData.parts,
-  camera
+  camera,
+  modelColliders
 );
 
 loadModels(scene);
-// --------------------------------------------------
-// 10. CLOUDS
-// --------------------------------------------------
 
 function createCloud(x, y, z, scale = 1) {
   const cloudGroup = new THREE.Group();
@@ -146,6 +113,8 @@ function animate() {
 
   playerController.update(deltaTime);
 
+  updateModels(deltaTime, playerData.group);
+
   cloud1.position.x += 0.002;
   cloud2.position.x -= 0.0015;
   cloud3.position.z += 0.001;
@@ -153,5 +122,6 @@ function animate() {
   cloud5.position.x += 0.001;
 
   renderer.render(scene, camera);
+
 }
 animate();

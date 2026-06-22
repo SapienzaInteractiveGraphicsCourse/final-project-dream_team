@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-export function createPlayerController(player, playerParts, camera) {
+export function createPlayerController(player, playerParts, camera, colliders = []) {
   const keys = {
     w: false,
     a: false,
@@ -37,6 +37,21 @@ export function createPlayerController(player, playerParts, camera) {
       keys[key] = false;
     }
   });
+
+  function collidesAt(x, z) {
+  const oldX = player.position.x;
+  const oldZ = player.position.z;
+
+  player.position.x = x;
+  player.position.z = z;
+
+  const playerBox = new THREE.Box3().setFromObject(player);
+
+  player.position.x = oldX;
+  player.position.z = oldZ;
+
+  return colliders.some((box) => playerBox.intersectsBox(box));
+}
 
   function update(deltaTime) {
     const speed = 2.5;
@@ -100,8 +115,16 @@ export function createPlayerController(player, playerParts, camera) {
     if (isMoving) {
       moveDirection.normalize();
 
-      player.position.x += moveDirection.x * speed * deltaTime;
-      player.position.z += moveDirection.z * speed * deltaTime;
+      const nextX = player.position.x + moveDirection.x * speed * deltaTime;
+      const nextZ = player.position.z + moveDirection.z * speed * deltaTime;
+
+      if (!collidesAt(nextX, player.position.z)) {
+        player.position.x = nextX;
+        }
+
+      if (!collidesAt(player.position.x, nextZ)) {
+        player.position.z = nextZ;
+        }
 
       player.rotation.y = Math.atan2(moveDirection.x, moveDirection.z);
 
@@ -144,7 +167,7 @@ export function createPlayerController(player, playerParts, camera) {
       }
     }
 
-    const maxDistance = 4.5;
+    const maxDistance = 30;
     const distanceFromCenter = Math.sqrt(
       player.position.x * player.position.x +
       player.position.z * player.position.z
