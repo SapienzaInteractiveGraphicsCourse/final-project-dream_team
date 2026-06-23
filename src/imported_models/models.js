@@ -197,6 +197,13 @@ export function loadModels(scene) {
   });
 }
 
+window.addEventListener('keydown', (event) => {
+  if (event.key.toLowerCase() === 'e' && canTalkToMage) {
+    mageIsTalking = true;
+    mageTalkTimer = 4;
+  }
+});
+
 export function updateModels(deltaTime, player) {
   if (!mage) return;
 
@@ -211,7 +218,7 @@ export function updateModels(deltaTime, player) {
   canTalkToMage = distance < interactionDistance;
 
   if (canTalkToMage) {
-    mage.lookAt(player.position.x, mage.position.y, player.position.z);
+    mage.lookAt(player.position.x, player.position.y, player.position.z);
   }
 
   if (mageIsTalking) {
@@ -223,7 +230,8 @@ export function updateModels(deltaTime, player) {
   }
 
   if (mageIsTalking) {
-    mageDialogue.textContent = 'Mago: Finalmente sei arrivato. La magia dell isola ti stava aspettando.';
+    mageDialogue.textContent =
+      'Mago: Finalmente sei arrivato. La magia dell isola ti stava aspettando.';
     mageDialogue.classList.add('is-visible');
   } else if (canTalkToMage) {
     mageDialogue.textContent = 'Premi E per parlare con il mago';
@@ -231,8 +239,9 @@ export function updateModels(deltaTime, player) {
   } else {
     mageDialogue.classList.remove('is-visible');
   }
+
   if (canTalkToMage) {
-    mage.lookAt(player.position.x, mage.position.y, player.position.z);
+    mage.lookAt(player.position.x, player.position.y, player.position.z);
 
     if (mageIsTalking) {
       setMageBrightness(0.25);
@@ -244,9 +253,3 @@ export function updateModels(deltaTime, player) {
   }
 }
 
-window.addEventListener('keydown', (event) => {
-  if (event.key.toLowerCase() === 'e' && canTalkToMage) {
-    mageIsTalking = true;
-    mageTalkTimer = 4;
-  }
-});

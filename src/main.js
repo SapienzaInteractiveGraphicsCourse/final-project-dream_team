@@ -14,10 +14,7 @@ import { createPlayer } from './player/player.js';
 import { createIsland } from './world/island.js';
 import { createPlayerController} from './controls/playerControls.js'
 import { loadModels, updateModels, modelColliders } from './imported_models/models.js';
-
-// --------------------------------------------------
-// 1. CANVAS
-// --------------------------------------------------
+import { createCloud } from './world/cloud.js';
 
 const canvas = document.querySelector('#bg');
 
@@ -34,7 +31,11 @@ const clock = new THREE.Clock();
 
 createLights(scene);
 createIsland(scene, materials);
-
+const cloud1 = createCloud(scene, -7, 5, -4, 1.2);
+const cloud2 = createCloud(scene, 7, 3, -5, 1.0);
+const cloud3 = createCloud(scene, 5, 4, 5, 1.1);
+const cloud4 = createCloud(scene, -6, 6, 5, 0.9);
+const cloud5 = createCloud(scene, 0, 6.5, 8, 1.4);
 
 const playerData = createPlayer(scene, materials);
 
@@ -47,57 +48,7 @@ const playerController = createPlayerController(
 
 loadModels(scene);
 
-function createCloud(x, y, z, scale = 1) {
-  const cloudGroup = new THREE.Group();
 
-  const cloudMaterial = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
-    roughness: 1
-  });
-
-  const sphere1 = new THREE.Mesh(
-    new THREE.SphereGeometry(0.8, 24, 24),
-    cloudMaterial
-  );
-
-  const sphere2 = new THREE.Mesh(
-    new THREE.SphereGeometry(1.0, 24, 24),
-    cloudMaterial
-  );
-
-  const sphere3 = new THREE.Mesh(
-    new THREE.SphereGeometry(0.7, 24, 24),
-    cloudMaterial
-  );
-
-  const sphere4 = new THREE.Mesh(
-    new THREE.SphereGeometry(0.6, 24, 24),
-    cloudMaterial
-  );
-
-  sphere1.position.set(-0.9, 0, 0);
-  sphere2.position.set(0, 0.25, 0);
-  sphere3.position.set(0.9, 0, 0);
-  sphere4.position.set(0.2, -0.15, 0.4);
-
-  cloudGroup.add(sphere1);
-  cloudGroup.add(sphere2);
-  cloudGroup.add(sphere3);
-  cloudGroup.add(sphere4);
-
-  cloudGroup.position.set(x, y, z);
-  cloudGroup.scale.set(scale, scale, scale);
-
-  scene.add(cloudGroup);
-
-  return cloudGroup;
-}
-
-const cloud1 = createCloud(-7, 5, -4, 1.2);
-const cloud2 = createCloud(7, 3, -5, 1.0);
-const cloud3 = createCloud(5, 4, 5, 1.1);
-const cloud4 = createCloud(-6, 6, 5, 0.9);
-const cloud5 = createCloud(0, 6.5, 8, 1.4);
 
 
 
