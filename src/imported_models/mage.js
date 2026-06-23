@@ -8,7 +8,7 @@ export function updateModels(deltaTime, player) {
   mage.rotation.y += Math.sin(time * 3) * 0.002;
 
   const distance = mage.position.distanceTo(player.position);
-  const interactionDistance = 4;
+  const interactionDistance = 2;
 
   canTalkToMage = distance < interactionDistance;
 

@@ -11,7 +11,8 @@ canvas {
   display: block;
 }
 
-.mage-dialogue {
+.mage-dialogue,
+.interaction-dialogue {
   position: fixed;
   left: 50%;
   bottom: 32px;
@@ -31,7 +32,13 @@ canvas {
   pointer-events: none;
 }
 
-.mage-dialogue.is-visible {
+.mage-dialogue.is-visible,
+.interaction-dialogue.is-visible {
   opacity: 1;
   transform: translate(-50%, 0);
+}
+
+.book-dialogue {
+  border-color: rgba(255, 214, 112, 0.72);
+  box-shadow: 0 0 26px rgba(255, 214, 112, 0.28);
 }

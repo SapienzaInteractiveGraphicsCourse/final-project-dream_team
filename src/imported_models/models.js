@@ -1,5 +1,11 @@
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as THREE from 'three';
+import {
+  isBookDelivered,
+  isCarryingBook,
+  registerBook,
+  registerBookDeliveryTarget
+} from './book.js';
 
 export const modelColliders = [];
 
@@ -11,16 +17,49 @@ let mageIsTalking = false;
 let mageTalkTimer = 0;
 let mageMaterials = [];
 
+const mageTintColor = new THREE.Color(0xd9eeff);
+const mageEmissiveColor = new THREE.Color(0x2a4a66);
+const mageBaseBrightness = 0.12;
+
 const mageDialogue = document.createElement('div');
 mageDialogue.className = 'mage-dialogue';
 mageDialogue.textContent = 'Premi E per parlare con il mago';
 document.body.appendChild(mageDialogue);
 
+function brightenMageMaterial(material) {
+  if (!material) return;
+
+  if (material.map) {
+    material.map.colorSpace = THREE.SRGBColorSpace;
+    material.map.needsUpdate = true;
+  }
+
+  if (material.color) {
+    material.color.lerp(mageTintColor, 0.18);
+    material.color.multiplyScalar(1.08);
+  }
+
+  if (material.emissive) {
+    material.emissive.copy(mageEmissiveColor);
+    material.emissiveIntensity = mageBaseBrightness;
+
+    if ('emissiveMap' in material && material.map) {
+      material.emissiveMap = material.map;
+    }
+  }
+
+  if ('roughness' in material) {
+    material.roughness = Math.min(material.roughness ?? 0.7, 0.65);
+  }
+
+  material.needsUpdate = true;
+}
+
 function setMageBrightness(strength) {
   mageMaterials.forEach((material) => {
     if (material.emissive) {
-      material.emissive.set(0x224466);
-      material.emissiveIntensity = strength;
+      material.emissive.copy(mageEmissiveColor);
+      material.emissiveIntensity = mageBaseBrightness + strength;
     }
   });
 }
@@ -57,6 +96,11 @@ function loadModel(scene, path, options = {}) {
 
       if (model === mage) {
         mageStartY = model.position.y;
+        registerBookDeliveryTarget(model);
+      }
+
+      if (path.includes('EvilBook')) {
+        registerBook(model);
       }
 
       model.traverse((child) => {
@@ -73,6 +117,7 @@ function loadModel(scene, path, options = {}) {
               ? child.material
               : [child.material];
 
+            materials.forEach(brightenMageMaterial);
             mageMaterials.push(...materials);
           }
         }
@@ -121,19 +166,19 @@ export const modelsToLoad = [
   },
   {
     path: '/models/EvilBook.glb',
-    x: -3,
+    x: -2,
     y: 0,
-    z: 2,
-    scale: 1.2,
+    z: -10,
+    scale: 1,
     rotationY: Math.PI,
     groundY: 0.49,
-    collider: true
+    collider: false
   },
   {
     path: '/models/FantasyHouse.glb',
-    x: 3.5,
+    x: 15,
     y: 0.45,
-    z: -2,
+    z: -10,
     scale: 1.2,
     rotationY: Math.PI / 2,
     groundY: 0.49,
@@ -141,10 +186,12 @@ export const modelsToLoad = [
   },
   {
     path: '/models/FantasyInn.glb',
-    x: 3.5,
+    x: -9
+    ,
     y: 0.45,
-    z: -2,
-    scale: 1.2,
+    z: -8
+    ,
+    scale: 3,
     rotationY: Math.PI / 2,
     groundY: 0.49,
     collider: true
@@ -153,8 +200,8 @@ export const modelsToLoad = [
     path: '/models/FantasyStable.glb',
     x: 8,
     y: 0.45,
-    z: -8,
-    scale: 1.2,
+    z: -10,
+    scale: 3,
     rotationY: Math.PI / 2,
     groundY: 0.49,
     collider: true
@@ -171,9 +218,9 @@ export const modelsToLoad = [
   },
   {
     path: '/models/FantasyCastlePrototype.glb',
-    x: 1.2,
+    x: 26,
     y: 0,
-    z: 2.8,
+    z: -18,
     scale: 0.4,
     rotationY: 0,
     groundY: 0.49,
@@ -181,9 +228,9 @@ export const modelsToLoad = [
   },
   {
     path: '/models/pixellabs-cute-skeleton-mage-character-2439.glb',
-    x: -3,
+    x: 2,
     y: 0,
-    z: 12,
+    z: -9,
     scale: 3,
     rotationY: Math.PI / 4,
     groundY: 0.49,
@@ -233,6 +280,12 @@ export function updateModels(deltaTime, player) {
     mageDialogue.textContent =
       'Mago: Finalmente sei arrivato. La magia dell isola ti stava aspettando.';
     mageDialogue.classList.add('is-visible');
+  } else if (canTalkToMage && isBookDelivered()) {
+    mageDialogue.textContent =
+      'Mago: Ottimo. Questo libro contiene la magia che cercavo.';
+    mageDialogue.classList.add('is-visible');
+  } else if (canTalkToMage && isCarryingBook()) {
+    mageDialogue.classList.remove('is-visible');
   } else if (canTalkToMage) {
     mageDialogue.textContent = 'Premi E per parlare con il mago';
     mageDialogue.classList.add('is-visible');
@@ -244,12 +297,11 @@ export function updateModels(deltaTime, player) {
     mage.lookAt(player.position.x, player.position.y, player.position.z);
 
     if (mageIsTalking) {
-      setMageBrightness(0.25);
+      setMageBrightness(0.1);
     } else {
-      setMageBrightness(0.08);
+      setMageBrightness(0.04);
     }
   } else {
     setMageBrightness(0);
   }
 }
-

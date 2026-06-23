@@ -1,6 +1,9 @@
 import * as THREE from 'three';
+import { animatePlayer } from '../player/schoolBoyPlayer.js';
 
-export function createPlayerController(player, playerParts, camera, colliders = []) {
+export function createPlayerController(playerObject, camera, colliders = []) {
+  const player = playerObject.group;
+  const playerRadius = 0.55;
   const keys = {
     w: false,
     a: false,
@@ -13,11 +16,11 @@ export function createPlayerController(player, playerParts, camera, colliders = 
   };
 
   let cameraAngle = 0;
-  let cameraDistance = 20;
+  let cameraDistance = 9;
 
   const cameraMinDistance = 2.5;
-  const cameraMaxDistance = 27;
-  const cameraHeight = 3.2;
+  const cameraMaxDistance = 18;
+  const cameraHeight = 3.6;
   const cameraLookHeight = 1.2;
 
   window.addEventListener('keydown', (event) => {
@@ -38,20 +41,28 @@ export function createPlayerController(player, playerParts, camera, colliders = 
     }
   });
 
+  function circleIntersectsBoxXZ(x, z, radius, box) {
+    const closestX = THREE.MathUtils.clamp(x, box.min.x, box.max.x);
+    const closestZ = THREE.MathUtils.clamp(z, box.min.z, box.max.z);
+    const dx = x - closestX;
+    const dz = z - closestZ;
+
+    return dx * dx + dz * dz < radius * radius;
+  }
+
   function collidesAt(x, z) {
-  const oldX = player.position.x;
-  const oldZ = player.position.z;
+    return colliders.some((box) => {
+      const isCollidingNow = circleIntersectsBoxXZ(
+        player.position.x,
+        player.position.z,
+        playerRadius,
+        box
+      );
+      const wouldCollide = circleIntersectsBoxXZ(x, z, playerRadius, box);
 
-  player.position.x = x;
-  player.position.z = z;
-
-  const playerBox = new THREE.Box3().setFromObject(player);
-
-  player.position.x = oldX;
-  player.position.z = oldZ;
-
-  return colliders.some((box) => playerBox.intersectsBox(box));
-}
+      return wouldCollide && !isCollidingNow;
+    });
+  }
 
   function update(deltaTime) {
     const speed = 2.5;
@@ -127,45 +138,9 @@ export function createPlayerController(player, playerParts, camera, colliders = 
         }
 
       player.rotation.y = Math.atan2(moveDirection.x, moveDirection.z);
-
-      const walkTime = Date.now() * 0.01;
-
-      playerParts.leftLeg.rotation.x = Math.sin(walkTime) * 0.55;
-      playerParts.rightLeg.rotation.x = -Math.sin(walkTime) * 0.55;
-
-      playerParts.leftArm.rotation.x = -Math.sin(walkTime) * 0.45;
-      playerParts.rightArm.rotation.x = Math.sin(walkTime) * 0.45;
-
-      if (playerParts.bodyGroup) {
-        playerParts.bodyGroup.position.y = Math.sin(walkTime * 2) * 0.025;
-      }
-
-      if (playerParts.hatCone) {
-        playerParts.hatCone.rotation.z = -0.16 + Math.sin(walkTime) * 0.04;
-      }
-
-      if (playerParts.staffCrystal) {
-        playerParts.staffCrystal.rotation.y += 0.04;
-      }
-    } else {
-      playerParts.leftLeg.rotation.x *= 0.8;
-      playerParts.rightLeg.rotation.x *= 0.8;
-
-      playerParts.leftArm.rotation.x *= 0.8;
-      playerParts.rightArm.rotation.x *= 0.8;
-
-      const idleTime = Date.now() * 0.003;
-
-      player.position.y = 0.45 + Math.sin(idleTime) * 0.025;
-
-      if (playerParts.head) {
-        playerParts.head.rotation.y = Math.sin(idleTime) * 0.08;
-      }
-
-      if (playerParts.staffCrystal) {
-        playerParts.staffCrystal.rotation.y += 0.025;
-      }
     }
+
+    animatePlayer(playerObject, isMoving, performance.now() * 0.001);
 
     const maxDistance = 30;
     const distanceFromCenter = Math.sqrt(
