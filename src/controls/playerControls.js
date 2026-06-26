@@ -19,9 +19,9 @@ export function createPlayerController(playerObject, camera, colliders = []) {
   let cameraDistance = 9;
 
   const cameraMinDistance = 2.5;
-  const cameraMaxDistance = 18;
-  const cameraHeight = 3.6;
-  const cameraLookHeight = 1.2;
+  const cameraMaxDistance = 30;
+  const cameraHeight = 4.2;
+  const cameraLookHeight = 2.4;
 
   window.addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
@@ -64,8 +64,8 @@ export function createPlayerController(playerObject, camera, colliders = []) {
     });
   }
 
-  function update(deltaTime) {
-    const speed = 2.5;
+  function update(deltaTime, canMove = true) {
+    const speed = 4;
     const cameraRotationSpeed = 2.2;
     const cameraZoomSpeed = 5;
 
@@ -104,45 +104,48 @@ export function createPlayerController(playerObject, camera, colliders = []) {
     );
 
     const moveDirection = new THREE.Vector3();
+    let isMoving = false;
 
-    if (keys.w) {
-      moveDirection.sub(forward);
-    }
+    if (canMove) {
+      if (keys.w) {
+        moveDirection.sub(forward);
+      }
 
-    if (keys.s) {
-      moveDirection.add(forward);
-    }
+      if (keys.s) {
+        moveDirection.add(forward);
+      }
 
-    if (keys.a) {
-      moveDirection.sub(right);
-    }
+      if (keys.a) {
+        moveDirection.sub(right);
+      }
 
-    if (keys.d) {
-      moveDirection.add(right);
-    }
+      if (keys.d) {
+        moveDirection.add(right);
+      }
 
-    const isMoving = moveDirection.length() > 0;
+      isMoving = moveDirection.length() > 0;
 
-    if (isMoving) {
-      moveDirection.normalize();
+      if (isMoving) {
+        moveDirection.normalize();
 
-      const nextX = player.position.x + moveDirection.x * speed * deltaTime;
-      const nextZ = player.position.z + moveDirection.z * speed * deltaTime;
+        const nextX = player.position.x + moveDirection.x * speed * deltaTime;
+        const nextZ = player.position.z + moveDirection.z * speed * deltaTime;
 
-      if (!collidesAt(nextX, player.position.z)) {
-        player.position.x = nextX;
+        if (!collidesAt(nextX, player.position.z)) {
+          player.position.x = nextX;
         }
 
-      if (!collidesAt(player.position.x, nextZ)) {
-        player.position.z = nextZ;
+        if (!collidesAt(player.position.x, nextZ)) {
+          player.position.z = nextZ;
         }
 
-      player.rotation.y = Math.atan2(moveDirection.x, moveDirection.z);
+        player.rotation.y = Math.atan2(moveDirection.x, moveDirection.z);
+      }
     }
 
     animatePlayer(playerObject, isMoving, performance.now() * 0.001);
 
-    const maxDistance = 30;
+    const maxDistance = 420;
     const distanceFromCenter = Math.sqrt(
       player.position.x * player.position.x +
       player.position.z * player.position.z

@@ -26,8 +26,8 @@ function saveInitialRotations(parts) {
 
 export function createPlayer(scene) {
   const player = new THREE.Group();
-  player.position.set(0, 0.5, 2.2);
-  player.rotation.y = Math.PI;
+  player.position.set(0, 0.15, 2);
+  player.rotation.y = 0;
   scene.add(player);
 
   const playerObject = {
@@ -119,29 +119,27 @@ export function animatePlayer(playerObject, isMoving, elapsedTime) {
   const parts = playerObject.parts;
   const initial = playerObject.initialRotations;
 
-  // Se il personaggio si muove, l'animazione è forte.
-  // Se è fermo, facciamo solo un idle leggero.
-  const amount = isMoving ? 1 : 0.15;
-
-  // Movimento oscillante per camminata
-  const swing = Math.sin(elapsedTime * 8) * amount;
-
   // Reset delle rotazioni alla posa iniziale
   for (const key in parts) {
     if (parts[key] && initial[key]) {
       parts[key].rotation.copy(initial[key]);
     }
   }
+
   const armDown = 1.1;
 
   if (parts.leftArm) {
     parts.leftArm.rotation.x += armDown;
-    }
+  }
 
   if (parts.rightArm) {
     parts.rightArm.rotation.x += armDown;
-    }
+  }
 
+  if (!isMoving) return;
+
+  // Movimento oscillante per camminata.
+  const swing = Math.sin(elapsedTime * 8);
 
   // Piccolo movimento del busto
   if (parts.spine) {

@@ -6,6 +6,7 @@ import {
   registerBook,
   registerBookDeliveryTarget
 } from './book.js';
+import { registerDemonDragon, updateDemonDragon } from './dragon.js';
 
 export const modelColliders = [];
 
@@ -20,6 +21,8 @@ let mageMaterials = [];
 const mageTintColor = new THREE.Color(0xd9eeff);
 const mageEmissiveColor = new THREE.Color(0x2a4a66);
 const mageBaseBrightness = 0.12;
+const demonTintColor = new THREE.Color(0xffc2a0);
+const demonEmissiveColor = new THREE.Color(0x3a160c);
 
 const mageDialogue = document.createElement('div');
 mageDialogue.className = 'mage-dialogue';
@@ -50,6 +53,35 @@ function brightenMageMaterial(material) {
 
   if ('roughness' in material) {
     material.roughness = Math.min(material.roughness ?? 0.7, 0.65);
+  }
+
+  material.needsUpdate = true;
+}
+
+function brightenDemonMaterial(material) {
+  if (!material) return;
+
+  if (material.map) {
+    material.map.colorSpace = THREE.SRGBColorSpace;
+    material.map.needsUpdate = true;
+  }
+
+  if (material.color) {
+    material.color.lerp(demonTintColor, 0.16);
+    material.color.multiplyScalar(1.28);
+  }
+
+  if (material.emissive) {
+    material.emissive.copy(demonEmissiveColor);
+    material.emissiveIntensity = 0.16;
+
+    if ('emissiveMap' in material && material.map) {
+      material.emissiveMap = material.map;
+    }
+  }
+
+  if ('roughness' in material) {
+    material.roughness = Math.min(material.roughness ?? 0.7, 0.58);
   }
 
   material.needsUpdate = true;
@@ -94,6 +126,8 @@ function loadModel(scene, path, options = {}) {
         model.position.y += groundY - modelBottomY;
       }
 
+      model.position.y += options.offsetY ?? 0;
+
       if (model === mage) {
         mageStartY = model.position.y;
         registerBookDeliveryTarget(model);
@@ -101,6 +135,10 @@ function loadModel(scene, path, options = {}) {
 
       if (path.includes('EvilBook')) {
         registerBook(model);
+      }
+
+      if (path.includes('demon')) {
+        registerDemonDragon(model);
       }
 
       model.traverse((child) => {
@@ -119,6 +157,18 @@ function loadModel(scene, path, options = {}) {
 
             materials.forEach(brightenMageMaterial);
             mageMaterials.push(...materials);
+          }
+
+          if (path.includes('demon') || path.includes('dragon_flying')) {
+            child.material = Array.isArray(child.material)
+              ? child.material.map((material) => material.clone())
+              : child.material.clone();
+
+            const materials = Array.isArray(child.material)
+              ? child.material
+              : [child.material];
+
+            materials.forEach(brightenDemonMaterial);
           }
         }
       });
@@ -145,30 +195,31 @@ function loadModel(scene, path, options = {}) {
 
 export const modelsToLoad = [
   {
-    path: '/models/Dragon.glb',
-    x: -3,
-    y: 8,
-    z: 15,
-    scale: 0.02,
-    rotationY: Math.PI,
+    path: '/models/demon.glb',
+    x: 38,
+    y: 7,
+    z: -27,
+    scale: 5,
+    rotationY: Math.PI / 3,
     floating: true,
-    collider: true
+    collider: false
   },
   {
     path: '/models/ElevenTower.glb',
-    x: 10,
+    x: -5,
     y: 0,
-    z: 2,
+    z: -20,
     scale: 1.5,
-    rotationY: Math.PI / 2,
+    rotationY: -2 ,
     groundY: 0.49,
+    offsetY: -0.5,
     collider: true
   },
   {
     path: '/models/EvilBook.glb',
     x: -2,
     y: 0,
-    z: -10,
+    z: -20,
     scale: 1,
     rotationY: Math.PI,
     groundY: 0.49,
@@ -178,7 +229,7 @@ export const modelsToLoad = [
     path: '/models/FantasyHouse.glb',
     x: 15,
     y: 0.45,
-    z: -10,
+    z: -15,
     scale: 1.2,
     rotationY: Math.PI / 2,
     groundY: 0.49,
@@ -189,8 +240,7 @@ export const modelsToLoad = [
     x: -9
     ,
     y: 0.45,
-    z: -8
-    ,
+    z: -8,
     scale: 3,
     rotationY: Math.PI / 2,
     groundY: 0.49,
@@ -200,8 +250,8 @@ export const modelsToLoad = [
     path: '/models/FantasyStable.glb',
     x: 8,
     y: 0.45,
-    z: -10,
-    scale: 3,
+    z: -15,
+    scale: 4,
     rotationY: Math.PI / 2,
     groundY: 0.49,
     collider: true
@@ -210,22 +260,22 @@ export const modelsToLoad = [
     path: '/models/RedDragon.glb',
     x: 5,
     y: 5,
-    z: 5,
+    z: 20,
     scale: 1.2,
-    rotationY: Math.PI / 2,
+    rotationY: -0.3,
     floating: true,
     collider: true
   },
-  {
-    path: '/models/FantasyCastlePrototype.glb',
-    x: 26,
-    y: 0,
-    z: -18,
-    scale: 0.4,
-    rotationY: 0,
-    groundY: 0.49,
-    collider: true
-  },
+  // {
+  //   path: '/models/FantasyCastlePrototype.glb',
+  //   x: 26,
+  //   y: 0,
+  //   z: -18,
+  //   scale: 0.4,
+  //   rotationY: 0,
+  //   groundY: 0.49,
+  //   collider: true
+  // },
   {
     path: '/models/pixellabs-cute-skeleton-mage-character-2439.glb',
     x: 2,
@@ -235,6 +285,36 @@ export const modelsToLoad = [
     rotationY: Math.PI / 4,
     groundY: 0.49,
     collider: true
+  },
+  {
+    path: '/models/flowers_lib.glb',
+    x: -7,
+    y: 0,
+    z: -1,
+    scale: 0.75,
+    rotationY: 0.3,
+    floating: true,
+    collider: true
+  },
+  {
+    path: '/models/dragon_flying.glb',
+    x: 0,
+    y: 9,
+    z: -20,
+    scale: 5,
+    rotationY: Math.PI / 4,
+    floating: true,
+    collider: false
+  },
+  {
+    path: '/models/tower.glb',
+    x: 85,
+    y: 12,
+    z: -120,
+    scale: 2,
+    rotationY: Math.PI / 4,
+    floating: true,
+    collider: false
   }
 ];
 
@@ -252,6 +332,8 @@ window.addEventListener('keydown', (event) => {
 });
 
 export function updateModels(deltaTime, player) {
+  updateDemonDragon(deltaTime);
+
   if (!mage) return;
 
   const time = performance.now() * 0.001;
