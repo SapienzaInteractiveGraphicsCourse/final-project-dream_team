@@ -1,10 +1,9 @@
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as THREE from 'three';
 import { registerBook, registerBookDeliveryTarget } from './book.js';
-import { registerDemonDragon, updateDemonDragon } from './dragon.js';
-// Importiamo le funzioni esposte da mage.js
 import { registerMage, addMageMaterial, updateMage } from './mage.js';
 import { registerGem, updateGem } from './gem.js';
+import { registerDemonDragon, updateDemonDragon, setDragonOrbitCenter } from './dragon.js';
 
 export const modelColliders = [];
 const gltfLoader = new GLTFLoader();
@@ -92,6 +91,19 @@ function loadModel(scene, path, options = {}) {
         registerGem(model);
       }
 
+      if (path.includes('FantasyCastlePrototype')) {
+        const castleBox = new THREE.Box3().setFromObject(model);
+        const castleHeight = castleBox.max.y - castleBox.min.y;
+        
+        // Calcoliamo il centro matematico esatto di TUTTI i muri del castello nel mondo
+        const realCastleCenter = new THREE.Vector3();
+        castleBox.getCenter(realCastleCenter);
+        
+        const dragonFlightHeight = 18; 
+        
+        // Spostiamo l'orbita del drago sul centro reale calcolato
+        setDragonOrbitCenter(realCastleCenter.x, dragonFlightHeight, realCastleCenter.z, 22);
+      }
       // 4. Gestione dei materiali e delle ombre
       model.traverse((child) => {
         if (child.isMesh) {
@@ -148,7 +160,7 @@ export const modelsToLoad = [
     x: 38,
     y: 7,
     z: -27,
-    scale: 5,
+    scale: 10,
     rotationY: Math.PI / 3,
     floating: true,
     collider: false
