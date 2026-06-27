@@ -88,7 +88,7 @@ function loadModel(scene, path, options = {}) {
       }
 
       if (path.includes('Gem')) {
-        registerGem(model);
+        registerGem(model,scene );
       }
 
       if (path.includes('FantasyCastlePrototype')) {
@@ -178,9 +178,9 @@ export const modelsToLoad = [
   },
   {
     path: '/models/Gem.glb', 
-    x: 26, 
+    x: 25, 
     y: 1,
-    z: -18,
+    z: -32,
     scale: 1,
     floating: true,
     collider: false
@@ -295,7 +295,7 @@ export function loadModels(scene) {
 
 // L'update globale adesso delega la logica del mago a mage.js
 export function updateModels(deltaTime, player) {
-  updateDemonDragon(deltaTime);
+  updateDemonDragon(deltaTime,player);
   updateMage(deltaTime, player);
   if(mage) {
     updateGem(deltaTime, player, mage);

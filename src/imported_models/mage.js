@@ -95,28 +95,29 @@ export function updateMage(deltaTime, player) {
   }
 
  // Gestione Dialoghi
+// Dentro updateMage(deltaTime, player) in mage.js
   if (mageIsTalking) {
+    // Gestione Dialoghi (Rimane invariata, premendo E il mago parla e basta)
     if (isGemDelivered()) {
-      // Fase Finale: Gioco completato!
-      mageDialogue.textContent = "Mago: Incredibile! Hai recuperato la gemma e sconfitto il drago! La magia è finalmente tornata sull'isola. Grazie, eroe!";
+      mageDialogue.textContent = "Mago: Incredibile! La gemma è al sicuro e la magia è tornata! Per ringraziarti di aver salvato l'isola, ti dono il mio Tappeto Volante.";
     } else if (isCarryingGem()) {
-      // Fase 4: Il giocatore ha la gemma, premiamo E e attiviamo la consegna
-      deliverGemToMage();
-      mageDialogue.textContent = "Mago: La gemma del castello! Sapevo che sconfiggere quel drago non sarebbe stato un problema per te. Ce l'abbiamo fatta!";
+      // Rimuoviamo deliverGemToMage() da qui! Perché ora ci pensa il tasto F dentro gem.js
+      mageDialogue.textContent = "Mago: Vedo che hai la gemma! Premi F per darmela!";
     } else if (isBookDelivered()) {
-      // Fase 3: Il libro è stato consegnato, ricorda la missione del drago
       mageDialogue.textContent = "Mago: Ora il passo successivo è prendere la gemma nascosta nel castello che però è sorvegliato da un drago.";
+    } else if (isCarryingBook()) {
+      mageDialogue.textContent = "Mago: Oh, hai trovato l'antico Grimorio! Premi F per consegnarmelo!";
     } else {
-      // Fase 1: Inizio gioco
       mageDialogue.textContent = "Mago: Benvenuto! Finalmente sei qui, l'isola ha perso la sua magia e ha bisogno del tuo aiuto per ritrovarla, aiutaci a trovare il libro incantato.";
     }
     mageDialogue.classList.add('is-visible');
   } else if (canTalkToMage) {
-    // Prompt dinamici vicino al mago
+    // PROMPT DI VICINANZA DIRETTI (Quando cammini vicino al mago senza parlare)
+    // Mostriamo i suggerimenti corretti separando F ed E!
     if (isCarryingGem()) {
-      mageDialogue.textContent = 'Premi E per consegnare la gemma al mago';
+      mageDialogue.textContent = 'Premi F per consegnare la gemma | Premi E per parlare';
     } else if (isCarryingBook() && !isBookDelivered()) {
-      mageDialogue.textContent = 'Premi F per consegnare il libro al mago';
+      mageDialogue.textContent = 'Premi F per consegnare il libro | Premi E per parlare';
     } else {
       mageDialogue.textContent = 'Premi E per parlare con il mago';
     }
