@@ -7,14 +7,14 @@ import {
   createRenderer,
   setupResize
 } from './base/sceneSetup.js';
-
+import { damageDragon, isDragonDefeated } from './imported_models/dragon.js';
 import {createLights} from './base/lights.js'
 import { materials } from './world/materials.js';
 import { createIsland } from './world/island.js';
 import { createPlayer } from './player/schoolBoyPlayer.js';
 import { createPlayerController} from './controls/playerControls.js'
 import { loadModels, updateModels, modelColliders } from './imported_models/models.js';
-import { updateBook } from './imported_models/book.js';
+import { updateBook, isBookDelivered } from './imported_models/book.js';
 import { createCloud } from './world/cloud.js';
 import {
   createCarpetTravel,
@@ -48,6 +48,22 @@ const carpetTravel = createCarpetTravel(scene);
 window.addEventListener('keydown', (event) => {
   if (event.key.toLowerCase() === 'f') {
     tryStartCarpetTravel(carpetTravel);
+  }
+  // Tasto R (o qualsiasi altro) per attaccare il drago
+  if (event.key.toLowerCase() === 'r') {
+    // Il giocatore può attaccare il drago solo se ha già attivato la seconda fase della quest
+    if (!isBookDelivered() || isDragonDefeated()) return;
+
+    // Poiché il drago vola in alto sopra il castello (coordinate X: 26, Z: -18),
+    // controlliamo se il giocatore si trova vicino alla zona del castello per poterlo colpire
+    const castlePosition = new THREE.Vector3(26, playerData.group.position.y, -18);
+    const distanceToCastle = playerData.group.position.distanceTo(castlePosition);
+
+    // Se il giocatore è nel raggio d'azione del castello (es. entro 30 unità)
+    if (distanceToCastle < 30) {
+      damageDragon(25); // Serviranno 4 colpi per ucciderlo (100 di vita)
+      console.log("Hai lanciato un incantesimo contro il drago!");
+    }
   }
 });
 

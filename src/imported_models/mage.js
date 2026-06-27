@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { isBookDelivered, isCarryingBook } from './book.js';
-
+import { isCarryingGem, isGemDelivered, deliverGemToMage } from './gem.js';
 let mage = null;
 let mageStartY = 0;
 let canTalkToMage = false;
@@ -94,16 +94,28 @@ export function updateMage(deltaTime, player) {
     }
   }
 
-  // Gestione Dialoghi
+ // Gestione Dialoghi
   if (mageIsTalking) {
-    if (isBookDelivered()) {
+    if (isGemDelivered()) {
+      // Fase Finale: Gioco completato!
+      mageDialogue.textContent = "Mago: Incredibile! Hai recuperato la gemma e sconfitto il drago! La magia è finalmente tornata sull'isola. Grazie, eroe!";
+    } else if (isCarryingGem()) {
+      // Fase 4: Il giocatore ha la gemma, premiamo E e attiviamo la consegna
+      deliverGemToMage();
+      mageDialogue.textContent = "Mago: La gemma del castello! Sapevo che sconfiggere quel drago non sarebbe stato un problema per te. Ce l'abbiamo fatta!";
+    } else if (isBookDelivered()) {
+      // Fase 3: Il libro è stato consegnato, ricorda la missione del drago
       mageDialogue.textContent = "Mago: Ora il passo successivo è prendere la gemma nascosta nel castello che però è sorvegliato da un drago.";
     } else {
+      // Fase 1: Inizio gioco
       mageDialogue.textContent = "Mago: Benvenuto! Finalmente sei qui, l'isola ha perso la sua magia e ha bisogno del tuo aiuto per ritrovarla, aiutaci a trovare il libro incantato.";
     }
     mageDialogue.classList.add('is-visible');
   } else if (canTalkToMage) {
-    if (isCarryingBook() && !isBookDelivered()) {
+    // Prompt dinamici vicino al mago
+    if (isCarryingGem()) {
+      mageDialogue.textContent = 'Premi E per consegnare la gemma al mago';
+    } else if (isCarryingBook() && !isBookDelivered()) {
       mageDialogue.textContent = 'Premi E per consegnare il libro al mago';
     } else {
       mageDialogue.textContent = 'Premi E per parlare con il mago';

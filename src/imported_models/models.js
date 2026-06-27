@@ -4,12 +4,14 @@ import { registerBook, registerBookDeliveryTarget } from './book.js';
 import { registerDemonDragon, updateDemonDragon } from './dragon.js';
 // Importiamo le funzioni esposte da mage.js
 import { registerMage, addMageMaterial, updateMage } from './mage.js';
+import { registerGem, updateGem } from './gem.js';
 
 export const modelColliders = [];
 const gltfLoader = new GLTFLoader();
 
 const demonTintColor = new THREE.Color(0xffc2a0);
 const demonEmissiveColor = new THREE.Color(0x3a160c);
+let mage = null;
 
 function brightenDemonMaterial(material) {
   if (!material) return;
@@ -73,6 +75,7 @@ function loadModel(scene, path, options = {}) {
       // 3. REGISTRAZIONE: Ora che il modello è stabilmente sul suolo, lo passiamo a mage.js
       // In questo modo 'mageStartY' salverà la coordinata Y corretta del terreno!
       if (isMage) {
+        mage=model;
         registerMage(model);
         registerBookDeliveryTarget(model);
       }
@@ -83,6 +86,10 @@ function loadModel(scene, path, options = {}) {
 
       if (path.includes('demon')) {
         registerDemonDragon(model);
+      }
+
+      if (path.includes('Gem')) {
+        registerGem(model);
       }
 
       // 4. Gestione dei materiali e delle ombre
@@ -158,6 +165,15 @@ export const modelsToLoad = [
     collider: true
   },
   {
+    path: '/models/Gem.glb', 
+    x: 26, 
+    y: 1,
+    z: -18,
+    scale: 1,
+    floating: true,
+    collider: false
+  },
+  {
     path: '/models/EvilBook.glb',
     x: -10,
     y: 0,
@@ -196,7 +212,7 @@ export const modelsToLoad = [
     rotationY: Math.PI / 2,
     groundY: 0.49,
     collider: true
-  },
+  },/*
   {
     path: '/models/RedDragon.glb',
     x: 5,
@@ -206,7 +222,7 @@ export const modelsToLoad = [
     rotationY: -0.3,
     floating: true,
     collider: true
-  },
+  },*/
   {
     path: '/models/pixellabs-cute-skeleton-mage-character-2439.glb',
     x: 2,
@@ -227,7 +243,7 @@ export const modelsToLoad = [
     floating: true,
     collider: true
   },
-  {
+  /*{
     path: '/models/dragon_flying.glb',
     x: 0,
     y: 9,
@@ -236,13 +252,23 @@ export const modelsToLoad = [
     rotationY: Math.PI / 4,
     floating: true,
     collider: false
-  },
+  },*/
   {
     path: '/models/tower.glb',
-    x: 85,
+    x: 105,
     y: 12,
     z: -120,
     scale: 2,
+    rotationY: Math.PI / 4,
+    floating: true,
+    collider: false
+  },
+  {
+    path: '/models/FantasyCastlePrototype.glb',
+    x: 25,
+    y: 0,
+    z: -50,
+    scale: 1,
     rotationY: Math.PI / 4,
     floating: true,
     collider: false
@@ -259,4 +285,7 @@ export function loadModels(scene) {
 export function updateModels(deltaTime, player) {
   updateDemonDragon(deltaTime);
   updateMage(deltaTime, player);
+  if(mage) {
+    updateGem(deltaTime, player, mage);
+  }
 }
