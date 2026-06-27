@@ -116,7 +116,7 @@ export function updateMage(deltaTime, player) {
     if (isCarryingGem()) {
       mageDialogue.textContent = 'Premi E per consegnare la gemma al mago';
     } else if (isCarryingBook() && !isBookDelivered()) {
-      mageDialogue.textContent = 'Premi E per consegnare il libro al mago';
+      mageDialogue.textContent = 'Premi F per consegnare il libro al mago';
     } else {
       mageDialogue.textContent = 'Premi E per parlare con il mago';
     }

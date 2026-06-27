@@ -160,7 +160,7 @@ export const modelsToLoad = [
     x: 38,
     y: 7,
     z: -27,
-    scale: 10,
+    scale: 15,
     rotationY: Math.PI / 3,
     floating: true,
     collider: false
@@ -283,7 +283,7 @@ export const modelsToLoad = [
     scale: 1,
     rotationY: Math.PI / 4,
     floating: true,
-    collider: false
+    collider: true
   }
 ];
 
