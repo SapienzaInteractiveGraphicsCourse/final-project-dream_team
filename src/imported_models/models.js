@@ -265,16 +265,16 @@ export const modelsToLoad = [
     floating: true,
     collider: false
   },*/
-  {
-    path: '/models/tower.glb',
-    x: 105,
-    y: 12,
-    z: -120,
-    scale: 2,
-    rotationY: Math.PI / 4,
-    floating: true,
-    collider: false
-  },
+  // {
+  //   path: '/models/tower.glb',
+  //   x: 105,
+  //   y: 12,
+  //   z: -120,
+  //   scale: 2,
+  //   rotationY: Math.PI / 4,
+  //   floating: true,
+  //   collider: false
+  // },
   {
     path: '/models/FantasyCastlePrototype.glb',
     x: 25,
