@@ -21,19 +21,18 @@ import {
   updateCarpetTravel,
   tryStartCarpetTravel
 } from './world/carpetTravel.js';
+import { loadShifuTask, updateShifuTask } from './imported_models/shifu.js';
+import { loadWoodTask, updateWoodTask } from './imported_models/wood.js';
+import { loadBridgeTask, updateBridgeTask } from './imported_models/bridge.js';
 
 const canvas = document.querySelector('#bg');
-
 const scene = createScene();
 const camera = createCamera();
 const renderer = createRenderer(canvas);
 
 setupResize(camera, renderer);
 
-
 const clock = new THREE.Clock();
-
-
 
 createLights(scene);
 createIsland(scene, materials);
@@ -60,6 +59,9 @@ const playerController = createPlayerController(
 );
 
 loadModels(scene);
+loadShifuTask(scene);
+loadWoodTask(scene);
+loadBridgeTask(scene);
 
 
 
@@ -76,12 +78,13 @@ function animate() {
   const deltaTime = clock.getDelta();
 
   updateCarpetTravel(deltaTime, playerData.group, carpetTravel);
-
   playerController.update(deltaTime, !carpetTravel.isTraveling);
 
   updateModels(deltaTime, playerData.group);
   updateBook(deltaTime, playerData.group);
-
+  updateShifuTask(deltaTime, playerData.group);
+  updateWoodTask(deltaTime, playerData.group);
+  updateBridgeTask(deltaTime, playerData.group);
   cloud1.position.x += 0.002;
   cloud2.position.x -= 0.0015;
   cloud3.position.z += 0.001;

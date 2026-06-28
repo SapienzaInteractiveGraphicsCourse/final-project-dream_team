@@ -1,0 +1,50 @@
+# 3ds Max Wavefront OBJ Exporter v0.97b - (c)2007 guruware
+# File Created: 19.12.2011 14:54:12
+
+newmtl Firewood_Stack_3
+	Ns 20.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 1.0000 1.0000 1.0000
+	Kd 1.0000 1.0000 1.0000
+	Ks 0.1800 0.1800 0.1800
+	Ke 0.0000 0.0000 0.0000
+	map_Ka Firewood_Stack_diffuse_2.jpg
+	map_Kd Firewood_Stack_diffuse_2.jpg
+	map_bump Firewood_Stack_bump_2.jpg
+	bump Firewood_Stack_bump_2.jpg
+
+newmtl Firewood_Stack_1
+	Ns 20.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 1.0000 1.0000 1.0000
+	Kd 1.0000 1.0000 1.0000
+	Ks 0.1800 0.1800 0.1800
+	Ke 0.0000 0.0000 0.0000
+	map_Ka Firewood_Stack_diffuse.jpg
+	map_Kd Firewood_Stack_diffuse.jpg
+	map_bump Firewood_Stack_bump.jpg
+	bump Firewood_Stack_bump.jpg
+
+newmtl Firewood_Stack_2
+	Ns 20.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 1.0000 1.0000 1.0000
+	Kd 1.0000 1.0000 1.0000
+	Ks 0.1800 0.1800 0.1800
+	Ke 0.0000 0.0000 0.0000
+	map_Ka Firewood_Stack_diffuse_1.jpg
+	map_Kd Firewood_Stack_diffuse_1.jpg
+	map_bump Firewood_Stack_bump_1.jpg
+	bump Firewood_Stack_bump_1.jpg
