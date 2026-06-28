@@ -196,11 +196,11 @@ function loadModel(scene, path, options = {}) {
 export const modelsToLoad = [
   {
     path: '/models/demon.glb',
-    x: 38,
-    y: 7,
-    z: -27,
+    x: 0,
+    y: 5,
+    z: -30,
     scale: 5,
-    rotationY: Math.PI / 3,
+    rotationY: 0,
     floating: true,
     collider: false
   },
@@ -302,16 +302,6 @@ export const modelsToLoad = [
     y: 9,
     z: -20,
     scale: 5,
-    rotationY: Math.PI / 4,
-    floating: true,
-    collider: false
-  },
-  {
-    path: '/models/tower.glb',
-    x: 85,
-    y: 12,
-    z: -120,
-    scale: 2,
     rotationY: Math.PI / 4,
     floating: true,
     collider: false
