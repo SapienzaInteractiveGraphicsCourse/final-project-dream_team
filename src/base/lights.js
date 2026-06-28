@@ -5,29 +5,26 @@ export function createLights(scene) {
   scene.add(ambientLight);
 
   const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
-  sunLight.position.set(8, 12, 6);
+  sunLight.position.set(80, 120, 60);
   sunLight.castShadow = true;
 
-  sunLight.shadow.mapSize.width = 2048;
-  sunLight.shadow.mapSize.height = 2048;
+  sunLight.shadow.mapSize.width = 4096;
+  sunLight.shadow.mapSize.height = 4096;
 
-  sunLight.shadow.camera.near = 0.5;
-  sunLight.shadow.camera.far = 50;
-  sunLight.shadow.camera.left = -12;
-  sunLight.shadow.camera.right = 12;
-  sunLight.shadow.camera.top = 12;
-  sunLight.shadow.camera.bottom = -12;
+  sunLight.shadow.camera.near = 1;
+  sunLight.shadow.camera.far = 300;
+  sunLight.shadow.camera.left = -150;
+  sunLight.shadow.camera.right = 150;
+  sunLight.shadow.camera.top = 150;
+  sunLight.shadow.camera.bottom = -150;
 
   sunLight.shadow.bias = -0.0005;
+  sunLight.shadow.normalBias = 0.02;
 
   scene.add(sunLight);
-  // poi si puo levare
-  const sunHelper = new THREE.DirectionalLightHelper(sunLight, 1);
-  scene.add(sunHelper);
 
   return {
     ambientLight,
-    sunLight,
-    sunHelper
+    sunLight
   };
 }

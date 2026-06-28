@@ -10,15 +10,6 @@ export function createIsland(scene, materials) {
   islandTop.receiveShadow = true;
   scene.add(islandTop);
 
-  const islandBottom = new THREE.Mesh(
-    new THREE.ConeGeometry(50, 50, 64),
-    materials.rock
-  );
-
-  islandBottom.position.y = -2.65;
-  islandBottom.rotation.x = Math.PI;
-  scene.add(islandBottom);
-
   // Creo un gruppo per contenere tutti i pezzi del sentiero
   const pathGroup = new THREE.Group();
   scene.add(pathGroup);
@@ -107,8 +98,7 @@ export function createIsland(scene, materials) {
 
   return {
     islandTop,
-    islandBottom,
     pathGroup,
-    smallPlaza
+    smallPlaza,
   };
 }
