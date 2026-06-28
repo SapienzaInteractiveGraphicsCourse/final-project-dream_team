@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { isBookDelivered, isCarryingBook } from './book.js';
-
+import { isCarryingGem, isGemDelivered, deliverGemToMage } from './gem.js';
 let mage = null;
 let mageStartY = 0;
 let canTalkToMage = false;
@@ -94,17 +94,30 @@ export function updateMage(deltaTime, player) {
     }
   }
 
-  // Gestione Dialoghi
+ // Gestione Dialoghi
+// Dentro updateMage(deltaTime, player) in mage.js
   if (mageIsTalking) {
-    if (isBookDelivered()) {
+    // Gestione Dialoghi (Rimane invariata, premendo E il mago parla e basta)
+    if (isGemDelivered()) {
+      mageDialogue.textContent = "Mago: Incredibile! La gemma è al sicuro e la magia è tornata! Per ringraziarti di aver salvato l'isola, ti dono il mio Tappeto Volante.";
+    } else if (isCarryingGem()) {
+      // Rimuoviamo deliverGemToMage() da qui! Perché ora ci pensa il tasto F dentro gem.js
+      mageDialogue.textContent = "Mago: Vedo che hai la gemma! Premi F per darmela!";
+    } else if (isBookDelivered()) {
       mageDialogue.textContent = "Mago: Ora il passo successivo è prendere la gemma nascosta nel castello che però è sorvegliato da un drago.";
+    } else if (isCarryingBook()) {
+      mageDialogue.textContent = "Mago: Oh, hai trovato l'antico Grimorio! Premi F per consegnarmelo!";
     } else {
       mageDialogue.textContent = "Mago: Benvenuto! Finalmente sei qui, l'isola ha perso la sua magia e ha bisogno del tuo aiuto per ritrovarla, aiutaci a trovare il libro incantato.";
     }
     mageDialogue.classList.add('is-visible');
   } else if (canTalkToMage) {
-    if (isCarryingBook() && !isBookDelivered()) {
-      mageDialogue.textContent = 'Premi E per consegnare il libro al mago';
+    // PROMPT DI VICINANZA DIRETTI (Quando cammini vicino al mago senza parlare)
+    // Mostriamo i suggerimenti corretti separando F ed E!
+    if (isCarryingGem()) {
+      mageDialogue.textContent = 'Premi F per consegnare la gemma | Premi E per parlare';
+    } else if (isCarryingBook() && !isBookDelivered()) {
+      mageDialogue.textContent = 'Premi F per consegnare il libro | Premi E per parlare';
     } else {
       mageDialogue.textContent = 'Premi E per parlare con il mago';
     }
