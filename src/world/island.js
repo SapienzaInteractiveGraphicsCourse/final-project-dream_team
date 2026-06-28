@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 export function createIsland(scene, materials) {
   const islandTop = new THREE.Mesh(
-    new THREE.CylinderGeometry(64, 64, 0.08, 8),
+    new THREE.CylinderGeometry(128, 128, 0.08, 12),
     materials.grass
   );
 

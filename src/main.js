@@ -7,14 +7,15 @@ import {
   createRenderer,
   setupResize
 } from './base/sceneSetup.js';
-
-import {createLights} from './base/lights.js'
+import { damageDragon, isDragonDefeated } from './imported_models/dragon.js';
+import { createLights } from './base/lights.js';
 import { materials } from './world/materials.js';
 import { createIsland } from './world/island.js';
 import { createPlayer } from './player/schoolBoyPlayer.js';
-import { createPlayerController} from './controls/playerControls.js'
+import { createPlayerController } from './controls/playerControls.js';
 import { loadModels, updateModels, modelColliders } from './imported_models/models.js';
-import { updateBook } from './imported_models/book.js';
+import { updateBook, isBookDelivered } from './imported_models/book.js';
+import { isGemDelivered } from './imported_models/gem.js'; // <-- 1. IMPORT CORETTO AGGIUNTO!
 import { createCloud } from './world/cloud.js';
 import {
   createCarpetTravel,
@@ -24,6 +25,7 @@ import {
 import { loadShifuTask, updateShifuTask } from './imported_models/shifu.js';
 import { loadWoodTask, updateWoodTask } from './imported_models/wood.js';
 import { loadBridgeTask, updateBridgeTask } from './imported_models/bridge.js';
+
 
 const canvas = document.querySelector('#bg');
 const scene = createScene();
@@ -44,10 +46,59 @@ const cloud5 = createCloud(scene, 15, 6.5, 8, 1.4);
 
 const carpetTravel = createCarpetTravel(scene);
 
+if (carpetTravel && carpetTravel.mesh) {
+  carpetTravel.mesh.visible = false; // Nasconde l'oggetto 3D del tappeto
+} else if (carpetTravel && carpetTravel.group) {
+  carpetTravel.group.visible = false; // Se usa un gruppo, nasconde il gruppo
+}
+
+const carpetPrompt = document.createElement('div');
+carpetPrompt.className = 'interaction-dialogue carpet-dialogue';
+carpetPrompt.textContent = 'Premi F per viaggiare sul tappeto magico';
+document.body.appendChild(carpetPrompt);
+
+const dragonPrompt = document.createElement('div');
+dragonPrompt.className = 'interaction-dialogue dragon-dialogue';
+dragonPrompt.textContent = 'Premi R per combattere il drago!';
+document.body.appendChild(dragonPrompt);
+
+// Sotto il dragonPrompt in main.js
+const dragonVictoryBanner = document.createElement('div');
+dragonVictoryBanner.className = 'victory-banner'; // Puoi stilizzarlo gigante e dorato in CSS
+dragonVictoryBanner.textContent = '⚔️ HAI UCCISO IL DRAGO! ⚔️';
+document.body.appendChild(dragonVictoryBanner);
+
+let isInsideCastle = false; // Traccia se siamo nel cortile del castello
 window.addEventListener('keydown', (event) => {
   if (event.key.toLowerCase() === 'f') {
+    // 2. BLOCCO DI SICUREZZA: Se la gemma non è stata consegnata, il tasto F sul tappeto non fa nulla
+    if (!isGemDelivered()) {
+      return; 
+    }
     tryStartCarpetTravel(carpetTravel);
   }
+
+  if (event.key.toLowerCase() === 'r') {
+    if (isInsideCastle && isBookDelivered() && !isDragonDefeated()) {
+      damageDragon(25); // Infligge 25 di danno (4 colpi totali)
+      console.log("Hai colpito il drago con la magia!");
+      
+      // Se il drago muore con questo colpo, nascondi subito il prompt
+      if (isDragonDefeated()) {
+        dragonPrompt.classList.remove('is-visible');
+        isInsideCastle = false;
+        dragonVictoryBanner.classList.add('is-visible');
+        
+        // La fa sparire automaticamente dopo 4 secondi
+        setTimeout(() => {
+          dragonVictoryBanner.classList.remove('is-visible');
+        }, 4000);
+      }
+    }
+  }
+});
+window.addEventListener('keyup', () => {
+  window.currentInteractionKey = null;
 });
 
 const playerData = createPlayer(scene);
@@ -85,6 +136,34 @@ function animate() {
   updateShifuTask(deltaTime, playerData.group);
   updateWoodTask(deltaTime, playerData.group);
   updateBridgeTask(deltaTime, playerData.group);
+
+  // --- 3. CONTROLLO VISIBILITÀ TAPPETO (SPOSTATO FUORI DA ALTRI IF) ---
+  if (isGemDelivered()) {
+    if (carpetTravel && carpetTravel.mesh) carpetTravel.mesh.visible = true;
+    if (carpetTravel && carpetTravel.group) carpetTravel.group.visible = true;
+  }
+
+  // --- CONTROLLO DELLA ZONA CASTELLO ---
+  if (isBookDelivered() && !isDragonDefeated()) {
+    // Definiamo la Trigger Box intorno al castello (Centro X:25, Z:-50)
+    const castleTriggerBox = new THREE.Box3(
+      new THREE.Vector3(0, -5, -75),  // Angolo minimo
+      new THREE.Vector3(50, 20, -25)  // Angolo massimo
+    );
+
+    // Se il giocatore entra nel perimetro, mostra il prompt
+    if (castleTriggerBox.containsPoint(playerData.group.position)) {
+      isInsideCastle = true;
+      dragonPrompt.classList.add('is-visible');
+    } else {
+      isInsideCastle = false;
+      dragonPrompt.classList.remove('is-visible');
+    }
+  } else {
+    dragonPrompt.classList.remove('is-visible');
+    isInsideCastle = false;
+  }
+
   cloud1.position.x += 0.002;
   cloud2.position.x -= 0.0015;
   cloud3.position.z += 0.001;
