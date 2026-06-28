@@ -42,3 +42,28 @@ canvas {
   border-color: rgba(255, 214, 112, 0.72);
   box-shadow: 0 0 26px rgba(255, 214, 112, 0.28);
 }
+
+/* Stile per il Banner di Vittoria del Drago */
+.victory-banner {
+  position: fixed;
+  top: 40%;                  /* Posizionato a metà altezza schermo */
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.5); /* Parte rimpicciolito */
+  font-family: 'Impact', 'Arial Black', sans-serif;
+  font-size: 4rem;           /* Scritta gigantesca */
+  color: #ffcc00;            /* Colore oro */
+  text-shadow: 0 0 10px #ff3300, 0 0 30px #ffaa00, 0 0 50px #000; /* Effetto infuocato */
+  font-weight: bold;
+  pointer-events: none;      /* Non blocca i click del mouse sul gioco */
+  opacity: 0;                /* Invisibile di default */
+  transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Animazione fluida ad impatto */
+  z-index: 9999;             /* Sta sopra a tutto il gioco */
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Quando si attiva la classe, la scritta compare con un effetto zoom-in */
+.victory-banner.is-visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
