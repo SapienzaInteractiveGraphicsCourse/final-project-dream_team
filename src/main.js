@@ -38,11 +38,34 @@ const clock = new THREE.Clock();
 
 createLights(scene);
 createIsland(scene, materials);
-const cloud1 = createCloud(scene, 7, 15, 11, 1.2);
-const cloud2 = createCloud(scene, 7, 10, -15, 1.0);
-const cloud3 = createCloud(scene, 10, 8, -5, 1.1);
-const cloud4 = createCloud(scene, 16, 10, -20, 0.9);
-const cloud5 = createCloud(scene, 15, 6.5, 8, 1.4);
+
+function getRndInteger(min, max) {
+  return Math.floor(Math.random() * (max - min) ) + min;
+}
+
+const cloudsNumber = 30;
+const clouds = [];
+const genericMin = -100;
+const genericMax = 100;
+const minY = 15;
+const maxY = 25;
+
+for (let i = 0; i < cloudsNumber; i++) {
+    const cloud = createCloud(
+        scene, 
+        getRndInteger(genericMin, genericMax), 
+        getRndInteger(minY, maxY), 
+        getRndInteger(genericMin, genericMax),
+        getRndInteger(1, 5)
+    );
+    clouds.push(cloud);
+}
+
+// const cloud1 = createCloud(scene, 7, 15, 11, 1.2);
+// const cloud2 = createCloud(scene, 7, 10, -15, 1.0);
+// const cloud3 = createCloud(scene, 10, 8, -5, 1.1);
+// const cloud4 = createCloud(scene, 16, 10, -20, 0.9);
+// const cloud5 = createCloud(scene, 15, 6.5, 8, 1.4);
 
 const carpetTravel = createCarpetTravel(scene);
 
@@ -159,13 +182,12 @@ function animate() {
     isInsideCastle = false;
   }
 
-  cloud1.position.x += 0.002;
-  cloud2.position.x -= 0.0015;
-  cloud3.position.z += 0.001;
-  cloud4.position.z -= 0.001;
-  cloud5.position.x += 0.001;
+//   cloud1.position.x += 0.002;
+//   cloud2.position.x -= 0.0015;
+//   cloud3.position.z += 0.001;
+//   cloud4.position.z -= 0.001;
+//   cloud5.position.x += 0.001;
 
   renderer.render(scene, camera);
-
 }
 animate();

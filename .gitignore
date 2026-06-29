@@ -23,5 +23,4 @@ dist-ssr
 *.suo
 *.ntvs*
 *.njsproj
-*.sln
-*.sw?
+*.sl/public/models/castle_03.glb
