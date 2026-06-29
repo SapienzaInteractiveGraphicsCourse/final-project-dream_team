@@ -3,11 +3,14 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { isShifuTaskStarted } from './shifu.js';
+import { modelColliders } from './models.js';
 
 const gltfLoader = new GLTFLoader();
 
 let axe = null;
 let wood = null;
+let axeStartY = 0;
+let axeCollider = null;
 
 let canTakeAxe = false;
 let hasAxe = false;
@@ -17,6 +20,7 @@ let hasWood = false;
 let woodTaskComplete = false;
 
 const axePosition = new THREE.Vector3(242, 28.4, -254);
+const axeBaseRotationY = Math.PI / 2;
 const woodPosition = new THREE.Vector3(240, 28.4, -263);
 const woodGroundScale = new THREE.Vector3(0.02, 0.02, 0.02);
 const woodCarryScale = new THREE.Vector3(0.012, 0.012, 0.012);
@@ -27,12 +31,34 @@ const woodTaskPrompt = document.createElement('div');
 woodTaskPrompt.className = 'interaction-dialogue';
 document.body.appendChild(woodTaskPrompt);
 
+function removeAxeCollider() {
+  if (!axeCollider) return;
+
+  const index = modelColliders.indexOf(axeCollider);
+
+  if (index !== -1) {
+    modelColliders.splice(index, 1);
+  }
+
+  axeCollider = null;
+}
+
+function updateAxeAnimation() {
+  if (!axe || hasAxe || !axe.visible) return;
+
+  const time = performance.now() * 0.001;
+  axe.position.y = axeStartY + Math.sin(time * 2.2) * 0.22;
+  axe.rotation.y = axeBaseRotationY;
+  axe.rotation.z = Math.sin(time * 2.6) * 0.06;
+}
+
 window.addEventListener('keydown', (event) => {
   if (event.key.toLowerCase() !== 'f') return;
 
   if (canTakeAxe) {
     hasAxe = true;
     axe.visible = false;
+    removeAxeCollider();
     if (wood) {
       wood.visible = true;
     }
@@ -54,7 +80,14 @@ export function loadWoodTask(scene) {
 
     axe.position.copy(axePosition);
     axe.scale.set(0.04, 0.04, 0.04);
-    axe.rotation.y = Math.PI / 2;
+    axe.rotation.y = axeBaseRotationY;
+    axeStartY = axe.position.y;
+
+    axeCollider = new THREE.Box3().setFromCenterAndSize(
+      axePosition,
+      new THREE.Vector3(1.6, 2.2, 1.6)
+    );
+    modelColliders.push(axeCollider);
 
     scene.add(axe);
   });
@@ -101,6 +134,8 @@ export function loadWoodTask(scene) {
 });
 }
 export function updateWoodTask(deltaTime, player) {
+  updateAxeAnimation();
+
   if (woodTaskComplete) {
     woodTaskPrompt.classList.remove('is-visible');
     return;
