@@ -45,4 +45,3 @@ export function createCloud(scene, x, y, z, scale = 1) {
 
   return cloudGroup;
 }
-

@@ -276,13 +276,12 @@ export const modelsToLoad = [
   //   collider: false
   // },
   {
-    path: '/models/FantasyCastlePrototype.glb',
+    path: '/models/castle_03.glb',
     x: 25,
     y: 0,
     z: -50,
-    scale: 1,
+    scale: 5,
     rotationY: Math.PI / 4,
-    floating: true,
     collider: true
   }
 ];
