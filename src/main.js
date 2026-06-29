@@ -29,7 +29,7 @@ import {
   createPortalPositionLogger,
   updatePortalTeleport
 } from './world/portalTeleport.js';
-import { updateTowerFall } from './world/towerFall.js';
+
 const canvas = document.querySelector('#bg');
 const scene = createScene();
 const camera = createCamera();
@@ -84,8 +84,7 @@ function animate() {
   const deltaTime = clock.getDelta();
 
   updateCarpetTravel(deltaTime, playerData.group, carpetTravel);
-  const isFalling = updateTowerFall(deltaTime, playerData.group);
-  playerController.update(deltaTime, !carpetTravel.isTraveling && !isFalling);
+  playerController.update(deltaTime, !carpetTravel.isTraveling);
 
   updateModels(deltaTime, playerData.group);
   updateBook(deltaTime, playerData.group);
