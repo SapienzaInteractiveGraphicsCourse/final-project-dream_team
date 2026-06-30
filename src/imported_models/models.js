@@ -6,6 +6,7 @@ import { registerGem, updateGem } from './gem.js';
 import { registerDemonDragon, updateDemonDragon, setDragonOrbitCenter } from './dragon.js';
 
 export const modelColliders = [];
+export const modelBounds = [];
 const gltfLoader = new GLTFLoader();
 
 const demonTintColor = new THREE.Color(0xffc2a0);
@@ -42,9 +43,10 @@ function brightenDemonMaterial(material) {
 }
 
 function loadModel(scene, path, options = {}) {
-  gltfLoader.load(
-    path,
-    (gltf) => {
+  return new Promise((resolve) => {
+    gltfLoader.load(
+      path,
+      (gltf) => {
       const model = gltf.scene;
       const isMage = path.includes('skeleton-mage') || path.includes('cute-skeleton-mage');
 
@@ -138,20 +140,25 @@ function loadModel(scene, path, options = {}) {
 
       scene.add(model);
 
+      const box = new THREE.Box3().setFromObject(model);
+      modelBounds.push(box);
+
       if (options.collider) {
-        const box = new THREE.Box3().setFromObject(model);
         modelColliders.push(box);
       }
 
       console.log(`Loaded model: ${path}`);
-    },
-    (xhr) => {
-      console.log(`${path}: ${(xhr.loaded / xhr.total) * 100}% loaded`);
-    },
-    (error) => {
-      console.error(`Error loading model: ${path}`, error);
-    }
-  );
+      resolve(model);
+      },
+      (xhr) => {
+        console.log(`${path}: ${(xhr.loaded / xhr.total) * 100}% loaded`);
+      },
+      (error) => {
+        console.error(`Error loading model: ${path}`, error);
+        resolve(null);
+      }
+    );
+  });
 }
 
 export const modelsToLoad = [
@@ -238,6 +245,16 @@ export const modelsToLoad = [
     floating: true,
     collider: false
   },
+  {
+    path: '/models/fantasy_house_low_poly.glb',
+    x: 70,
+    y: -0.1,
+    z: 90,
+    scale: 1,
+    rotationY: 3*Math.PI/4,
+    floating: true,
+    collider: false
+  },
   /* TODO: da eliminare?
   {
     path: '/models/RedDragon.glb',
@@ -310,6 +327,8 @@ export const modelsToLoad = [
     rotationY: -3 * Math.PI / 4,
     collider: true
   },
+
+  /** ISLANDS */
   {
     path: '/models/floating_island.glb',
     x: -300,
@@ -339,13 +358,35 @@ export const modelsToLoad = [
     rotationY: 0.3,
     floating: true,
     collider: false
+  },
+
+  /** CART AND MARKETS */
+  {
+    path: '/models/cart.glb',
+    x: -12,
+    y: 0,
+    z: 47,
+    scale: 1.5,
+    rotation: 0,
+    floating: true,
+    collider: false
+  },
+  {
+    path: '/models/props_cart_02.glb',
+    x: 26,
+    y: 0,
+    z: -41,
+    scale: 2,
+    rotationY: 0.3,
+    floating: true,
+    collider: false
   }
 ];
 
 export function loadModels(scene) {
-  modelsToLoad.forEach((item) => {
-    loadModel(scene, item.path, item);
-  });
+  return Promise.all(modelsToLoad.map((item) => {
+    return loadModel(scene, item.path, item);
+  }));
 }
 
 // L'update globale adesso delega la logica del mago a mage.js

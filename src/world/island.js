@@ -153,5 +153,6 @@ export function createIsland(scene, materials) {
     islandTop,
     pathGroup,
     centralPlaza,
+    radius: islandRadius,
   };
 }

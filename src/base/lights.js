@@ -8,15 +8,15 @@ export function createLights(scene) {
   sunLight.position.set(80, 120, 60);
   sunLight.castShadow = true;
 
-  sunLight.shadow.mapSize.width = 4096;
-  sunLight.shadow.mapSize.height = 4096;
+  sunLight.shadow.mapSize.width = 1024;
+  sunLight.shadow.mapSize.height = 1024;
 
   sunLight.shadow.camera.near = 1;
-  sunLight.shadow.camera.far = 300;
-  sunLight.shadow.camera.left = -150;
-  sunLight.shadow.camera.right = 150;
-  sunLight.shadow.camera.top = 150;
-  sunLight.shadow.camera.bottom = -150;
+  sunLight.shadow.camera.far = 180;
+  sunLight.shadow.camera.left = -95;
+  sunLight.shadow.camera.right = 95;
+  sunLight.shadow.camera.top = 95;
+  sunLight.shadow.camera.bottom = -95;
 
   sunLight.shadow.bias = -0.0005;
   sunLight.shadow.normalBias = 0.02;

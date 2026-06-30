@@ -11,9 +11,10 @@ import { damageDragon, isDragonDefeated } from './imported_models/dragon.js';
 import { createLights } from './base/lights.js';
 import { materials } from './world/materials.js';
 import { createIsland } from './world/island.js';
+import { createIslandVegetation } from './world/vegetation.js';
 import { createPlayer } from './player/schoolBoyPlayer.js';
 import { createPlayerController } from './controls/playerControls.js';
-import { loadModels, updateModels, modelColliders } from './imported_models/models.js';
+import { loadModels, updateModels, modelColliders, modelBounds } from './imported_models/models.js';
 import { updateBook, isBookDelivered } from './imported_models/book.js';
 import { isGemDelivered } from './imported_models/gem.js'; // <-- 1. IMPORT CORETTO AGGIUNTO!
 import { createCloud } from './world/cloud.js';
@@ -35,15 +36,16 @@ const renderer = createRenderer(canvas);
 setupResize(camera, renderer);
 
 const clock = new THREE.Clock();
+const debugMode = new URLSearchParams(window.location.search).has('debug');
 
 createLights(scene);
-createIsland(scene, materials);
+const island = createIsland(scene, materials);
 
 function getRndInteger(min, max) {
   return Math.floor(Math.random() * (max - min) ) + min;
 }
 
-const cloudsNumber = 50;
+const cloudsNumber = 18;
 const genericMin = -300;
 const genericMax = 300;
 const minY = 30;
@@ -125,28 +127,43 @@ const playerController = createPlayerController(
   modelColliders
 );
 
-loadModels(scene);
+loadModels(scene).then(() => {
+  createIslandVegetation(scene, {
+    island,
+    obstacleBounds: modelBounds,
+    colliderTargets: modelColliders
+  });
+});
 loadShifuTask(scene);
 loadWoodTask(scene);
 loadBridgeTask(scene);
 
-const axesHelper = new THREE.AxesHelper(100);
-axesHelper.position.set(0, 5, 0);
-scene.add(axesHelper);
+if (debugMode) {
+  const axesHelper = new THREE.AxesHelper(100);
+  axesHelper.position.set(0, 5, 0);
+  scene.add(axesHelper);
 
-const gridHelper = new THREE.GridHelper(200, 20);
-scene.add(gridHelper);
+  const gridHelper = new THREE.GridHelper(200, 20);
+  scene.add(gridHelper);
+}
 
 // plotting of coords of the player
 const playerCoords = document.createElement('div');
-playerCoords.style.position = 'fixed';
-playerCoords.style.top = '10px';
-playerCoords.style.left = '10px';
-playerCoords.style.color = 'black';
-playerCoords.style.fontFamily = 'monospace';
-playerCoords.style.fontSize = '16px';
-playerCoords.style.zIndex = '9999';
-document.body.appendChild(playerCoords);
+if (debugMode) {
+  playerCoords.style.position = 'fixed';
+  playerCoords.style.top = '10px';
+  playerCoords.style.left = '10px';
+  playerCoords.style.color = 'black';
+  playerCoords.style.fontFamily = 'monospace';
+  playerCoords.style.fontSize = '16px';
+  playerCoords.style.zIndex = '9999';
+  document.body.appendChild(playerCoords);
+}
+
+const castleTriggerBox = new THREE.Box3(
+  new THREE.Vector3(0, -5, -75),
+  new THREE.Vector3(50, 20, -25)
+);
 
 // --------------------------------------------------
 // 18. ANIMATION LOOP
@@ -160,7 +177,9 @@ function animate() {
   playerController.update(deltaTime, !carpetTravel.isTraveling);
 
   const pos = playerData.group.position;
-  playerCoords.textContent = `X: ${pos.x.toFixed(2)}  Y: ${pos.y.toFixed(2)}  Z: ${pos.z.toFixed(2)}`;
+  if (debugMode) {
+    playerCoords.textContent = `X: ${pos.x.toFixed(2)}  Y: ${pos.y.toFixed(2)}  Z: ${pos.z.toFixed(2)}`;
+  }
 
   updateModels(deltaTime, playerData.group);
   updateBook(deltaTime, playerData.group);
@@ -176,12 +195,6 @@ function animate() {
 
   // --- CONTROLLO DELLA ZONA CASTELLO ---
   if (isBookDelivered() && !isDragonDefeated()) {
-    // Definiamo la Trigger Box intorno al castello (Centro X:25, Z:-50)
-    const castleTriggerBox = new THREE.Box3(
-      new THREE.Vector3(0, -5, -75),  // Angolo minimo
-      new THREE.Vector3(50, 20, -25)  // Angolo massimo
-    );
-
     // Se il giocatore entra nel perimetro, mostra il prompt
     if (castleTriggerBox.containsPoint(playerData.group.position)) {
       isInsideCastle = true;
