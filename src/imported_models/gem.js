@@ -10,20 +10,17 @@ let isPlayerNearGem = false;
 let canTakeGem = false; 
 let gemStartY = 0.8;    
 
-// Offset simmetrico rispetto al libro (Spalla sinistra)
 const gemOffset = new THREE.Vector3(-1.2, 1.8, -1.2); 
 const gemTargetPos = new THREE.Vector3();
 const gemDeliveredOffset = new THREE.Vector3(-0.9, 1.15, 0); 
 
-// --- SISTEMA PARTICELLE (BRILLANTINI GEMMA) ---
 let gemParticles = null;
 const PARTICLE_COUNT = 15;
-let particleData = []; // <-- CORRETTO: Dichiarato l'array per i dati dei brillantini rotanti
+let particleData = []; 
 
-// Prompt UI per la gemma
 const gemPrompt = document.createElement('div');
 gemPrompt.className = 'interaction-dialogue gem-dialogue';
-gemPrompt.textContent = 'Premi F per raccogliere la Gemma della Luce';
+gemPrompt.textContent = 'Press F to collect the Light Gem';
 document.body.appendChild(gemPrompt);
 
 export function isCarryingGem() { return hasGem; }
@@ -56,7 +53,7 @@ function createCircleTexture() {
   const ctx = canvas.getContext('2d');
   const gradient = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
   gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-  gradient.addColorStop(0.3, 'rgba(51, 82, 255, 0.9)'); // Bellissimo colore blu/azzurro per la gemma
+  gradient.addColorStop(0.3, 'rgba(213, 6, 250, 0.9)'); 
   gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, 16, 16);
@@ -66,18 +63,17 @@ function createCircleTexture() {
 function createGemParticles(scene) {
   const geometry = new THREE.BufferGeometry();
   const positions = new Float32Array(PARTICLE_COUNT * 3);
-  particleData = []; // Inizializza l'array dei dati
+  particleData = []; 
 
   for (let i = 0; i < PARTICLE_COUNT; i++) {
     const angle = Math.random() * Math.PI * 2;
-    const radius = 0.2 + Math.random() * 0.6; // Raggio leggermente più stretto per avvolgere la gemma
+    const radius = 0.2 + Math.random() * 0.6; 
     const y = Math.random() * 1.0 - 0.3; 
 
     positions[i * 3] = Math.cos(angle) * radius;
     positions[i * 3 + 1] = y;
     positions[i * 3 + 2] = Math.sin(angle) * radius;
 
-    // Salviamo i parametri orbitali (identico a book.js)
     particleData.push({
       angle: angle,
       radius: radius,
@@ -90,7 +86,7 @@ function createGemParticles(scene) {
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
   const material = new THREE.PointsMaterial({
-    color: 0x00ffff, // Forza il colore azzurro ciano sul materiale per i brillantini blu
+    color: 0x00ffff, 
     size: 0.25, 
     map: createCircleTexture(),
     transparent: true,
@@ -107,7 +103,6 @@ function createGemParticles(scene) {
 export function updateGem(deltaTime, player, mageModel) {
   if (!gemModel) return;
 
-  // 1. Controllo Apparizione
   if (!gemModel.visible && !hasGem && !gemDelivered) {
     if (isBookDelivered() && isDragonDefeated()) {
       gemModel.visible = true;
@@ -119,12 +114,10 @@ export function updateGem(deltaTime, player, mageModel) {
 
   const time = performance.now() * 0.001;
 
-  // AGGANCIO DELLE PARTICELLE ALLA GEMMA (Elimina i brillantini a caso nel vuoto)
   if (gemParticles && gemParticles.visible) {
     gemParticles.position.copy(gemModel.position);
   }
 
-  // Nuova Fase: Consegnata e vola intorno al mago
   if (gemDelivered && mageModel) {
     gemTargetPos.copy(mageModel.position).add(gemDeliveredOffset);
     gemModel.position.lerp(gemTargetPos, Math.min(deltaTime * 6, 1));
@@ -135,7 +128,6 @@ export function updateGem(deltaTime, player, mageModel) {
     return;
   }
 
-  // 2. GESTIONE INSEGUIMENTO AL GIOCATORE (Sulla spalla sinistra)
   if (hasGem) {
     gemTargetPos.copy(gemOffset).applyMatrix4(player.matrixWorld);
     gemModel.position.lerp(gemTargetPos, deltaTime * 4);
@@ -144,12 +136,11 @@ export function updateGem(deltaTime, player, mageModel) {
 
     if (gemParticles) animateParticles(deltaTime);
 
-    // Abilita la consegna vicino al mago
     if (mageModel) {
       const distanceToMage = player.position.distanceTo(mageModel.position);
       if (distanceToMage < 4) {
         canTakeGem = true;
-        gemPrompt.textContent = 'Premi F per consegnare la gemma al mago';
+        gemPrompt.textContent = 'Press F to deliver the gem to the mage';
         gemPrompt.classList.add('is-visible');
       } else {
         gemPrompt.classList.remove('is-visible');
@@ -159,7 +150,6 @@ export function updateGem(deltaTime, player, mageModel) {
     return;
   }
 
-  // 3. LOGICA A TERRA NEL CASTELLO (Prima di essere raccolta)
   if (!hasGem && !gemDelivered) {
     const distanceToPlayer = gemModel.position.distanceTo(player.position);
     canTakeGem = distanceToPlayer < 3;
@@ -170,7 +160,7 @@ export function updateGem(deltaTime, player, mageModel) {
     if (gemParticles) animateParticles(deltaTime);
 
     if (canTakeGem) {
-      gemPrompt.textContent = 'Premi F per raccogliere la gemma';
+      gemPrompt.textContent = 'Press F to collect the gem';
       gemPrompt.classList.add('is-visible');
     } else {
       gemPrompt.classList.remove('is-visible');
@@ -178,7 +168,6 @@ export function updateGem(deltaTime, player, mageModel) {
   }
 }
 
-// Funzione interna riadattata perfettamente al moto ondulatorio/orbitale di book.js
 function animateParticles(deltaTime) {
   if (!gemParticles || !gemModel) return;
   
@@ -189,16 +178,13 @@ function animateParticles(deltaTime) {
     const data = particleData[i];
     if (!data) continue;
 
-    // Aggiorna l'orbita e l'altezza (Uguale a book.js)
     data.angle += data.rotSpeed * deltaTime;
     data.radius = data.originalRadius + Math.sin(time * 2 + i) * 0.05; 
-    positions[i * 3 + 1] += data.speedY * deltaTime; // Sali su Y
+    positions[i * 3 + 1] += data.speedY * deltaTime; 
 
-    // Calcolo coordinate sferiche locali attorno al centro della gemma
     positions[i * 3] = Math.cos(data.angle) * data.radius;
     positions[i * 3 + 2] = Math.sin(data.angle) * data.radius;
 
-    // Se sale troppo in alto, si rigenera sotto la gemma
     if (positions[i * 3 + 1] > 0.6) {
       positions[i * 3 + 1] = -0.4;
       data.angle = Math.random() * Math.PI * 2;
@@ -221,7 +207,7 @@ window.addEventListener('keydown', (event) => {
     gemModel.scale.set(0.4, 0.4, 0.4); 
 
     import('./models.js').then(({ modelsToLoad }) => {
-      const gemData = modelsToLoad.find(m => m.path.includes('gem'));
+      const gemData = modelsToLoad.find(m => m.path.includes('gem') || m.path.includes('Gem'));
       if (gemData) gemData.floating = false; 
     });
     
