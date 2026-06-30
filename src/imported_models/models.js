@@ -91,7 +91,7 @@ function loadModel(scene, path, options = {}) {
         registerGem(model,scene );
       }
 
-      if (path.includes('FantasyCastlePrototype')) {
+      if (path.includes('castle_03')) {
         const castleBox = new THREE.Box3().setFromObject(model);
         const castleHeight = castleBox.max.y - castleBox.min.y;
         
@@ -102,7 +102,7 @@ function loadModel(scene, path, options = {}) {
         const dragonFlightHeight = 18; 
         
         // Spostiamo l'orbita del drago sul centro reale calcolato
-        setDragonOrbitCenter(realCastleCenter.x, dragonFlightHeight, realCastleCenter.z, 22);
+        setDragonOrbitCenter(realCastleCenter.x, dragonFlightHeight, realCastleCenter.z, 45);
       }
       // 4. Gestione dei materiali e delle ombre
       model.traverse((child) => {
@@ -224,7 +224,8 @@ export const modelsToLoad = [
     rotationY: Math.PI / 2,
     groundY: 0.49,
     collider: true
-  },/*
+  },
+  /* TODO: da eliminare?
   {
     path: '/models/RedDragon.glb',
     x: 5,
@@ -234,7 +235,8 @@ export const modelsToLoad = [
     rotationY: -0.3,
     floating: true,
     collider: true
-  },*/
+  },
+  */
   {
     path: '/models/pixellabs-cute-skeleton-mage-character-2439.glb',
     x: 2,
@@ -277,12 +279,13 @@ export const modelsToLoad = [
   // },
   {
     path: '/models/castle_03.glb',
-    x: 25,
+    x: -40,
     y: 0,
-    z: -50,
+    z: -80,
     scale: 5,
+    offsetY: -0.5,
     rotationY: Math.PI / 4,
-    collider: true
+    collider: false
   }
 ];
 

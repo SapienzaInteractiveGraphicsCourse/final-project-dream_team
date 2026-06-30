@@ -65,7 +65,7 @@ export function createPlayerController(playerObject, camera, colliders = []) {
   }
 
   function update(deltaTime, canMove = true) {
-    const speed = 4;
+    const speed = 16; // 4
     const cameraRotationSpeed = 2.2;
     const cameraZoomSpeed = 5;
 

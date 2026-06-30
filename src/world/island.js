@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 export function createIsland(scene, materials) {
 
-  const islandRadius = 80;
+  const islandRadius = 130;
   const islandTop = new THREE.Mesh(
     new THREE.CylinderGeometry(islandRadius, islandRadius, 0.08, 12),
     materials.grass
@@ -74,6 +74,27 @@ export function createIsland(scene, materials) {
     return jointGroup;
   }
 
+  function createRamp(x, z, rotationY, length = 8, width = 7, height = 1.5) {
+    const rampGroup = new THREE.Group();
+
+    const ramp = new THREE.Mesh(
+      new THREE.BoxGeometry(width, 0.35, length),
+      materials.plazaStone
+    );
+
+    ramp.rotation.x = -Math.atan(height / length);
+    ramp.receiveShadow = true;
+    ramp.castShadow = true;
+
+    rampGroup.position.set(x, height / 2, z);
+    rampGroup.rotation.y = rotationY;
+
+    rampGroup.add(ramp);
+    pathGroup.add(rampGroup);
+
+    return rampGroup;
+  }
+
   // Sentiero principale: parte dalla posizione iniziale del player e prosegue in avanti.
   createPathJoint(0, 2.2, 5.2);
   createPathSegment(0, -6, 0, 16.4, 8);
@@ -87,6 +108,10 @@ export function createIsland(scene, materials) {
 
   createPathSegment(36, -31, Math.PI / 4.2, 24, 8);
   createPathJoint(44, -22, 4.9);
+
+  // path to the castle
+  createPathSegment(-15, -54, 26, 60, 8);
+  createRamp(-15, -54, 4, 18, 8, 4);
 
   // Piccola piazzetta centrale lungo il percorso
   const smallPlaza = new THREE.Mesh(
