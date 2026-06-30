@@ -5,6 +5,7 @@ import { consumeCarriedWood, isCarryingWood } from './wood.js';
 const loader = new GLTFLoader();
 
 const towerPosition = new THREE.Vector3(85, 12, -120);
+const brokenTowerWorldOffset = new THREE.Vector3(0, 1, 0);
 const fixedTowerWorldOffset = new THREE.Vector3(125, 1.1, -123.52);
 const shifuPosition = new THREE.Vector3(231, 28.4, -258);
 const buildEffectPosition = new THREE.Vector3(85, 16, -120);
@@ -33,6 +34,7 @@ let canBuildBridge = false;
 let particles = [];
 const buildEffectBox = new THREE.Box3();
 const buildEffectCenter = new THREE.Vector3();
+const towerBounds = new THREE.Box3();
 
 const bridgePrompt = document.createElement('div');
 bridgePrompt.className = 'interaction-dialogue';
@@ -185,7 +187,7 @@ window.addEventListener('keydown', (event) => {
 export function loadBridgeTask(scene) {
   loader.load('/models/tower1.glb', (gltf) => {
     brokenTower = gltf.scene;
-    prepareTower(brokenTower, true);
+    prepareTower(brokenTower, true, brokenTowerWorldOffset);
     scene.add(brokenTower);
   });
 
@@ -234,4 +236,19 @@ export function updateBridgeTask(deltaTime, player) {
 
 export function isBridgeBuilt() {
   return bridgeState === 'built';
+}
+
+export function getActiveTowerBounds() {
+  const activeTower = bridgeState === 'built' ? fixedTower : brokenTower;
+
+  if (!activeTower) return null;
+
+  activeTower.updateMatrixWorld(true);
+  towerBounds.setFromObject(activeTower);
+
+  return towerBounds;
+}
+
+export function getActiveTower() {
+  return bridgeState === 'built' ? fixedTower : brokenTower;
 }

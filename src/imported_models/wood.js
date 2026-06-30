@@ -19,9 +19,9 @@ let canCollectWood = false;
 let hasWood = false;
 let woodTaskComplete = false;
 
-const axePosition = new THREE.Vector3(242, 28.4, -254);
+const axePosition = new THREE.Vector3(242, 29.4, -254);
 const axeBaseRotationY = Math.PI / 2;
-const woodPosition = new THREE.Vector3(240, 28.4, -263);
+const woodPosition = new THREE.Vector3(240, 29.4, -263);
 const woodGroundScale = new THREE.Vector3(0.02, 0.02, 0.02);
 const woodCarryScale = new THREE.Vector3(0.012, 0.012, 0.012);
 const woodCarryOffset = new THREE.Vector3(0.6, 3, 0.35);
