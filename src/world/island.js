@@ -16,7 +16,7 @@ export function createIsland(scene, materials) {
   const pathGroup = new THREE.Group();
   scene.add(pathGroup);
 
-  // Funzione interna: crea un singolo pezzo rettangolare di sentiero con bordo
+  // Funzione interna: crea un pezzo di sentiero che parte da (x, z) e si allunga in avanti
   function createPathSegment(x, z, rotationY, length, width = 8) {
     const segmentGroup = new THREE.Group();
 
@@ -30,8 +30,8 @@ export function createIsland(scene, materials) {
       materials.plazaStone
     );
 
-    border.position.y = 0.075;
-    path.position.y = 0.12;
+    border.position.set(0, 0.075, length / 2);
+    path.position.set(0, 0.12, length / 2);
 
     border.receiveShadow = true;
     path.receiveShadow = true;
@@ -69,9 +69,33 @@ export function createIsland(scene, materials) {
     jointGroup.add(border);
     jointGroup.add(joint);
     jointGroup.position.set(x, 0, z);
+    jointGroup.userData.radius = radius;
     pathGroup.add(jointGroup);
 
     return jointGroup;
+  }
+
+  function createPathBetweenJoints(startJoint, endJoint, width = 8, jointOverlap = 0.8) {
+    const start = startJoint.position;
+    const end = endJoint.position;
+    const dx = end.x - start.x;
+    const dz = end.z - start.z;
+    const centerDistance = Math.sqrt(dx * dx + dz * dz);
+
+    if (centerDistance === 0) return null;
+
+    const startRadius = startJoint.userData.radius ?? 0;
+    const endRadius = endJoint.userData.radius ?? 0;
+    const startInset = Math.max(startRadius - jointOverlap, 0);
+    const endInset = Math.max(endRadius - jointOverlap, 0);
+    const length = Math.max(centerDistance - startInset - endInset, 0);
+    const directionX = dx / centerDistance;
+    const directionZ = dz / centerDistance;
+    const startX = start.x + directionX * startInset;
+    const startZ = start.z + directionZ * startInset;
+    const rotationY = Math.atan2(dx, dz);
+
+    return createPathSegment(startX, startZ, rotationY, length, width);
   }
 
   function createRamp(x, z, rotationY, length = 8, width = 7, height = 1.5) {
@@ -96,36 +120,38 @@ export function createIsland(scene, materials) {
   }
 
   // Sentiero principale: parte dalla posizione iniziale del player e prosegue in avanti.
-  createPathJoint(0, 2.2, 5.2);
-  createPathSegment(0, -6, 0, 16.4, 8);
-  createPathJoint(0, -14, 4.9);
+  // initial plaza
+  const initialPlaza = createPathJoint(0, 26, 5.2);
 
-  createPathSegment(5, -22, -Math.PI / 5, 19, 8);
-  createPathJoint(10, -30, 4.9);
+  const rightPlaza = createPathJoint(50, 30, 10);
+  const stoneBuildingPlaza = createPathJoint(-42, 68, 1);
+  const castelPlaza = createPathJoint(-30, -70, 1);
 
-  createPathSegment(19, -35, -Math.PI / 2.8, 20, 8);
-  createPathJoint(28, -40, 4.9);
-
-  createPathSegment(36, -31, Math.PI / 4.2, 24, 8);
-  createPathJoint(44, -22, 4.9);
-
-  // path to the castle
-  createPathSegment(-15, -54, 26, 60, 8);
-  createRamp(-15, -54, 4, 18, 8, 4);
-
-  // Piccola piazzetta centrale lungo il percorso
-  const smallPlaza = new THREE.Mesh(
+  // central plaza
+  const centralPlaza = new THREE.Mesh(
     new THREE.CylinderGeometry(12, 12, 0.1, 24),
     materials.plazaStone
   );
 
-  smallPlaza.position.set(10, 0.09, -30);
-  smallPlaza.receiveShadow = true;
-  pathGroup.add(smallPlaza);
+  centralPlaza.position.set(10, 0.09, -30);
+  centralPlaza.receiveShadow = true;
+  centralPlaza.userData.radius = 12;
+  pathGroup.add(centralPlaza);
+
+  createPathBetweenJoints(initialPlaza, centralPlaza, 8, 2);
+  createPathBetweenJoints(initialPlaza, rightPlaza, 8, 2);
+  createPathBetweenJoints(initialPlaza, stoneBuildingPlaza, 8, 2);
+  createPathBetweenJoints(centralPlaza, castelPlaza, 8);
+  
+  // flying carpet plaza
+  const carpetPlaza = createPathJoint(44, -22, 4.9);
+
+  // ramp for the castle entrance
+  createRamp(-15, -54, 4, 18, 8, 4);
 
   return {
     islandTop,
     pathGroup,
-    smallPlaza,
+    centralPlaza,
   };
 }

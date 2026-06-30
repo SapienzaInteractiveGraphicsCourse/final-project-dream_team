@@ -155,6 +155,7 @@ function loadModel(scene, path, options = {}) {
 }
 
 export const modelsToLoad = [
+    // TODO: is it useful? i don't see it anywhere
   {
     path: '/models/demon.glb',
     x: 38,
@@ -164,17 +165,6 @@ export const modelsToLoad = [
     rotationY: Math.PI / 3,
     floating: true,
     collider: false
-  },
-  {
-    path: '/models/ElevenTower.glb',
-    x: -5,
-    y: 0,
-    z: -20,
-    scale: 1.5,
-    rotationY: -2 ,
-    groundY: 0.49,
-    offsetY: -0.5,
-    collider: true
   },
   {
     path: '/models/Gem.glb', 
@@ -195,35 +185,58 @@ export const modelsToLoad = [
     groundY: 0.49,
     collider: false
   },
-  {
-    path: '/models/FantasyHouse.glb',
-    x: 15,
-    y: 0.45,
-    z: -15,
-    scale: 1.2,
-    rotationY: Math.PI / 2,
-    groundY: 0.49,
-    collider: true
-  },
+//   {
+//     path: '/models/FantasyHouse.glb',
+//     x: 15,
+//     y: 0.45,
+//     z: -15,
+//     scale: 1.2,
+//     rotationY: Math.PI / 2,
+//     groundY: 0.49,
+//     collider: true
+//   },
   {
     path: '/models/FantasyInn.glb',
-    x: -9,
-    y: 0.45,
-    z: -8,
-    scale: 3,
-    rotationY: Math.PI / 2,
+    x: -10,
+    y: 0,
+    z: -5.13,
+    scale: 6,
+    rotationY: Math.PI / 2.3,
     groundY: 0.49,
+    floating: true,
     collider: true
   },
   {
     path: '/models/FantasyStable.glb',
-    x: 8,
-    y: 0.45,
-    z: -15,
-    scale: 4,
-    rotationY: Math.PI / 2,
+    x: 32,
+    y: 0,
+    z: -3,
+    scale: 6,
+    rotationY: -0.05,
     groundY: 0.49,
+    floating: true,
     collider: true
+  },
+  {
+    path: '/models/alchemist_fantasy_house.glb',
+    x: 60,
+    y: 0,
+    z: 30,
+    scale: 0.05,
+    rotationY: 3 * Math.PI / 2,
+    groundY: 0.49,
+    floating: true,
+    collider: true
+  },
+  {
+    path: '/models/stone_building.glb',
+    x: -42,
+    y: -0.1,
+    z: 68,
+    scale: 40,
+    rotationY: 3*Math.PI/4,
+    floating: true,
+    collider: false
   },
   /* TODO: da eliminare?
   {
@@ -249,9 +262,9 @@ export const modelsToLoad = [
   },
   {
     path: '/models/flowers_lib.glb',
-    x: -7,
+    x: -4,
     y: 0,
-    z: -1,
+    z: 10,
     scale: 0.75,
     rotationY: 0.3,
     floating: true,
@@ -285,6 +298,46 @@ export const modelsToLoad = [
     scale: 5,
     offsetY: -0.5,
     rotationY: Math.PI / 4,
+    collider: false
+  },
+  {
+    path: '/models/statue.glb',
+    x: 11.29,
+    y: 0,
+    z: -30.32,
+    scale: 2,
+    offsetY: -0.5,
+    rotationY: -3 * Math.PI / 4,
+    collider: true
+  },
+  {
+    path: '/models/floating_island.glb',
+    x: -300,
+    y: -2,
+    z: -1,
+    scale: 10,
+    rotationY: 0.3,
+    floating: true,
+    collider: true
+  },
+  {
+    path: '/models/floating_island2.glb',
+    x: 300,
+    y: -2,
+    z: -1,
+    scale: 1,
+    rotationY: 0.3,
+    floating: true,
+    collider: false
+  },
+  {
+    path: '/models/floating_island3.glb',
+    x: 10,
+    y: -2,
+    z: 500,
+    scale: 100,
+    rotationY: 0.3,
+    floating: true,
     collider: false
   }
 ];
