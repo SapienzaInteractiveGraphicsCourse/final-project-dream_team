@@ -21,9 +21,15 @@ import {
   updateCarpetTravel,
   tryStartCarpetTravel
 } from './world/carpetTravel.js';
-import { loadShifuTask, updateShifuTask } from './imported_models/shifu.js';
+import { loadShifuTask, startShifuBridgeThanks, updateShifuTask } from './imported_models/shifu.js';
 import { loadWoodTask, updateWoodTask } from './imported_models/wood.js';
-import { loadBridgeTask, updateBridgeTask } from './imported_models/bridge.js';
+import { isBridgeBuilt, loadBridgeTask, updateBridgeTask } from './imported_models/bridge.js';
+import { createRain, startStorm, updateRain, updateStorm } from './world/rain.js';
+import {
+  createPortalPositionLogger,
+  updatePortalTeleport
+} from './world/portalTeleport.js';
+import { updateTowerFall } from './world/towerFall.js';
 
 const canvas = document.querySelector('#bg');
 const scene = createScene();
@@ -41,7 +47,7 @@ const cloud2 = createCloud(scene, 7, 10, -15, 1.0);
 const cloud3 = createCloud(scene, 10, 8, -5, 1.1);
 const cloud4 = createCloud(scene, 16, 10, -20, 0.9);
 const cloud5 = createCloud(scene, 15, 6.5, 8, 1.4);
-
+createRain(scene); 
 const carpetTravel = createCarpetTravel(scene);
 
 if (carpetTravel && carpetTravel.mesh) {
@@ -96,6 +102,7 @@ window.addEventListener('keyup', () => {
 });
 
 const playerData = createPlayer(scene);
+createPortalPositionLogger(playerData.group);
 
 const playerController = createPlayerController(
   playerData,
@@ -108,6 +115,12 @@ loadShifuTask(scene);
 loadWoodTask(scene);
 loadBridgeTask(scene);
 
+
+
+
+
+let shifuThanksTriggered = false;
+
 // --------------------------------------------------
 // 18. ANIMATION LOOP
 // --------------------------------------------------
@@ -117,13 +130,21 @@ function animate() {
   const deltaTime = clock.getDelta();
 
   updateCarpetTravel(deltaTime, playerData.group, carpetTravel);
-  playerController.update(deltaTime, !carpetTravel.isTraveling);
+  const isFalling = updateTowerFall(
+    deltaTime,
+    playerData.group,
+    playerData.group.position.y > 20 && !carpetTravel.isTraveling
+  );
+  playerController.update(deltaTime, !carpetTravel.isTraveling && !isFalling);
 
   updateModels(deltaTime, playerData.group);
   updateBook(deltaTime, playerData.group);
   updateShifuTask(deltaTime, playerData.group);
   updateWoodTask(deltaTime, playerData.group);
   updateBridgeTask(deltaTime, playerData.group);
+  updatePortalTeleport(playerData.group);
+  updateRain(deltaTime, playerData.group);
+  updateStorm(deltaTime,scene);
 
   if (isGemDelivered()) {
     if (carpetTravel && carpetTravel.mesh) carpetTravel.mesh.visible = true;
@@ -156,5 +177,11 @@ function animate() {
   cloud5.position.x += 0.001;
 
   renderer.render(scene, camera);
+  if (isBridgeBuilt() && !shifuThanksTriggered ){
+    shifuThanksTriggered = true;
+    startShifuBridgeThanks();
+    startStorm(scene);
+  }
+
 }
 animate();
