@@ -178,7 +178,7 @@ export const modelsToLoad = [
     x: 25, 
     y: 1,
     z: -32,
-    scale: 1,
+    scale: 0.7,
     floating: true,
     collider: false
   },
@@ -269,9 +269,9 @@ export const modelsToLoad = [
   */
   {
     path: '/models/pixellabs-cute-skeleton-mage-character-2439.glb',
-    x: 2,
+    x: -4,
     y: 0,
-    z: -9,
+    z: -15,
     scale: 3,
     rotationY: Math.PI / 4,
     groundY: 0.49,
@@ -390,10 +390,13 @@ export function loadModels(scene) {
 }
 
 // L'update globale adesso delega la logica del mago a mage.js
+// Sostituisci la funzione in fondo a models.js
 export function updateModels(deltaTime, player) {
-  updateDemonDragon(deltaTime,player);
+  updateDemonDragon(deltaTime, player);
   updateMage(deltaTime, player);
-  if(mage) {
+  
+  // Recuperiamo direttamente la variabile globale 'mage' registrata a riga 73
+  if (mage) {
     updateGem(deltaTime, player, mage);
   }
 }

@@ -10,9 +10,8 @@ let hasBook = false;
 let bookDelivered = false;
 
 let bookParticles = null;
-// Array per memorizzare i dati individuali di ogni brillantino (velocità, raggio, angolo)
 let particleData = []; 
-const PARTICLE_COUNT = 35; // Leggermente aumentato per densità visiva
+const PARTICLE_COUNT = 35; 
 
 const followOffset = new THREE.Vector3(1.05, 1.15, -0.85);
 const deliveredOffset = new THREE.Vector3(0.9, 1.15, 0);
@@ -22,7 +21,7 @@ const targetScale = new THREE.Vector3();
 
 const bookPrompt = document.createElement('div');
 bookPrompt.className = 'interaction-dialogue book-dialogue';
-bookPrompt.textContent = 'Premi F per prendere il libro';
+bookPrompt.textContent = 'Press F to take the book';
 document.body.appendChild(bookPrompt);
 
 function createCircleTexture() {
@@ -32,7 +31,7 @@ function createCircleTexture() {
   const ctx = canvas.getContext('2d');
   const gradient = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
   gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-  gradient.addColorStop(0.3, 'rgba(51, 255, 153, 0.9)'); // Colore magico leggermente più vivo
+  gradient.addColorStop(0.3, 'rgba(51, 255, 153, 0.9)'); 
   gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, 16, 16);
@@ -45,21 +44,19 @@ function createBookParticles(scene) {
   particleData = [];
 
   for (let i = 0; i < PARTICLE_COUNT; i++) {
-    // Definiamo un raggio e un angolo iniziale per far orbitare i brillantini intorno al centro del libro
     const angle = Math.random() * Math.PI * 2;
     const radius = 0.2 + Math.random() * 0.8;
-    const y = Math.random() * 1.2 - 0.4; // Distribuiti verticalmente attorno al libro
+    const y = Math.random() * 1.2 - 0.4; 
 
     positions[i * 3] = Math.cos(angle) * radius;
     positions[i * 3 + 1] = y;
     positions[i * 3 + 2] = Math.sin(angle) * radius;
 
-    // Salviamo le proprietà uniche per l'animazione di ogni brillantino
     particleData.push({
       angle: angle,
       radius: radius,
-      speedY: 0.3 + Math.random() * 0.4, // Velocità di salita
-      rotSpeed: (Math.random() - 0.5) * 2.0, // Velocità di rotazione attorno al libro
+      speedY: 0.3 + Math.random() * 0.4, 
+      rotSpeed: (Math.random() - 0.5) * 2.0, 
       originalRadius: radius
     });
   }
@@ -68,7 +65,7 @@ function createBookParticles(scene) {
   
   const material = new THREE.PointsMaterial({
     color: 0x77ffbd, 
-    size: 0.28, // Dimensione leggermente più definita ed elegante
+    size: 0.28, 
     map: createCircleTexture(),
     transparent: true,
     opacity: 0.95,
@@ -111,15 +108,12 @@ window.addEventListener('keydown', (event) => {
     hasBook = true;
     canTakeBook = false;
     bookPrompt.classList.remove('is-visible');
-    // Manteniamo le particelle visibili anche quando si prende il libro!
   }
 });
 
-// Nuova logica di animazione: effetto vortice/aura orbitante
-function animateParticles(deltaTime) {
+function animateBookParticles(deltaTime) {
   if (!bookParticles || !bookParticles.visible || !book) return;
 
-  // Il contenitore delle particelle segue costantemente il centro geometrico esatto del libro
   bookParticles.position.copy(book.position);
 
   const positions = bookParticles.geometry.attributes.position.array;
@@ -128,16 +122,13 @@ function animateParticles(deltaTime) {
   for (let i = 0; i < PARTICLE_COUNT; i++) {
     const data = particleData[i];
 
-    // Aggiorna l'angolo di rotazione e l'altezza del brillantino
     data.angle += data.rotSpeed * deltaTime;
-    data.radius = data.originalRadius + Math.sin(time * 2 + i) * 0.1; // Pulsazione del raggio
-    positions[i * 3 + 1] += data.speedY * deltaTime; // Sali verso l'alto
+    data.radius = data.originalRadius + Math.sin(time * 2 + i) * 0.1; 
+    positions[i * 3 + 1] += data.speedY * deltaTime; 
 
-    // Applica le coordinate locali calcolando l'orbita circolare attorno al libro
     positions[i * 3] = Math.cos(data.angle) * data.radius;
     positions[i * 3 + 2] = Math.sin(data.angle) * data.radius;
 
-    // Se il brillantino sale troppo in alto rispetto al libro, si rigenera in basso
     if (positions[i * 3 + 1] > 0.8) {
       positions[i * 3 + 1] = -0.5;
       data.angle = Math.random() * Math.PI * 2;
@@ -150,7 +141,6 @@ export function updateBook(deltaTime, player) {
   if (!book) return;
   const time = performance.now() * 0.001;
 
-  // 1. Fase: Libro consegnato al mago
   if (bookDelivered) {
     if (deliveryTarget) {
       targetPosition.copy(deliveryTarget.position).add(deliveredOffset);
@@ -162,14 +152,13 @@ export function updateBook(deltaTime, player) {
       
       if (bookParticles) {
         bookParticles.visible = true;
-        animateParticles(deltaTime);
+        animateBookParticles(deltaTime);
       }
     }
     bookPrompt.classList.remove('is-visible');
     return;
   }
 
-  // 2. Fase: Il giocatore trasporta il libro (I brillantini ora fluttuano intorno alla mano/giocatore)
   if (hasBook) {
     rotatedFollowOffset.copy(followOffset).applyQuaternion(player.quaternion);
     targetPosition.copy(player.position).add(rotatedFollowOffset);
@@ -184,12 +173,11 @@ export function updateBook(deltaTime, player) {
 
     if (bookParticles) {
       bookParticles.visible = true;
-      animateParticles(deltaTime);
+      animateBookParticles(deltaTime);
     }
     return;
   }
 
-  // 3. Fase: Libro a terra in attesa di essere raccolto
   const distance = book.position.distanceTo(player.position);
   canTakeBook = distance < 3;
   canDeliverBook = false;
@@ -199,11 +187,11 @@ export function updateBook(deltaTime, player) {
   
   if (bookParticles) {
     bookParticles.visible = true;
-    animateParticles(deltaTime);
+    animateBookParticles(deltaTime);
   }
 
   if (canTakeBook) {
-    bookPrompt.textContent = 'Premi F per prendere il libro';
+    bookPrompt.textContent = 'Press F to take the book';
     bookPrompt.classList.add('is-visible');
   } else {
     bookPrompt.classList.remove('is-visible');

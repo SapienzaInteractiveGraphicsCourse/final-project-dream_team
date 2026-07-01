@@ -17,8 +17,8 @@ const shifuPosition = new THREE.Vector3(231, 28.4, -258);
 const shifuScale = 2;
 const interactionDistance = 4;
 const shifuGlowColor = new THREE.Color(0x6fffd8);
-const upperArmDrop = 0.75;
-const foreArmRelax = 0.28;
+const upperArmDown = 1.2;
+const foreArmRelax = 0.24;
 
 const shifuDialogueLines = [
   'Master: At last, you have arrived. I was beginning to fear that no one would answer my call.',
@@ -26,6 +26,17 @@ const shifuDialogueLines = [
   'Shifu: Take this axe, cut some wood from the forest, and use it to rebuild the bridge. Return when you have enough timber.'
 
 ];
+
+const shifuBridgeThanksLines = [
+  'Master: You did it! You managed to rebuild the bridge.',
+  'Master: Thank you. The path to the tower is open again.',
+  'Master: But look carefully... the sky is changing. Something is approaching.',
+  'Master: Hurry! You need to come back where you belong. Use the portal'
+];
+
+let activeDialogueLines = shifuDialogueLines;
+let bridgeThanksStarted = false;
+let bridgeThanksDone = false;
 
 const shifuDialogue = document.createElement('div');
 shifuDialogue.className = 'interaction-dialogue';
@@ -71,24 +82,32 @@ function poseShifuArms() {
   }
 
   if (parts.leftUpperArm) {
-    parts.leftUpperArm.rotation.z += upperArmDrop;
+    parts.leftUpperArm.rotation.x -= upperArmDown;
   }
 
   if (parts.rightUpperArm) {
-    parts.rightUpperArm.rotation.z -= upperArmDrop;
+    parts.rightUpperArm.rotation.x -= upperArmDown;
   }
 
   if (parts.leftLowerArm) {
-    parts.leftLowerArm.rotation.z += foreArmRelax;
+    parts.leftLowerArm.rotation.x -= foreArmRelax;
   }
 
   if (parts.rightLowerArm) {
-    parts.rightLowerArm.rotation.z -= foreArmRelax;
+    parts.rightLowerArm.rotation.x -= foreArmRelax;
   }
+}
+
+function getYawToPlayer(player) {
+  const directionX = player.position.x - shifu.position.x;
+  const directionZ = player.position.z - shifu.position.z;
+
+  return Math.atan2(directionX, directionZ);
 }
 
 window.addEventListener('keydown', (event) => {
   if (event.key.toLowerCase() === 'e' && canTalkToShifu && !shifuIsTalking) {
+    activeDialogueLines = shifuDialogueLines;
     shifuIsTalking = true;
     shifuDialogueIndex = 0;
   }
@@ -96,9 +115,16 @@ window.addEventListener('keydown', (event) => {
   if (event.key === 'Enter' && shifuIsTalking) {
     shifuDialogueIndex += 1;
 
-    if (shifuDialogueIndex >= shifuDialogueLines.length) {
+    if (shifuDialogueIndex >= activeDialogueLines.length) {
       shifuIsTalking = false;
-      taskStarted = true;
+
+      if (activeDialogueLines === shifuDialogueLines) {
+        taskStarted = true;
+      }
+
+      if (activeDialogueLines === shifuBridgeThanksLines) {
+        bridgeThanksDone = true;
+      }
     }
   }
 });
@@ -201,14 +227,17 @@ export function updateShifuTask (deltaTime, player){
     canTalkToShifu = distance < interactionDistance;
 
     if (canTalkToShifu) {
-    shifu.lookAt(player.position.x, shifu.position.y, player.position.z);
-    shifuBaseRotationY = shifu.rotation.y;
+    shifuBaseRotationY = getYawToPlayer(player);
+    shifu.rotation.x = 0;
+    shifu.rotation.y = shifuBaseRotationY;
+    shifu.rotation.z = 0;
   } else {
+    shifu.rotation.x = 0;
     shifu.rotation.y = shifuBaseRotationY + Math.sin(time * 1.4) * 0.08;
   }
 
     if (shifuIsTalking) {
-        shifuDialogue.textContent = shifuDialogueLines[shifuDialogueIndex];
+        shifuDialogue.textContent = activeDialogueLines[shifuDialogueIndex];
         shifuDialogue.classList.add('is-visible');
     } else if (taskStarted) {
         shifuDialogue.classList.remove('is-visible');
@@ -223,6 +252,14 @@ export function isShifuTaskStarted() {
   return taskStarted;
 }
 
+export function startShifuBridgeThanks() {
+  if (bridgeThanksStarted || bridgeThanksDone) return;
+
+  activeDialogueLines = shifuBridgeThanksLines;
+  shifuDialogueIndex = 0;
+  bridgeThanksStarted = true;
+  shifuIsTalking = true;
+}
 
 
         

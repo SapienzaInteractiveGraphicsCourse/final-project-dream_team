@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { isBookDelivered, isCarryingBook } from './book.js';
 import { isCarryingGem, isGemDelivered, deliverGemToMage } from './gem.js';
+
 let mage = null;
 let mageStartY = 0;
 let canTalkToMage = false;
@@ -12,20 +13,20 @@ const mageTintColor = new THREE.Color(0xd9eeff);
 const mageEmissiveColor = new THREE.Color(0x2a4a66);
 const mageBaseBrightness = 0.12;
 
-// Creazione del DOM per il dialogo
+// Dialogue DOM creation
 const mageDialogue = document.createElement('div');
 mageDialogue.className = 'mage-dialogue';
-mageDialogue.textContent = 'Premi E per parlare con il mago';
+mageDialogue.textContent = 'Press E to talk to the mage';
 document.body.appendChild(mageDialogue);
 
-// Registra il mago e salva i suoi dati
+// Register the mage and save its data
 export function registerMage(model) {
   mage = model;
   mageStartY = model.position.y;
   mageMaterials = [];
 }
 
-// Funzione per raccogliere i materiali del mago (chiamata durante il traverse)
+// Function to collect mage materials (called during traverse)
 export function addMageMaterial(material) {
   if (!material) return;
   
@@ -60,21 +61,35 @@ function setMageBrightness(strength) {
   });
 }
 
-// Ascoltatore di eventi per il tasto E
+// Event listener for the E key
+// --- GESTIONE INPUT UNIFICATA PER IL MAGO ---
 window.addEventListener('keydown', (event) => {
-  if (event.key.toLowerCase() === 'e' && canTalkToMage) {
+  const key = event.key.toLowerCase();
+
+  // Tasto E: Serve solo ad attivare il dialogo parlato
+  if (key === 'e' && canTalkToMage) {
     mageIsTalking = true;
-    mageTalkTimer = 4; // Durata del dialogo in secondi
+    mageTalkTimer = 4; // Il fumetto resta visibile per 4 secondi
+  }
+
+  // Tasto F: Gestisce le consegne degli oggetti della quest al mago
+  if (key === 'f' && canTalkToMage) {
+    if (isCarryingGem() && isBookDelivered()) {
+      deliverGemToMage(); // Sposta la gemma in orbita intorno al mago
+      mageIsTalking = true;
+      mageTalkTimer = 5;  // Estende il tempo per leggere il ringraziamento finale
+      console.log("Gem delivered to the Mage!");
+    }
   }
 });
 
-// Funzione di update principale del mago
+// Main update function for the mage
 export function updateMage(deltaTime, player) {
   if (!mage) return;
 
   const time = performance.now() * 0.001;
 
-  // Fluttuazione del mago
+  // Mage floating animation
   mage.position.y = mageStartY + Math.sin(time * 2) * 0.12;
   mage.rotation.y += Math.sin(time * 3) * 0.002;
 
@@ -94,39 +109,35 @@ export function updateMage(deltaTime, player) {
     }
   }
 
- // Gestione Dialoghi
-// Dentro updateMage(deltaTime, player) in mage.js
+  // Dialogue Management
   if (mageIsTalking) {
-    // Gestione Dialoghi (Rimane invariata, premendo E il mago parla e basta)
     if (isGemDelivered()) {
-      mageDialogue.textContent = "Mago: Incredibile! La gemma è al sicuro e la magia è tornata! Per ringraziarti di aver salvato l'isola, ti dono il mio Tappeto Volante.";
+      mageDialogue.textContent = "Mage: Incredible! The gem is safe and magic has returned! To thank you for saving the island, I gift you my Flying Carpet.";
     } else if (isCarryingGem()) {
-      // Rimuoviamo deliverGemToMage() da qui! Perché ora ci pensa il tasto F dentro gem.js
-      mageDialogue.textContent = "Mago: Vedo che hai la gemma! Premi F per darmela!";
+      mageDialogue.textContent = "Mage: I see you have the gem! Press F to give it to me!";
     } else if (isBookDelivered()) {
-      mageDialogue.textContent = "Mago: Ora il passo successivo è prendere la gemma nascosta nel castello che però è sorvegliato da un drago.";
+      mageDialogue.textContent = "Mage: Now the next step is to retrieve the hidden gem inside the castle, which is guarded by a dragon.";
     } else if (isCarryingBook()) {
-      mageDialogue.textContent = "Mago: Oh, hai trovato l'antico Grimorio! Premi F per consegnarmelo!";
+      mageDialogue.textContent = "Mage: Oh, you found the ancient Grimoire! Press F to hand it over to me!";
     } else {
-      mageDialogue.textContent = "Mago: Benvenuto! Finalmente sei qui, l'isola ha perso la sua magia e ha bisogno del tuo aiuto per ritrovarla, aiutaci a trovare il libro incantato.";
+      mageDialogue.textContent = "Mage: Welcome! Finally you are here. The island has lost its magic and needs your help to restore it. Help us find the enchanted book.";
     }
     mageDialogue.classList.add('is-visible');
   } else if (canTalkToMage) {
-    // PROMPT DI VICINANZA DIRETTI (Quando cammini vicino al mago senza parlare)
-    // Mostriamo i suggerimenti corretti separando F ed E!
+    // PROXIMITY PROMPTS (When walking near the mage without actively talking)
     if (isCarryingGem()) {
-      mageDialogue.textContent = 'Premi F per consegnare la gemma | Premi E per parlare';
+      mageDialogue.textContent = 'Press F to deliver the gem | Press E to talk';
     } else if (isCarryingBook() && !isBookDelivered()) {
-      mageDialogue.textContent = 'Premi F per consegnare il libro | Premi E per parlare';
+      mageDialogue.textContent = 'Press F to deliver the book | Press E to talk';
     } else {
-      mageDialogue.textContent = 'Premi E per parlare con il mago';
+      mageDialogue.textContent = 'Press E to talk to the mage';
     }
     mageDialogue.classList.add('is-visible');
   } else {
     mageDialogue.classList.remove('is-visible');
   }
 
-  // Gestione Luminosità al passaggio
+  // Luminescence management on approach
   if (canTalkToMage) {
     if (mageIsTalking) {
       setMageBrightness(0.1);
