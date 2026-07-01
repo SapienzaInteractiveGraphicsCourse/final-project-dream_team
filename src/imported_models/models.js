@@ -1,62 +1,16 @@
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as THREE from 'three';
-import {
-  isBookDelivered,
-  isCarryingBook,
-  registerBook,
-  registerBookDeliveryTarget
-} from './book.js';
-import { registerDemonDragon, updateDemonDragon } from './dragon.js';
+import { registerBook, registerBookDeliveryTarget } from './book.js';
+import { registerMage, addMageMaterial, updateMage } from './mage.js';
+import { registerGem, updateGem } from './gem.js';
+import { registerDemonDragon, updateDemonDragon, setDragonOrbitCenter } from './dragon.js';
 
 export const modelColliders = [];
-
 const gltfLoader = new GLTFLoader();
-let mage = null;
-let mageStartY = 0;
-let canTalkToMage = false;
-let mageIsTalking = false;
-let mageTalkTimer = 0;
-let mageMaterials = [];
 
-const mageTintColor = new THREE.Color(0xd9eeff);
-const mageEmissiveColor = new THREE.Color(0x2a4a66);
-const mageBaseBrightness = 0.12;
 const demonTintColor = new THREE.Color(0xffc2a0);
 const demonEmissiveColor = new THREE.Color(0x3a160c);
-
-const mageDialogue = document.createElement('div');
-mageDialogue.className = 'mage-dialogue';
-mageDialogue.textContent = 'Premi E per parlare con il mago';
-document.body.appendChild(mageDialogue);
-
-function brightenMageMaterial(material) {
-  if (!material) return;
-
-  if (material.map) {
-    material.map.colorSpace = THREE.SRGBColorSpace;
-    material.map.needsUpdate = true;
-  }
-
-  if (material.color) {
-    material.color.lerp(mageTintColor, 0.18);
-    material.color.multiplyScalar(1.08);
-  }
-
-  if (material.emissive) {
-    material.emissive.copy(mageEmissiveColor);
-    material.emissiveIntensity = mageBaseBrightness;
-
-    if ('emissiveMap' in material && material.map) {
-      material.emissiveMap = material.map;
-    }
-  }
-
-  if ('roughness' in material) {
-    material.roughness = Math.min(material.roughness ?? 0.7, 0.65);
-  }
-
-  material.needsUpdate = true;
-}
+let mage = null;
 
 function brightenDemonMaterial(material) {
   if (!material) return;
@@ -87,30 +41,17 @@ function brightenDemonMaterial(material) {
   material.needsUpdate = true;
 }
 
-function setMageBrightness(strength) {
-  mageMaterials.forEach((material) => {
-    if (material.emissive) {
-      material.emissive.copy(mageEmissiveColor);
-      material.emissiveIntensity = mageBaseBrightness + strength;
-    }
-  });
-}
-
 function loadModel(scene, path, options = {}) {
   gltfLoader.load(
     path,
-
     (gltf) => {
       const model = gltf.scene;
-      if (path.includes('skeleton-mage')) {
-        mage = model;
-        mageMaterials = [];
-      }
+      const isMage = path.includes('skeleton-mage') || path.includes('cute-skeleton-mage');
 
+      // 1. Applichiamo prima le trasformazioni di base (posizione, scala, rotazione)
       const x = options.x ?? 0;
       const y = options.y ?? 0;
       const z = options.z ?? 0;
-
       const scale = options.scale ?? 1;
       const rotationY = options.rotationY ?? 0;
 
@@ -118,6 +59,7 @@ function loadModel(scene, path, options = {}) {
       model.scale.set(scale, scale, scale);
       model.rotation.y = rotationY;
 
+      // 2. LOGICA DEL SUOLO: Calcoliamo l'altezza corretta basandoci sulla base del modello
       if (!options.floating) {
         const groundY = options.groundY ?? 0.49;
         const box = new THREE.Box3().setFromObject(model);
@@ -126,27 +68,49 @@ function loadModel(scene, path, options = {}) {
         model.position.y += groundY - modelBottomY;
       }
 
+      // Applichiamo l'eventuale offset manuale (se presente nelle opzioni)
       model.position.y += options.offsetY ?? 0;
 
-      if (model === mage) {
-        mageStartY = model.position.y;
+      // 3. REGISTRAZIONE: Ora che il modello è stabilmente sul suolo, lo passiamo a mage.js
+      // In questo modo 'mageStartY' salverà la coordinata Y corretta del terreno!
+      if (isMage) {
+        mage=model;
+        registerMage(model);
         registerBookDeliveryTarget(model);
       }
 
       if (path.includes('EvilBook')) {
-        registerBook(model);
+        registerBook(model, scene);
       }
 
       if (path.includes('demon')) {
         registerDemonDragon(model);
       }
 
+      if (path.includes('Gem')) {
+        registerGem(model,scene );
+      }
+
+      if (path.includes('FantasyCastlePrototype')) {
+        const castleBox = new THREE.Box3().setFromObject(model);
+        const castleHeight = castleBox.max.y - castleBox.min.y;
+        
+        // Calcoliamo il centro matematico esatto di TUTTI i muri del castello nel mondo
+        const realCastleCenter = new THREE.Vector3();
+        castleBox.getCenter(realCastleCenter);
+        
+        const dragonFlightHeight = 18; 
+        
+        // Spostiamo l'orbita del drago sul centro reale calcolato
+        setDragonOrbitCenter(realCastleCenter.x, dragonFlightHeight, realCastleCenter.z, 22);
+      }
+      // 4. Gestione dei materiali e delle ombre
       model.traverse((child) => {
         if (child.isMesh) {
           child.castShadow = true;
           child.receiveShadow = true;
 
-          if (model === mage) {
+          if (isMage) {
             child.material = Array.isArray(child.material)
               ? child.material.map((material) => material.clone())
               : child.material.clone();
@@ -155,8 +119,7 @@ function loadModel(scene, path, options = {}) {
               ? child.material
               : [child.material];
 
-            materials.forEach(brightenMageMaterial);
-            mageMaterials.push(...materials);
+            materials.forEach(addMageMaterial);
           }
 
           if (path.includes('demon') || path.includes('dragon_flying')) {
@@ -182,11 +145,9 @@ function loadModel(scene, path, options = {}) {
 
       console.log(`Loaded model: ${path}`);
     },
-
     (xhr) => {
       console.log(`${path}: ${(xhr.loaded / xhr.total) * 100}% loaded`);
     },
-
     (error) => {
       console.error(`Error loading model: ${path}`, error);
     }
@@ -196,30 +157,72 @@ function loadModel(scene, path, options = {}) {
 export const modelsToLoad = [
   {
     path: '/models/demon.glb',
-    x: 0,
-    y: 5,
-    z: -30,
-    scale: 5,
-    rotationY: 0,
+    x: 38,
+    y: 7,
+    z: -27,
+    scale: 15,
+    rotationY: Math.PI / 3,
     floating: true,
     collider: false
   },
   {
     path: '/models/ElevenTower.glb',
-    x: -5,
+    x: -8,
     y: 0,
     z: -20,
     scale: 1.5,
-    rotationY: -2 ,
+    rotationY: -Math.PI / 2,
     groundY: 0.49,
     offsetY: -0.5,
     collider: true
   },
   {
-    path: '/models/EvilBook.glb',
-    x: -2,
+    path: '/models/alchemist_fantasy_house.glb',
+    x: -10,
     y: 0,
     z: -20,
+    scale: 0.5,
+    rotationY: -Math.PI / 2,
+    groundY: 0.49,
+    offsetY: -0.5,
+    collider: true
+  },
+  {
+    path: '/models/fantasy_house_low_poly.glb',
+    x: -14,
+    y: 0,
+    z: -20,
+    scale: 0.5,
+    rotationY: -Math.PI / 2,
+    groundY: 0.49,
+    offsetY: -0.5,
+    collider: true
+  },
+  {
+    path: '/models/stylized_medieval_fantasy_house.glb',
+    x: -16,
+    y: 0,
+    z: -20,
+    scale: 0.5,
+    rotationY: -Math.PI / 2,
+    groundY: 0.49,
+    offsetY: -0.5,
+    collider: true
+  },
+  {
+    path: '/models/Gem.glb', 
+    x: 25, 
+    y: 1,
+    z: -32,
+    scale: 0.7,
+    floating: true,
+    collider: false
+  },
+  {
+    path: '/models/EvilBook.glb',
+    x: -10,
+    y: 0,
+    z: -30,
     scale: 1,
     rotationY: Math.PI,
     groundY: 0.49,
@@ -237,8 +240,7 @@ export const modelsToLoad = [
   },
   {
     path: '/models/FantasyInn.glb',
-    x: -9
-    ,
+    x: -9,
     y: 0.45,
     z: -8,
     scale: 3,
@@ -255,7 +257,7 @@ export const modelsToLoad = [
     rotationY: Math.PI / 2,
     groundY: 0.49,
     collider: true
-  },
+  },/*
   {
     path: '/models/RedDragon.glb',
     x: 5,
@@ -265,22 +267,12 @@ export const modelsToLoad = [
     rotationY: -0.3,
     floating: true,
     collider: true
-  },
-  // {
-  //   path: '/models/FantasyCastlePrototype.glb',
-  //   x: 26,
-  //   y: 0,
-  //   z: -18,
-  //   scale: 0.4,
-  //   rotationY: 0,
-  //   groundY: 0.49,
-  //   collider: true
-  // },
+  },*/
   {
     path: '/models/pixellabs-cute-skeleton-mage-character-2439.glb',
-    x: 2,
+    x: -4,
     y: 0,
-    z: -9,
+    z: -15,
     scale: 3,
     rotationY: Math.PI / 4,
     groundY: 0.49,
@@ -296,7 +288,7 @@ export const modelsToLoad = [
     floating: true,
     collider: true
   },
-  {
+  /*{
     path: '/models/dragon_flying.glb',
     x: 0,
     y: 9,
@@ -305,6 +297,26 @@ export const modelsToLoad = [
     rotationY: Math.PI / 4,
     floating: true,
     collider: false
+  },*/
+  // {
+  //   path: '/models/tower.glb',
+  //   x: 105,
+  //   y: 12,
+  //   z: -120,
+  //   scale: 2,
+  //   rotationY: Math.PI / 4,
+  //   floating: true,
+  //   collider: false
+  // },
+  {
+    path: '/models/FantasyCastlePrototype.glb',
+    x: 25,
+    y: 0,
+    z: -50,
+    scale: 1,
+    rotationY: Math.PI / 4,
+    floating: true,
+    collider: true
   }
 ];
 
@@ -314,66 +326,14 @@ export function loadModels(scene) {
   });
 }
 
-window.addEventListener('keydown', (event) => {
-  if (event.key.toLowerCase() === 'e' && canTalkToMage) {
-    mageIsTalking = true;
-    mageTalkTimer = 4;
-  }
-});
-
+// L'update globale adesso delega la logica del mago a mage.js
+// Sostituisci la funzione in fondo a models.js
 export function updateModels(deltaTime, player) {
-  updateDemonDragon(deltaTime);
-
-  if (!mage) return;
-
-  const time = performance.now() * 0.001;
-
-  mage.position.y = mageStartY + Math.sin(time * 2) * 0.12;
-  mage.rotation.y += Math.sin(time * 3) * 0.002;
-
-  const distance = mage.position.distanceTo(player.position);
-  const interactionDistance = 4;
-
-  canTalkToMage = distance < interactionDistance;
-
-  if (canTalkToMage) {
-    mage.lookAt(player.position.x, player.position.y, player.position.z);
-  }
-
-  if (mageIsTalking) {
-    mageTalkTimer -= deltaTime;
-
-    if (mageTalkTimer <= 0) {
-      mageIsTalking = false;
-    }
-  }
-
-  if (mageIsTalking) {
-    mageDialogue.textContent =
-      'Mago: Finalmente sei arrivato. La magia dell isola ti stava aspettando.';
-    mageDialogue.classList.add('is-visible');
-  } else if (canTalkToMage && isBookDelivered()) {
-    mageDialogue.textContent =
-      'Mago: Ottimo. Questo libro contiene la magia che cercavo.';
-    mageDialogue.classList.add('is-visible');
-  } else if (canTalkToMage && isCarryingBook()) {
-    mageDialogue.classList.remove('is-visible');
-  } else if (canTalkToMage) {
-    mageDialogue.textContent = 'Premi E per parlare con il mago';
-    mageDialogue.classList.add('is-visible');
-  } else {
-    mageDialogue.classList.remove('is-visible');
-  }
-
-  if (canTalkToMage) {
-    mage.lookAt(player.position.x, player.position.y, player.position.z);
-
-    if (mageIsTalking) {
-      setMageBrightness(0.1);
-    } else {
-      setMageBrightness(0.04);
-    }
-  } else {
-    setMageBrightness(0);
+  updateDemonDragon(deltaTime, player);
+  updateMage(deltaTime, player);
+  
+  // Recuperiamo direttamente la variabile globale 'mage' registrata a riga 73
+  if (mage) {
+    updateGem(deltaTime, player, mage);
   }
 }

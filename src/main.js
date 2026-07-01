@@ -1,20 +1,20 @@
 import './style.css';
 import * as THREE from 'three';
-//import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import {
   createScene,
   createCamera,
   createRenderer,
   setupResize
 } from './base/sceneSetup.js';
-
-import {createLights} from './base/lights.js'
+import { damageDragon, isDragonDefeated } from './imported_models/dragon.js';
+import { createLights } from './base/lights.js';
 import { materials } from './world/materials.js';
 import { createIsland } from './world/island.js';
 import { createPlayer } from './player/schoolBoyPlayer.js';
-import { createPlayerController} from './controls/playerControls.js'
+import { createPlayerController } from './controls/playerControls.js';
 import { loadModels, updateModels, modelColliders } from './imported_models/models.js';
-import { updateBook } from './imported_models/book.js';
+import { updateBook, isBookDelivered } from './imported_models/book.js';
+import { isGemDelivered } from './imported_models/gem.js';
 import { createCloud } from './world/cloud.js';
 import {
   createCarpetTravel,
@@ -50,10 +50,55 @@ const cloud5 = createCloud(scene, 15, 6.5, 8, 1.4);
 createRain(scene); 
 const carpetTravel = createCarpetTravel(scene);
 
+if (carpetTravel && carpetTravel.mesh) {
+  carpetTravel.mesh.visible = false;
+} else if (carpetTravel && carpetTravel.group) {
+  carpetTravel.group.visible = false;
+}
+
+const carpetPrompt = document.createElement('div');
+carpetPrompt.className = 'interaction-dialogue carpet-dialogue';
+carpetPrompt.textContent = 'Press F to travel on the magic carpet';
+document.body.appendChild(carpetPrompt);
+
+const dragonPrompt = document.createElement('div');
+dragonPrompt.className = 'interaction-dialogue dragon-dialogue';
+dragonPrompt.textContent = 'Press R to fight the dragon!';
+document.body.appendChild(dragonPrompt);
+
+const dragonVictoryBanner = document.createElement('div');
+dragonVictoryBanner.className = 'victory-banner';
+dragonVictoryBanner.textContent = '⚔️ YOU HAVE SLAIN THE DRAGON! ⚔️';
+document.body.appendChild(dragonVictoryBanner);
+
+let isInsideCastle = false;
 window.addEventListener('keydown', (event) => {
   if (event.key.toLowerCase() === 'f') {
+    if (!isGemDelivered()) {
+      return; 
+    }
     tryStartCarpetTravel(carpetTravel);
   }
+
+  if (event.key.toLowerCase() === 'r') {
+    if (isInsideCastle && isBookDelivered() && !isDragonDefeated()) {
+      damageDragon(25);
+      console.log("You hit the dragon with magic!");
+      
+      if (isDragonDefeated()) {
+        dragonPrompt.classList.remove('is-visible');
+        isInsideCastle = false;
+        dragonVictoryBanner.classList.add('is-visible');
+        
+        setTimeout(() => {
+          dragonVictoryBanner.classList.remove('is-visible');
+        }, 4000);
+      }
+    }
+  }
+});
+window.addEventListener('keyup', () => {
+  window.currentInteractionKey = null;
 });
 
 const playerData = createPlayer(scene);
@@ -100,6 +145,31 @@ function animate() {
   updatePortalTeleport(playerData.group);
   updateRain(deltaTime, playerData.group);
   updateStorm(deltaTime,scene);
+
+  if (isGemDelivered()) {
+    if (carpetTravel && carpetTravel.mesh) carpetTravel.mesh.visible = true;
+    if (carpetTravel && carpetTravel.group) carpetTravel.group.visible = true;
+  }
+
+  // --- CASTLE ZONE CHECK ---
+  if (isBookDelivered() && !isDragonDefeated()) {
+    const castleTriggerBox = new THREE.Box3(
+      new THREE.Vector3(0, -5, -75),
+      new THREE.Vector3(50, 20, -25)
+    );
+
+    if (castleTriggerBox.containsPoint(playerData.group.position)) {
+      isInsideCastle = true;
+      dragonPrompt.classList.add('is-visible');
+    } else {
+      isInsideCastle = false;
+      dragonPrompt.classList.remove('is-visible');
+    }
+  } else {
+    dragonPrompt.classList.remove('is-visible');
+    isInsideCastle = false;
+  }
+
   cloud1.position.x += 0.002;
   cloud2.position.x -= 0.0015;
   cloud3.position.z += 0.001;
