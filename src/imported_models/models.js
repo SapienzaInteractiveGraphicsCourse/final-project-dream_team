@@ -192,16 +192,16 @@ export const modelsToLoad = [
     groundY: 0.49,
     collider: false
   },
-//   {
-//     path: '/models/FantasyHouse.glb',
-//     x: 15,
-//     y: 0.45,
-//     z: -15,
-//     scale: 1.2,
-//     rotationY: Math.PI / 2,
-//     groundY: 0.49,
-//     collider: true
-//   },
+  {
+    path: '/models/FantasyHouse.glb',
+    x: 15,
+    y: 0.45,
+    z: -15,
+    scale: 5,
+    rotationY: Math.PI / 2,
+    groundY: 0.49,
+    collider: true
+  },
   {
     path: '/models/FantasyInn.glb',
     x: -10,

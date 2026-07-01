@@ -23,5 +23,3 @@ dist-ssr
 *.suo
 *.ntvs*
 *.njsproj
-
-/public/models/*.glb
