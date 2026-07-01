@@ -9,22 +9,22 @@ export function createCloud(scene, x, y, z, scale = 1) {
   });
 
   const sphere1 = new THREE.Mesh(
-    new THREE.SphereGeometry(0.8, 24, 24),
+    new THREE.SphereGeometry(0.8, 12, 8),
     cloudMaterial
   );
 
   const sphere2 = new THREE.Mesh(
-    new THREE.SphereGeometry(1.0, 24, 24),
+    new THREE.SphereGeometry(1.0, 12, 8),
     cloudMaterial
   );
 
   const sphere3 = new THREE.Mesh(
-    new THREE.SphereGeometry(0.7, 24, 24),
+    new THREE.SphereGeometry(0.7, 12, 8),
     cloudMaterial
   );
 
   const sphere4 = new THREE.Mesh(
-    new THREE.SphereGeometry(0.6, 24, 24),
+    new THREE.SphereGeometry(0.6, 12, 8),
     cloudMaterial
   );
 
@@ -45,4 +45,3 @@ export function createCloud(scene, x, y, z, scale = 1) {
 
   return cloudGroup;
 }
-

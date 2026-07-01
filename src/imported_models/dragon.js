@@ -348,5 +348,5 @@ export function updateDemonDragon(deltaTime) {
 }
 
 export function isDragonDefeated() {
-  return dragonDefeated; 
+  return dragonDefeated;
 }

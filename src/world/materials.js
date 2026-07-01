@@ -4,14 +4,21 @@ const textureLoader = new THREE.TextureLoader();
 
 const plazaTexture = textureLoader.load('/textures/pav3.jpg');
 
+const grassTexture = textureLoader.load('/textures/ground.jpg');
+grassTexture.colorSpace = THREE.SRGBColorSpace;
+grassTexture.wrapS = THREE.RepeatWrapping;
+grassTexture.wrapT = THREE.RepeatWrapping;
+grassTexture.repeat.set(16, 16);
+
 plazaTexture.colorSpace = THREE.SRGBColorSpace;
 plazaTexture.wrapS = THREE.RepeatWrapping;
 plazaTexture.wrapT = THREE.RepeatWrapping;
 plazaTexture.repeat.set(3, 3);
+
 export const materials = {
   grass: new THREE.MeshStandardMaterial({
-    color: 0x5fa85f,
-    roughness: 0.85
+    map: grassTexture,
+    roughness: 0.1
   }),
 
   rock: new THREE.MeshStandardMaterial({

@@ -24,14 +24,15 @@ export function createCamera() {
 export function createRenderer(canvas) {
   const renderer = new THREE.WebGLRenderer({
     canvas: canvas,
-    antialias: true
+    antialias: window.devicePixelRatio <= 1.5,
+    powerPreference: 'high-performance'
   });
 
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
 
   return renderer;
 }

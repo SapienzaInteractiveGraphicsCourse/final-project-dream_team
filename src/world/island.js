@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 
 export function createIsland(scene, materials) {
+
+  const islandRadius = 130;
   const islandTop = new THREE.Mesh(
-    new THREE.CylinderGeometry(128, 128, 0.08, 12),
+    new THREE.CylinderGeometry(islandRadius, islandRadius, 0.08, 12),
     materials.grass
   );
 
@@ -10,20 +12,11 @@ export function createIsland(scene, materials) {
   islandTop.receiveShadow = true;
   scene.add(islandTop);
 
-  const islandBottom = new THREE.Mesh(
-    new THREE.ConeGeometry(50, 50, 64),
-    materials.rock
-  );
-
-  islandBottom.position.y = -2.65;
-  islandBottom.rotation.x = Math.PI;
-  scene.add(islandBottom);
-
   // Creo un gruppo per contenere tutti i pezzi del sentiero
   const pathGroup = new THREE.Group();
   scene.add(pathGroup);
 
-  // Funzione interna: crea un singolo pezzo rettangolare di sentiero con bordo
+  // Funzione interna: crea un pezzo di sentiero che parte da (x, z) e si allunga in avanti
   function createPathSegment(x, z, rotationY, length, width = 8) {
     const segmentGroup = new THREE.Group();
 
@@ -37,8 +30,8 @@ export function createIsland(scene, materials) {
       materials.plazaStone
     );
 
-    border.position.y = 0.075;
-    path.position.y = 0.12;
+    border.position.set(0, 0.075, length / 2);
+    path.position.set(0, 0.12, length / 2);
 
     border.receiveShadow = true;
     path.receiveShadow = true;
@@ -76,43 +69,90 @@ export function createIsland(scene, materials) {
     jointGroup.add(border);
     jointGroup.add(joint);
     jointGroup.position.set(x, 0, z);
+    jointGroup.userData.radius = radius;
     pathGroup.add(jointGroup);
 
     return jointGroup;
   }
 
+  function createPathBetweenJoints(startJoint, endJoint, width = 8, jointOverlap = 0.8) {
+    const start = startJoint.position;
+    const end = endJoint.position;
+    const dx = end.x - start.x;
+    const dz = end.z - start.z;
+    const centerDistance = Math.sqrt(dx * dx + dz * dz);
+
+    if (centerDistance === 0) return null;
+
+    const startRadius = startJoint.userData.radius ?? 0;
+    const endRadius = endJoint.userData.radius ?? 0;
+    const startInset = Math.max(startRadius - jointOverlap, 0);
+    const endInset = Math.max(endRadius - jointOverlap, 0);
+    const length = Math.max(centerDistance - startInset - endInset, 0);
+    const directionX = dx / centerDistance;
+    const directionZ = dz / centerDistance;
+    const startX = start.x + directionX * startInset;
+    const startZ = start.z + directionZ * startInset;
+    const rotationY = Math.atan2(dx, dz);
+
+    return createPathSegment(startX, startZ, rotationY, length, width);
+  }
+
+  function createRamp(x, z, rotationY, length = 8, width = 7, height = 1.5) {
+    const rampGroup = new THREE.Group();
+
+    const ramp = new THREE.Mesh(
+      new THREE.BoxGeometry(width, 0.35, length),
+      materials.plazaStone
+    );
+
+    ramp.rotation.x = -Math.atan(height / length);
+    ramp.receiveShadow = true;
+    ramp.castShadow = true;
+
+    rampGroup.position.set(x, height / 2, z);
+    rampGroup.rotation.y = rotationY;
+
+    rampGroup.add(ramp);
+    pathGroup.add(rampGroup);
+
+    return rampGroup;
+  }
+
   // Sentiero principale: parte dalla posizione iniziale del player e prosegue in avanti.
-  
-  // Sentiero principale: parte dalla posizione iniziale del player e prosegue rettilineo.
-  createPathJoint(0, 2.2, 5.2);          // Partenza (Piazzola di Spawn)
-  
-  // Abbiamo raddoppiato la lunghezza da 16.4 a 32 unità, centrandola perfettamente a Z: -14
-  createPathSegment(0, -14, 0, 32, 8);   
-  
-  // La giunzione di curva si sposta in avanti a Z: -30 per accogliere il viale lungo
-  createPathJoint(0, -30, 4.9);          
+  // initial plaza
+  const initialPlaza = createPathJoint(0, 26, 5.2);
 
-  // --- I PEZZI SUCCESSIVI SI ADATTANO ALLA NUOVA GIUNZIONE A (0, -30) ---
-  createPathSegment(5, -38, -Math.PI / 5, 19, 8);
-  createPathJoint(10, -46, 4.9);
+  const rightPlaza = createPathJoint(50, 30, 10);
+  const stoneBuildingPlaza = createPathJoint(-42, 68, 1);
+  const castelPlaza = createPathJoint(-30, -70, 1);
 
-  createPathSegment(19, -51, -Math.PI / 2.8, 20, 8);
-  createPathJoint(28, -56, 4.9);
-
-  createPathSegment(36, -47, Math.PI / 4.2, 24, 8);
-  createPathJoint(44, -38, 4.9);
-
-  // Piccola piazzetta centrale riposizionata coerentemente lungo il percorso
-  const smallPlaza = new THREE.Mesh(
+  // central plaza
+  const centralPlaza = new THREE.Mesh(
     new THREE.CylinderGeometry(12, 12, 0.1, 24),
     materials.plazaStone
   );
+
+  centralPlaza.position.set(10, 0.09, -30);
+  centralPlaza.receiveShadow = true;
+  centralPlaza.userData.radius = 12;
+  pathGroup.add(centralPlaza);
+
+  createPathBetweenJoints(initialPlaza, centralPlaza, 8, 2);
+  createPathBetweenJoints(initialPlaza, rightPlaza, 8, 2);
+  createPathBetweenJoints(initialPlaza, stoneBuildingPlaza, 8, 2);
+  createPathBetweenJoints(centralPlaza, castelPlaza, 8);
   
+  // flying carpet plaza
+  const carpetPlaza = createPathJoint(44, -22, 4.9);
+
+  // ramp for the castle entrance
+  createRamp(-15, -54, 4, 18, 8, 4);
 
   return {
     islandTop,
-    islandBottom,
     pathGroup,
-    smallPlaza
+    centralPlaza,
+    radius: islandRadius,
   };
 }

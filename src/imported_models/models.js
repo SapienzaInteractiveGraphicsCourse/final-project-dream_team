@@ -6,6 +6,7 @@ import { registerGem, updateGem } from './gem.js';
 import { registerDemonDragon, updateDemonDragon, setDragonOrbitCenter } from './dragon.js';
 
 export const modelColliders = [];
+export const modelBounds = [];
 const gltfLoader = new GLTFLoader();
 
 const demonTintColor = new THREE.Color(0xffc2a0);
@@ -42,9 +43,10 @@ function brightenDemonMaterial(material) {
 }
 
 function loadModel(scene, path, options = {}) {
-  gltfLoader.load(
-    path,
-    (gltf) => {
+  return new Promise((resolve) => {
+    gltfLoader.load(
+      path,
+      (gltf) => {
       const model = gltf.scene;
       const isMage = path.includes('skeleton-mage') || path.includes('cute-skeleton-mage');
 
@@ -91,7 +93,7 @@ function loadModel(scene, path, options = {}) {
         registerGem(model,scene );
       }
 
-      if (path.includes('FantasyCastlePrototype')) {
+      if (path.includes('castle_03')) {
         const castleBox = new THREE.Box3().setFromObject(model);
         const castleHeight = castleBox.max.y - castleBox.min.y;
         
@@ -102,7 +104,7 @@ function loadModel(scene, path, options = {}) {
         const dragonFlightHeight = 18; 
         
         // Spostiamo l'orbita del drago sul centro reale calcolato
-        setDragonOrbitCenter(realCastleCenter.x, dragonFlightHeight, realCastleCenter.z, 22);
+        setDragonOrbitCenter(realCastleCenter.x, dragonFlightHeight, realCastleCenter.z, 45);
       }
       // 4. Gestione dei materiali e delle ombre
       model.traverse((child) => {
@@ -138,23 +140,29 @@ function loadModel(scene, path, options = {}) {
 
       scene.add(model);
 
+      const box = new THREE.Box3().setFromObject(model);
+      modelBounds.push(box);
+
       if (options.collider) {
-        const box = new THREE.Box3().setFromObject(model);
         modelColliders.push(box);
       }
 
       console.log(`Loaded model: ${path}`);
-    },
-    (xhr) => {
-      console.log(`${path}: ${(xhr.loaded / xhr.total) * 100}% loaded`);
-    },
-    (error) => {
-      console.error(`Error loading model: ${path}`, error);
-    }
-  );
+      resolve(model);
+      },
+      (xhr) => {
+        console.log(`${path}: ${(xhr.loaded / xhr.total) * 100}% loaded`);
+      },
+      (error) => {
+        console.error(`Error loading model: ${path}`, error);
+        resolve(null);
+      }
+    );
+  });
 }
 
 export const modelsToLoad = [
+    // TODO: is it useful? i don't see it anywhere
   {
     path: '/models/demon.glb',
     x: 38,
@@ -164,50 +172,6 @@ export const modelsToLoad = [
     rotationY: Math.PI / 3,
     floating: true,
     collider: false
-  },
-  {
-    path: '/models/ElevenTower.glb',
-    x: -8,
-    y: 0,
-    z: -20,
-    scale: 1.5,
-    rotationY: -Math.PI / 2,
-    groundY: 0.49,
-    offsetY: -0.5,
-    collider: true
-  },
-  {
-    path: '/models/alchemist_fantasy_house.glb',
-    x: -10,
-    y: 0,
-    z: -20,
-    scale: 0.5,
-    rotationY: -Math.PI / 2,
-    groundY: 0.49,
-    offsetY: -0.5,
-    collider: true
-  },
-  {
-    path: '/models/fantasy_house_low_poly.glb',
-    x: -14,
-    y: 0,
-    z: -20,
-    scale: 0.5,
-    rotationY: -Math.PI / 2,
-    groundY: 0.49,
-    offsetY: -0.5,
-    collider: true
-  },
-  {
-    path: '/models/stylized_medieval_fantasy_house.glb',
-    x: -16,
-    y: 0,
-    z: -20,
-    scale: 0.5,
-    rotationY: -Math.PI / 2,
-    groundY: 0.49,
-    offsetY: -0.5,
-    collider: true
   },
   {
     path: '/models/Gem.glb', 
@@ -233,31 +197,65 @@ export const modelsToLoad = [
     x: 15,
     y: 0.45,
     z: -15,
-    scale: 1.2,
+    scale: 5,
     rotationY: Math.PI / 2,
     groundY: 0.49,
     collider: true
   },
   {
     path: '/models/FantasyInn.glb',
-    x: -9,
-    y: 0.45,
-    z: -8,
-    scale: 3,
-    rotationY: Math.PI / 2,
+    x: -10,
+    y: 0,
+    z: -5.13,
+    scale: 6,
+    rotationY: Math.PI / 2.3,
     groundY: 0.49,
+    floating: true,
     collider: true
   },
   {
     path: '/models/FantasyStable.glb',
-    x: 8,
-    y: 0.45,
-    z: -15,
-    scale: 4,
-    rotationY: Math.PI / 2,
+    x: 32,
+    y: 0,
+    z: -3,
+    scale: 6,
+    rotationY: -0.05,
     groundY: 0.49,
+    floating: true,
     collider: true
-  },/*
+  },
+  {
+    path: '/models/alchemist_fantasy_house.glb',
+    x: 60,
+    y: 0,
+    z: 30,
+    scale: 0.05,
+    rotationY: 3 * Math.PI / 2,
+    groundY: 0.49,
+    floating: true,
+    collider: true
+  },
+  {
+    path: '/models/stone_building.glb',
+    x: -42,
+    y: -0.1,
+    z: 68,
+    scale: 40,
+    rotationY: 3*Math.PI/4,
+    floating: true,
+    collider: false
+  },
+  {
+    path: '/models/fantasy_house_low_poly.glb',
+    x: 70,
+    y: -0.1,
+    z: 90,
+    scale: 1,
+    rotationY: 3*Math.PI/4,
+    floating: true,
+    collider: false
+  },
+  /* TODO: da eliminare?
   {
     path: '/models/RedDragon.glb',
     x: 5,
@@ -267,7 +265,8 @@ export const modelsToLoad = [
     rotationY: -0.3,
     floating: true,
     collider: true
-  },*/
+  },
+  */
   {
     path: '/models/pixellabs-cute-skeleton-mage-character-2439.glb',
     x: -4,
@@ -280,9 +279,9 @@ export const modelsToLoad = [
   },
   {
     path: '/models/flowers_lib.glb',
-    x: -7,
+    x: -4,
     y: 0,
-    z: -1,
+    z: 10,
     scale: 0.75,
     rotationY: 0.3,
     floating: true,
@@ -309,21 +308,85 @@ export const modelsToLoad = [
   //   collider: false
   // },
   {
-    path: '/models/FantasyCastlePrototype.glb',
-    x: 25,
+    path: '/models/castle_03.glb',
+    x: -40,
     y: 0,
-    z: -50,
-    scale: 1,
+    z: -80,
+    scale: 5,
+    offsetY: -0.5,
     rotationY: Math.PI / 4,
+    collider: false
+  },
+  {
+    path: '/models/statue.glb',
+    x: 11.29,
+    y: 0,
+    z: -30.32,
+    scale: 2,
+    offsetY: -0.5,
+    rotationY: -3 * Math.PI / 4,
+    collider: true
+  },
+
+  /** ISLANDS */
+  {
+    path: '/models/floating_island.glb',
+    x: -300,
+    y: -2,
+    z: -1,
+    scale: 10,
+    rotationY: 0.3,
     floating: true,
     collider: true
+  },
+  {
+    path: '/models/floating_island2.glb',
+    x: 300,
+    y: -2,
+    z: -1,
+    scale: 1,
+    rotationY: 0.3,
+    floating: true,
+    collider: false
+  },
+  {
+    path: '/models/floating_island3.glb',
+    x: 10,
+    y: -2,
+    z: 500,
+    scale: 100,
+    rotationY: 0.3,
+    floating: true,
+    collider: false
+  },
+
+  /** CART AND MARKETS */
+  {
+    path: '/models/cart.glb',
+    x: -12,
+    y: 0,
+    z: 47,
+    scale: 1.5,
+    rotation: 0,
+    floating: true,
+    collider: false
+  },
+  {
+    path: '/models/props_cart_02.glb',
+    x: 26,
+    y: 0,
+    z: -41,
+    scale: 2,
+    rotationY: 0.3,
+    floating: true,
+    collider: false
   }
 ];
 
 export function loadModels(scene) {
-  modelsToLoad.forEach((item) => {
-    loadModel(scene, item.path, item);
-  });
+  return Promise.all(modelsToLoad.map((item) => {
+    return loadModel(scene, item.path, item);
+  }));
 }
 
 // L'update globale adesso delega la logica del mago a mage.js
