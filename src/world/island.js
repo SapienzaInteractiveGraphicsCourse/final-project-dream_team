@@ -82,28 +82,32 @@ export function createIsland(scene, materials) {
   }
 
   // Sentiero principale: parte dalla posizione iniziale del player e prosegue in avanti.
-  createPathJoint(0, 2.2, 5.2);
-  createPathSegment(0, -6, 0, 16.4, 8);
-  createPathJoint(0, -14, 4.9);
+  
+  // Sentiero principale: parte dalla posizione iniziale del player e prosegue rettilineo.
+  createPathJoint(0, 2.2, 5.2);          // Partenza (Piazzola di Spawn)
+  
+  // Abbiamo raddoppiato la lunghezza da 16.4 a 32 unità, centrandola perfettamente a Z: -14
+  createPathSegment(0, -14, 0, 32, 8);   
+  
+  // La giunzione di curva si sposta in avanti a Z: -30 per accogliere il viale lungo
+  createPathJoint(0, -30, 4.9);          
 
-  createPathSegment(5, -22, -Math.PI / 5, 19, 8);
-  createPathJoint(10, -30, 4.9);
+  // --- I PEZZI SUCCESSIVI SI ADATTANO ALLA NUOVA GIUNZIONE A (0, -30) ---
+  createPathSegment(5, -38, -Math.PI / 5, 19, 8);
+  createPathJoint(10, -46, 4.9);
 
-  createPathSegment(19, -35, -Math.PI / 2.8, 20, 8);
-  createPathJoint(28, -40, 4.9);
+  createPathSegment(19, -51, -Math.PI / 2.8, 20, 8);
+  createPathJoint(28, -56, 4.9);
 
-  createPathSegment(36, -31, Math.PI / 4.2, 24, 8);
-  createPathJoint(44, -22, 4.9);
+  createPathSegment(36, -47, Math.PI / 4.2, 24, 8);
+  createPathJoint(44, -38, 4.9);
 
-  // Piccola piazzetta centrale lungo il percorso
+  // Piccola piazzetta centrale riposizionata coerentemente lungo il percorso
   const smallPlaza = new THREE.Mesh(
     new THREE.CylinderGeometry(12, 12, 0.1, 24),
     materials.plazaStone
   );
-
-  smallPlaza.position.set(10, 0.09, -30);
-  smallPlaza.receiveShadow = true;
-  pathGroup.add(smallPlaza);
+  
 
   return {
     islandTop,
