@@ -4,7 +4,7 @@ import { isBridgeBuilt } from '../imported_models/bridge.js';
 const portalCenter = new THREE.Vector3(243.4, 28.75, -255.4);
 const portalSize = new THREE.Vector3(5, 6, 5);
 const portalBox = new THREE.Box3().setFromCenterAndSize(portalCenter, portalSize);
-const returnPosition = new THREE.Vector3(44, 0.85, -22);
+const returnPosition = new THREE.Vector3(44, 0.15, -22);
 
 let hasTeleportedToFirstWorld = false;
 

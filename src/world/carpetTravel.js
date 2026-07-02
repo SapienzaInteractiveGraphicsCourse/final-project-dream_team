@@ -36,7 +36,7 @@ export function createCarpetTravel(scene) {
     objLoader.setPath('/models/');
 
     objLoader.load('model.obj', (object) => {
-      object.scale.setScalar(0.6);
+      object.scale.setScalar(1);   // modified scale of the carpet
       object.rotation.y = Math.PI / 2;
 
       object.traverse((child) => {

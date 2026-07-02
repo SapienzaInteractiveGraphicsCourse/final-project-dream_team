@@ -14,6 +14,23 @@ plazaTexture.colorSpace = THREE.SRGBColorSpace;
 plazaTexture.wrapS = THREE.RepeatWrapping;
 plazaTexture.wrapT = THREE.RepeatWrapping;
 plazaTexture.repeat.set(3, 3);
+plazaTexture.anisotropy = 8;
+
+const plazaTileWorldSize = 4;
+
+export function createTiledPlazaStoneMaterial(width, length) {
+  const texture = plazaTexture.clone();
+  texture.needsUpdate = true;
+  texture.repeat.set(
+    Math.max(width / plazaTileWorldSize, 1),
+    Math.max(length / plazaTileWorldSize, 1)
+  );
+
+  return new THREE.MeshStandardMaterial({
+    map: texture,
+    roughness: 0.9
+  });
+}
 
 export const materials = {
   grass: new THREE.MeshStandardMaterial({

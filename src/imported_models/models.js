@@ -255,23 +255,11 @@ export const modelsToLoad = [
     floating: true,
     collider: false
   },
-  /* TODO: da eliminare?
-  {
-    path: '/models/RedDragon.glb',
-    x: 5,
-    y: 5,
-    z: 20,
-    scale: 1.2,
-    rotationY: -0.3,
-    floating: true,
-    collider: true
-  },
-  */
   {
     path: '/models/pixellabs-cute-skeleton-mage-character-2439.glb',
-    x: -4,
+    x: 3,
     y: 0,
-    z: -15,
+    z: 2,
     scale: 3,
     rotationY: Math.PI / 4,
     groundY: 0.49,
@@ -287,26 +275,6 @@ export const modelsToLoad = [
     floating: true,
     collider: true
   },
-  /*{
-    path: '/models/dragon_flying.glb',
-    x: 0,
-    y: 9,
-    z: -20,
-    scale: 5,
-    rotationY: Math.PI / 4,
-    floating: true,
-    collider: false
-  },*/
-  // {
-  //   path: '/models/tower.glb',
-  //   x: 105,
-  //   y: 12,
-  //   z: -120,
-  //   scale: 2,
-  //   rotationY: Math.PI / 4,
-  //   floating: true,
-  //   collider: false
-  // },
   {
     path: '/models/castle_03.glb',
     x: -40,

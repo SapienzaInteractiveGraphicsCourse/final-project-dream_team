@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createTiledPlazaStoneMaterial } from './materials.js';
 
 export function createIsland(scene, materials) {
 
@@ -27,7 +28,7 @@ export function createIsland(scene, materials) {
 
     const path = new THREE.Mesh(
       new THREE.BoxGeometry(width, 0.08, length),
-      materials.plazaStone
+      createTiledPlazaStoneMaterial(width, length)
     );
 
     border.position.set(0, 0.075, length / 2);
@@ -57,7 +58,7 @@ export function createIsland(scene, materials) {
 
     const joint = new THREE.Mesh(
       new THREE.CylinderGeometry(radius, radius, 0.09, 32),
-      materials.plazaStone
+      createTiledPlazaStoneMaterial(radius * 2, radius * 2)
     );
 
     border.position.y = 0.075;
@@ -103,7 +104,7 @@ export function createIsland(scene, materials) {
 
     const ramp = new THREE.Mesh(
       new THREE.BoxGeometry(width, 0.35, length),
-      materials.plazaStone
+      createTiledPlazaStoneMaterial(width, length)
     );
 
     ramp.rotation.x = -Math.atan(height / length);
@@ -130,7 +131,7 @@ export function createIsland(scene, materials) {
   // central plaza
   const centralPlaza = new THREE.Mesh(
     new THREE.CylinderGeometry(12, 12, 0.1, 24),
-    materials.plazaStone
+    createTiledPlazaStoneMaterial(24, 24)
   );
 
   centralPlaza.position.set(10, 0.09, -30);

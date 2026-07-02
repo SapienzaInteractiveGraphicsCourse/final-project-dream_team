@@ -67,3 +67,91 @@ canvas {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
 }
+
+.difficulty-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  display: none;
+  place-items: center;
+  padding: 24px;
+  color: #f7fbff;
+  background: radial-gradient(circle at 50% 30%, rgba(70, 42, 28, 0.86), rgba(5, 8, 13, 0.92) 58%);
+}
+
+.difficulty-overlay.is-visible {
+  display: grid;
+}
+
+.difficulty-panel {
+  width: min(620px, calc(100vw - 32px));
+  padding: 24px;
+  background: rgba(15, 20, 28, 0.92);
+  border: 1px solid rgba(255, 194, 88, 0.72);
+  border-radius: 8px;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.5), 0 0 42px rgba(255, 133, 66, 0.18);
+  text-align: center;
+}
+
+.difficulty-kicker {
+  margin: 0 0 6px;
+  color: #ffcf6c;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.difficulty-panel h1 {
+  margin: 0 0 20px;
+  font-size: clamp(28px, 6vw, 44px);
+  line-height: 1.05;
+}
+
+.difficulty-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.difficulty-option {
+  min-height: 116px;
+  padding: 16px 10px;
+  color: #fff8e8;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.difficulty-option:hover,
+.difficulty-option:focus-visible {
+  background: rgba(255, 194, 88, 0.16);
+  border-color: rgba(255, 194, 88, 0.9);
+  outline: none;
+}
+
+.difficulty-option strong,
+.difficulty-option span {
+  display: block;
+}
+
+.difficulty-option strong {
+  margin-bottom: 8px;
+  font-size: 20px;
+}
+
+.difficulty-option span {
+  color: #f5e8c9;
+  font-size: 14px;
+}
+
+@media (max-width: 620px) {
+  .difficulty-options {
+    grid-template-columns: 1fr;
+  }
+
+  .difficulty-option {
+    min-height: 78px;
+  }
+}
