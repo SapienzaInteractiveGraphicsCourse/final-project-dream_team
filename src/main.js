@@ -100,7 +100,6 @@ difficultyOverlay.innerHTML = `
       ${Object.entries(getPuzzleDifficulties()).map(([key, option]) => `
         <button class="difficulty-option" type="button" data-difficulty="${key}">
           <strong>${option.label}</strong>
-          <span>${option.size}x${option.size} puzzle</span>
         </button>
       `).join('')}
     </div>
