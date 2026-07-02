@@ -31,6 +31,7 @@ import {
   updatePortalTeleport
 } from './world/portalTeleport.js';
 import { updateTowerFall } from './world/towerFall.js';
+import { createPuzzleMinigame, getPuzzleDifficulties } from './minigame/puzzle.js';
 
 const canvas = document.querySelector('#bg');
 const scene = createScene();
@@ -90,8 +91,101 @@ dragonVictoryBanner.className = 'victory-banner';
 dragonVictoryBanner.textContent = '⚔️ YOU HAVE SLAIN THE DRAGON! ⚔️';
 document.body.appendChild(dragonVictoryBanner);
 
+const difficultyOverlay = document.createElement('div');
+difficultyOverlay.className = 'difficulty-overlay is-visible';
+difficultyOverlay.innerHTML = `
+  <section class="difficulty-panel" role="dialog" aria-modal="true" aria-labelledby="difficulty-title">
+    <p class="difficulty-kicker">Choose your challenge</p>
+    <div class="difficulty-options">
+      ${Object.entries(getPuzzleDifficulties()).map(([key, option]) => `
+        <button class="difficulty-option" type="button" data-difficulty="${key}">
+          <strong>${option.label}</strong>
+          <span>${option.size}x${option.size} puzzle</span>
+        </button>
+      `).join('')}
+    </div>
+  </section>
+`;
+document.body.appendChild(difficultyOverlay);
+
+let selectedDifficulty = 'medium';
+let isChoosingDifficulty = true;
+let dragonPuzzle = null;
+let isDragonPuzzleActive = false;
+let dragonDirectHits = 0;
+let finalPuzzleStarted = false;
+const DIRECT_HITS_BEFORE_FINAL_PUZZLE = 3;
+const DRAGON_HIT_DAMAGE = 25;
+
+function showDragonVictory() {
+  dragonPrompt.classList.remove('is-visible');
+  isInsideCastle = false;
+  dragonVictoryBanner.classList.add('is-visible');
+
+  setTimeout(() => {
+    dragonVictoryBanner.classList.remove('is-visible');
+  }, 4000);
+}
+
+function startDragonPuzzle() {
+  if (isDragonPuzzleActive || finalPuzzleStarted || isDragonDefeated()) return;
+
+  if (!dragonPuzzle) {
+    dragonPuzzle = createPuzzleMinigame({
+      difficulty: selectedDifficulty,
+      title: 'Give the last hit',
+      instruction: 'Give the last hit to the dragon by completing this puzzle.',
+      allowClose: false,
+      onClose: () => {
+        isDragonPuzzleActive = false;
+      },
+      onSolved: () => {
+        damageDragon(DRAGON_HIT_DAMAGE);
+        console.log('Final puzzle solved. You gave the last hit to the dragon!');
+
+        if (isDragonDefeated()) {
+          showDragonVictory();
+        }
+      }
+    });
+  }
+
+  finalPuzzleStarted = true;
+  isDragonPuzzleActive = true;
+  dragonPrompt.classList.remove('is-visible');
+  dragonPuzzle.open();
+}
+
+function attackDragon() {
+  if (dragonDirectHits < DIRECT_HITS_BEFORE_FINAL_PUZZLE) {
+    dragonDirectHits += 1;
+    damageDragon(DRAGON_HIT_DAMAGE);
+    console.log(`You hit the dragon with magic! Hit ${dragonDirectHits}/${DIRECT_HITS_BEFORE_FINAL_PUZZLE}`);
+
+    if (dragonDirectHits === DIRECT_HITS_BEFORE_FINAL_PUZZLE) {
+      dragonPrompt.textContent = 'Press R to give the last hit to the dragon!';
+    }
+
+    return;
+  }
+
+  startDragonPuzzle();
+}
+
+difficultyOverlay.querySelectorAll('[data-difficulty]').forEach((button) => {
+  button.addEventListener('click', () => {
+    selectedDifficulty = button.dataset.difficulty;
+    isChoosingDifficulty = false;
+    difficultyOverlay.classList.remove('is-visible');
+  });
+});
+
 let isInsideCastle = false;
 window.addEventListener('keydown', (event) => {
+  if (isChoosingDifficulty || isDragonPuzzleActive) {
+    return;
+  }
+
   if (event.key.toLowerCase() === 'f') {
     if (!isGemDelivered()) {
       return; 
@@ -101,18 +195,7 @@ window.addEventListener('keydown', (event) => {
 
   if (event.key.toLowerCase() === 'r') {
     if (isInsideCastle && isBookDelivered() && !isDragonDefeated()) {
-      damageDragon(25);
-      console.log("You hit the dragon with magic!");
-      
-      if (isDragonDefeated()) {
-        dragonPrompt.classList.remove('is-visible');
-        isInsideCastle = false;
-        dragonVictoryBanner.classList.add('is-visible');
-        
-        setTimeout(() => {
-          dragonVictoryBanner.classList.remove('is-visible');
-        }, 4000);
-      }
+      attackDragon();
     }
   }
 });
@@ -182,7 +265,8 @@ function animate() {
     playerData.group,
     playerData.group.position.y > 20 && !carpetTravel.isTraveling
   );
-  playerController.update(deltaTime, !carpetTravel.isTraveling && !isFalling);
+  const canControlPlayer = !carpetTravel.isTraveling && !isFalling && !isChoosingDifficulty && !isDragonPuzzleActive;
+  playerController.update(deltaTime, canControlPlayer);
 
   const pos = playerData.group.position;
   if (debugMode) {
@@ -204,12 +288,7 @@ function animate() {
   }
 
   // --- CASTLE ZONE CHECK ---
-  if (isBookDelivered() && !isDragonDefeated()) {
-    const castleTriggerBox = new THREE.Box3(
-      new THREE.Vector3(0, -5, -75),
-      new THREE.Vector3(50, 20, -25)
-    );
-
+  if (isBookDelivered() && !isDragonDefeated() && !isDragonPuzzleActive && !isChoosingDifficulty) {
     if (castleTriggerBox.containsPoint(playerData.group.position)) {
       isInsideCastle = true;
       dragonPrompt.classList.add('is-visible');
