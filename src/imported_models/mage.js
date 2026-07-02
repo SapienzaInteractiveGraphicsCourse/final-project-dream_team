@@ -109,8 +109,8 @@ export function updateMage(deltaTime, player) {
     }
   }
 
-  // Dialogue Management
   if (mageIsTalking) {
+    // Se sta parlando attivamente, mostra SOLO il testo del dialogo parlato
     if (isGemDelivered()) {
       mageDialogue.textContent = "Mage: Incredible! The gem is safe and magic has returned! To thank you for saving the island, I gift you my Flying Carpet.";
     } else if (isCarryingGem()) {
@@ -124,7 +124,7 @@ export function updateMage(deltaTime, player) {
     }
     mageDialogue.classList.add('is-visible');
   } else if (canTalkToMage) {
-    // PROXIMITY PROMPTS (When walking near the mage without actively talking)
+    // Mostra i prompt di prossimità SOLO se NON sta parlando
     if (isCarryingGem()) {
       mageDialogue.textContent = 'Press F to deliver the gem | Press E to talk';
     } else if (isCarryingBook() && !isBookDelivered()) {
@@ -134,6 +134,7 @@ export function updateMage(deltaTime, player) {
     }
     mageDialogue.classList.add('is-visible');
   } else {
+    // Se siamo lontani e non parla, nascondi tutto
     mageDialogue.classList.remove('is-visible');
   }
 
@@ -147,4 +148,5 @@ export function updateMage(deltaTime, player) {
   } else {
     setMageBrightness(0);
   }
+  return mageIsTalking;
 }
