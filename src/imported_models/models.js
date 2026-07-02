@@ -175,9 +175,9 @@ export const modelsToLoad = [
   },
   {
     path: '/models/Gem.glb', 
-    x: 25, 
+    x: -6, 
     y: 1,
-    z: -32,
+    z: -46,
     scale: 0.7,
     floating: true,
     collider: false
