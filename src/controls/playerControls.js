@@ -17,11 +17,17 @@ export function createPlayerController(playerObject, camera, colliders = []) {
 
   let cameraAngle = 0;
   let cameraDistance = 9;
+  let isFirstPerson = false;
+  let firstPersonPitch = 0;
 
   const cameraMinDistance = 2.5;
   const cameraMaxDistance = 30;
   const cameraHeight = 4.2;
   const cameraLookHeight = 2.4;
+  const firstPersonEyeHeight = 2.5;
+  const firstPersonPitchSpeed = 3.8;
+  const firstPersonMinPitch = THREE.MathUtils.degToRad(-75);
+  const firstPersonMaxPitch = THREE.MathUtils.degToRad(75);
 
   window.addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
@@ -77,19 +83,35 @@ export function createPlayerController(playerObject, camera, colliders = []) {
       cameraAngle -= cameraRotationSpeed * deltaTime;
     }
 
-    if (keys.arrowup) {
-      cameraDistance -= cameraZoomSpeed * deltaTime;
-    }
+    if (isFirstPerson) {
+      if (keys.arrowup) {
+        firstPersonPitch += firstPersonPitchSpeed * deltaTime;
+      }
 
-    if (keys.arrowdown) {
-      cameraDistance += cameraZoomSpeed * deltaTime;
-    }
+      if (keys.arrowdown) {
+        firstPersonPitch -= firstPersonPitchSpeed * deltaTime;
+      }
 
-    cameraDistance = THREE.MathUtils.clamp(
-      cameraDistance,
-      cameraMinDistance,
-      cameraMaxDistance
-    );
+      firstPersonPitch = THREE.MathUtils.clamp(
+        firstPersonPitch,
+        firstPersonMinPitch,
+        firstPersonMaxPitch
+      );
+    } else {
+      if (keys.arrowup) {
+        cameraDistance -= cameraZoomSpeed * deltaTime;
+      }
+
+      if (keys.arrowdown) {
+        cameraDistance += cameraZoomSpeed * deltaTime;
+      }
+
+      cameraDistance = THREE.MathUtils.clamp(
+        cameraDistance,
+        cameraMinDistance,
+        cameraMaxDistance
+      );
+    }
 
     const forward = new THREE.Vector3(
       Math.sin(cameraAngle),
@@ -156,24 +178,33 @@ export function createPlayerController(playerObject, camera, colliders = []) {
       player.position.z *= maxDistance / distanceFromCenter;
     }
 
-    const cameraOffset = new THREE.Vector3(
-      Math.sin(cameraAngle) * cameraDistance,
-      cameraHeight,
-      Math.cos(cameraAngle) * cameraDistance
-    );
+    if (isFirstPerson) {
+      camera.position.copy(player.position);
+      camera.position.y += firstPersonEyeHeight;
+      camera.rotation.set(firstPersonPitch, cameraAngle, 0, 'YXZ');
+    } else {
+      const cameraOffset = new THREE.Vector3(
+        Math.sin(cameraAngle) * cameraDistance,
+        cameraHeight,
+        Math.cos(cameraAngle) * cameraDistance
+      );
 
-    const desiredCameraPosition = player.position.clone().add(cameraOffset);
+      const desiredCameraPosition = player.position.clone().add(cameraOffset);
 
-    camera.position.lerp(desiredCameraPosition, 0.08);
+      camera.position.lerp(desiredCameraPosition, 0.08);
 
-    camera.lookAt(
-      player.position.x,
-      player.position.y + cameraLookHeight,
-      player.position.z
-    );
+      camera.lookAt(
+        player.position.x,
+        player.position.y + cameraLookHeight,
+        player.position.z
+      );
+    }
   }
 
   return {
-    update
+    update,
+    setFirstPersonMode(enable) {
+      isFirstPerson = enable;
+    }
   };
 }

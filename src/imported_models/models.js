@@ -42,6 +42,26 @@ function brightenDemonMaterial(material) {
   material.needsUpdate = true;
 }
 
+function createLitStoneBuildingMaterial(material) {
+  const map = material?.map ?? null;
+
+  if (map) {
+    map.colorSpace = THREE.SRGBColorSpace;
+    map.needsUpdate = true;
+  }
+
+  return new THREE.MeshStandardMaterial({
+    map,
+    color: material?.color?.clone?.() ?? new THREE.Color(0xffffff),
+    roughness: 0.9,
+    metalness: 0,
+    side: material?.side ?? THREE.FrontSide,
+    transparent: material?.transparent ?? false,
+    opacity: material?.opacity ?? 1,
+    alphaTest: material?.alphaTest ?? 0
+  });
+}
+
 function loadModel(scene, path, options = {}) {
   return new Promise((resolve) => {
     gltfLoader.load(
@@ -49,6 +69,7 @@ function loadModel(scene, path, options = {}) {
       (gltf) => {
       const model = gltf.scene;
       const isMage = path.includes('skeleton-mage') || path.includes('cute-skeleton-mage');
+      const isStoneBuilding = path.includes('stone_building');
 
       // 1. Applichiamo prima le trasformazioni di base (posizione, scala, rotazione)
       const x = options.x ?? 0;
@@ -111,6 +132,12 @@ function loadModel(scene, path, options = {}) {
         if (child.isMesh) {
           child.castShadow = true;
           child.receiveShadow = true;
+
+          if (isStoneBuilding) {
+            child.material = Array.isArray(child.material)
+              ? child.material.map(createLitStoneBuildingMaterial)
+              : createLitStoneBuildingMaterial(child.material);
+          }
 
           if (isMage) {
             child.material = Array.isArray(child.material)

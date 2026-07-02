@@ -94,6 +94,11 @@ dragonVictoryBanner.className = 'victory-banner';
 dragonVictoryBanner.textContent = '⚔️ YOU HAVE SLAIN THE DRAGON! ⚔️';
 document.body.appendChild(dragonVictoryBanner);
 
+const viewHint = document.createElement('div');
+viewHint.className = 'view-hint';
+viewHint.textContent = 'Press V to change view';
+document.body.appendChild(viewHint);
+
 const difficultyOverlay = document.createElement('div');
 difficultyOverlay.className = 'difficulty-overlay is-visible';
 difficultyOverlay.innerHTML = `
@@ -185,9 +190,22 @@ difficultyOverlay.querySelectorAll('[data-difficulty]').forEach((button) => {
 // RETTIFICA: Gestione pulita dello stato della telecamera
 let isFirstPerson = false;
 let manualFirstPerson = false; // Ricorda se l'utente ha attivato la prima persona con il tasto 'V'
+const thirdPersonFov = 65;
+const firstPersonFov = 100;
 
 function setFirstPersonMode(enable) {
   isFirstPerson = enable;
+  const targetFov = enable ? firstPersonFov : thirdPersonFov;
+
+  if (playerController) {
+    playerController.setFirstPersonMode(enable);
+  }
+
+  if (camera.fov !== targetFov) {
+    camera.fov = targetFov;
+    camera.updateProjectionMatrix();
+  }
+
   if (playerData && playerData.group) {
     playerData.group.traverse((child) => {
       if (child.isMesh) {
@@ -328,13 +346,6 @@ function animate() {
   } else {
     // Quando nessuno sta parlando, la telecamera torna alla modalità scelta dall'utente (di base Terza Persona)
     setFirstPersonMode(manualFirstPerson);
-  }
-
-  // 3. Posizionamento effettivo della telecamera se la 1PV è attiva
-  if (isFirstPerson && !carpetTravel.isTraveling) {
-    const eyeHeight = 1.6; 
-    camera.position.copy(playerData.group.position);
-    camera.position.y += eyeHeight;
   }
 
   // --- FINE BLOCCO GESTIONE TELECAMERA E DIALOGHI ---
