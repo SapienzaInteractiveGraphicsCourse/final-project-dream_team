@@ -200,7 +200,7 @@ export const modelsToLoad = [
     scale: 5,
     rotationY: Math.PI / 2,
     groundY: 0.49,
-    collider: true
+    collider: false
   },
   {
     path: '/models/FantasyInn.glb',
@@ -211,7 +211,7 @@ export const modelsToLoad = [
     rotationY: Math.PI / 2.3,
     groundY: 0.49,
     floating: true,
-    collider: true
+    collider: false
   },
   {
     path: '/models/FantasyStable.glb',
@@ -222,7 +222,7 @@ export const modelsToLoad = [
     rotationY: -0.05,
     groundY: 0.49,
     floating: true,
-    collider: true
+    collider: false
   },
   {
     path: '/models/alchemist_fantasy_house.glb',

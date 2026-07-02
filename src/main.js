@@ -66,6 +66,7 @@ for (let i = 0; i < cloudsNumber; i++) {
     cloud.rotation.y = Math.PI / Math.random();
 }
 
+createRain(scene);
 const carpetTravel = createCarpetTravel(scene);
 
 if (carpetTravel && carpetTravel.mesh) {
