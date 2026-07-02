@@ -31,6 +31,8 @@ import {
   updatePortalTeleport
 } from './world/portalTeleport.js';
 import { updateTowerFall } from './world/towerFall.js';
+// RETTIFICA: Importiamo updateMage per poterlo usare nel ciclo di animazione
+import { updateMage } from './imported_models/mage.js'; 
 
 const canvas = document.querySelector('#bg');
 const scene = createScene();
@@ -75,6 +77,7 @@ if (carpetTravel && carpetTravel.mesh) {
   carpetTravel.group.visible = false;
 }
 
+
 const carpetPrompt = document.createElement('div');
 carpetPrompt.className = 'interaction-dialogue carpet-dialogue';
 carpetPrompt.textContent = 'Press F to travel on the magic carpet';
@@ -90,6 +93,21 @@ dragonVictoryBanner.className = 'victory-banner';
 dragonVictoryBanner.textContent = '⚔️ YOU HAVE SLAIN THE DRAGON! ⚔️';
 document.body.appendChild(dragonVictoryBanner);
 
+// RETTIFICA: Gestione pulita dello stato della telecamera
+let isFirstPerson = false;
+let manualFirstPerson = false; // Ricorda se l'utente ha attivato la prima persona con il tasto 'V'
+
+function setFirstPersonMode(enable) {
+  isFirstPerson = enable;
+  if (playerData && playerData.group) {
+    playerData.group.traverse((child) => {
+      if (child.isMesh) {
+        child.visible = !enable; 
+      }
+    });
+  }
+}
+
 let isInsideCastle = false;
 window.addEventListener('keydown', (event) => {
   if (event.key.toLowerCase() === 'f') {
@@ -97,6 +115,13 @@ window.addEventListener('keydown', (event) => {
       return; 
     }
     tryStartCarpetTravel(carpetTravel);
+  }
+
+  // RETTIFICA: Quando premi V, aggiorni lo stato manuale inserito dall'utente
+  if (event.key.toLowerCase() === 'v') {
+    manualFirstPerson = !manualFirstPerson;
+    setFirstPersonMode(manualFirstPerson);
+    console.log("Visuale manuale cambiata. Prima persona:", manualFirstPerson);
   }
 
   if (event.key.toLowerCase() === 'r') {
@@ -116,6 +141,7 @@ window.addEventListener('keydown', (event) => {
     }
   }
 });
+
 window.addEventListener('keyup', () => {
   window.currentInteractionKey = null;
 });
@@ -149,7 +175,6 @@ if (debugMode) {
   scene.add(gridHelper);
 }
 
-// plotting of coords of the player
 const playerCoords = document.createElement('div');
 if (debugMode) {
   playerCoords.style.position = 'fixed';
@@ -163,9 +188,9 @@ if (debugMode) {
 }
 
 const castleTriggerBox = new THREE.Box3(
-  new THREE.Vector3(0, -5, -75),
-  new THREE.Vector3(50, 20, -25)
-);
+      new THREE.Vector3(-9, -5, -130),
+      new THREE.Vector3(15, 30, -10)
+    );
 let shifuThanksTriggered = false;
 
 // --------------------------------------------------
@@ -182,7 +207,53 @@ function animate() {
     playerData.group,
     playerData.group.position.y > 20 && !carpetTravel.isTraveling
   );
+
+  const carpetObject = carpetTravel.group || carpetTravel.mesh;
+  
+  if (carpetObject && carpetObject.visible && !carpetTravel.isTraveling) {
+    const distanceToCarpet = playerData.group.position.distanceTo(carpetObject.position);
+    const carpetInteractionDistance = 4; // Raggio di attivazione (uguale a quello dei personaggi)
+
+    if (distanceToCarpet < carpetInteractionDistance) {
+      carpetPrompt.classList.add('is-visible');
+    } else {
+      carpetPrompt.classList.remove('is-visible');
+    }
+  } else {
+    // Se sta già viaggiando o il tappeto non è ancora sbloccato, nascondi il banner
+    carpetPrompt.classList.remove('is-visible');
+  }
+  
   playerController.update(deltaTime, !carpetTravel.isTraveling && !isFalling);
+
+  // --- INIZIO BLOCCO GESTIONE TELECAMERA E DIALOGHI ---
+
+  // 1. Aggiorna il Mago e cattura se STA PARLANDO ATTIVAMENTE (mageIsTalking è true)
+  const isTalkingToMage = updateMage(deltaTime, playerData.group);
+  const isTalkingToShifu = updateShifuTask(deltaTime, playerData.group);
+  // 2. Controlla le condizioni per FORZARE la prima persona.
+  // IMPORTANTE: Forziamo la 1PV SOLO se il mago sta attivamente parlando (isTalkingToMage è true).
+  // Se siamo solo vicini al Mago (canTalkToMage), la visuale resta in terza persona.
+  const shouldBeInFirstPerson = 
+    isTalkingToMage || 
+    isTalkingToShifu || 
+    (isBridgeBuilt() && shifuThanksTriggered && !window.shifuThanksEnded);
+
+  if (shouldBeInFirstPerson) {
+    setFirstPersonMode(true);
+  } else {
+    // Quando nessuno sta parlando, la telecamera torna alla modalità scelta dall'utente (di base Terza Persona)
+    setFirstPersonMode(manualFirstPerson);
+  }
+
+  // 3. Posizionamento effettivo della telecamera se la 1PV è attiva
+  if (isFirstPerson && !carpetTravel.isTraveling) {
+    const eyeHeight = 1.6; 
+    camera.position.copy(playerData.group.position);
+    camera.position.y += eyeHeight;
+  }
+
+  // --- FINE BLOCCO GESTIONE TELECAMERA E DIALOGHI ---
 
   const pos = playerData.group.position;
   if (debugMode) {
@@ -191,12 +262,11 @@ function animate() {
 
   updateModels(deltaTime, playerData.group);
   updateBook(deltaTime, playerData.group);
-  updateShifuTask(deltaTime, playerData.group);
   updateWoodTask(deltaTime, playerData.group);
   updateBridgeTask(deltaTime, playerData.group);
   updatePortalTeleport(playerData.group);
   updateRain(deltaTime, playerData.group);
-  updateStorm(deltaTime,scene);
+  updateStorm(deltaTime, scene);
 
   if (isGemDelivered()) {
     if (carpetTravel && carpetTravel.mesh) carpetTravel.mesh.visible = true;
@@ -206,13 +276,15 @@ function animate() {
   // --- CASTLE ZONE CHECK ---
   if (isBookDelivered() && !isDragonDefeated()) {
     const castleTriggerBox = new THREE.Box3(
-      new THREE.Vector3(0, -5, -75),
-      new THREE.Vector3(50, 20, -25)
+      new THREE.Vector3(-9, -5, -130),
+      new THREE.Vector3(15, 30, -10)
     );
 
     if (castleTriggerBox.containsPoint(playerData.group.position)) {
       isInsideCastle = true;
-      dragonPrompt.classList.add('is-visible');
+      if (!dragonPrompt.classList.contains('is-visible')) {
+        dragonPrompt.classList.add('is-visible');
+      }
     } else {
       isInsideCastle = false;
       dragonPrompt.classList.remove('is-visible');
@@ -223,11 +295,15 @@ function animate() {
   }
 
   renderer.render(scene, camera);
+
   if (isBridgeBuilt() && !shifuThanksTriggered ){
     shifuThanksTriggered = true;
     startShifuBridgeThanks();
     startStorm(scene);
+    
+    setTimeout(() => {
+       window.shifuThanksEnded = true; 
+    }, 5000); 
   }
-
 }
 animate();
