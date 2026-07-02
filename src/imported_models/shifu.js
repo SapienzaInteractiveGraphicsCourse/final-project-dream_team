@@ -247,6 +247,7 @@ export function updateShifuTask (deltaTime, player){
     } else {
         shifuDialogue.classList.remove('is-visible');
     }
+    return shifuIsTalking;
     }
 export function isShifuTaskStarted() {
   return taskStarted;

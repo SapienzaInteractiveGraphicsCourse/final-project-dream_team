@@ -140,7 +140,6 @@ export function updateGem(deltaTime, player, mageModel) {
       const distanceToMage = player.position.distanceTo(mageModel.position);
       if (distanceToMage < 4) {
         canTakeGem = true;
-        gemPrompt.textContent = 'Press F to deliver the gem to the mage';
         gemPrompt.classList.add('is-visible');
       } else {
         gemPrompt.classList.remove('is-visible');
