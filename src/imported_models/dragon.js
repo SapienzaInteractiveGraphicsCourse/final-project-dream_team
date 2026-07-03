@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 let demonDragon = null;
 let demonDragonStartY = 0;
+let dragonHiddenAfterPortal = false;
 // --- VARIABILI PER IL COMBATTIMENTO E VOLO ---
 let dragonHealth = 100;
 let dragonDefeated = false;
@@ -92,14 +93,14 @@ function applyWingPose(key, amount) {
 export function setDragonOrbitCenter(x, y, z, calculatedRadius) {
   castleCenter.set(x, y, z);
   flightRadius = Math.max(calculatedRadius, 15); 
-  console.log(`Il drago ora orbita a X:${x}, Y:${y}, Z:${z} con raggio ${flightRadius}`);
+  console.log(`The dragon now orbits at X:${x}, Y:${y}, Z:${z} with radius ${flightRadius}`);
 }
 
 export function damageDragon(amount) {
   if (dragonDefeated || !demonDragon) return;
 
   dragonHealth -= amount;
-  console.log(`Drago colpito duramente! Vita rimasta: ${dragonHealth}`);
+  console.log(`Dragon hit hard! Remaining health: ${dragonHealth}`);
 
   const scene = demonDragon.parent;
 
@@ -217,7 +218,7 @@ export function damageDragon(amount) {
   // --- 3. CONTROLLO FINALE (IL MEGA IMPATTO MORTALE) ---
   if (dragonHealth <= 0) {
     dragonDefeated = true;
-    console.log("Il drago è morto! Attivazione detonazione epica.");
+    console.log('The dragon is dead! Triggering epic detonation.');
     
     if (scene) {
       particlesGeometry = new THREE.BufferGeometry();
@@ -258,6 +259,7 @@ export function registerDemonDragon(model) {
   demonDragonStartY = model.position.y;
   dragonHealth = 100;
   dragonDefeated = false;
+  dragonHiddenAfterPortal = false;
 
   Object.keys(wingBones).forEach((key) => {
     delete wingBones[key];
@@ -282,6 +284,13 @@ export function registerDemonDragon(model) {
 
 export function updateDemonDragon(deltaTime) {
   if (!demonDragon) return;
+  if (dragonHiddenAfterPortal) {
+    demonDragon.visible = false;
+    if (deathParticles) {
+      deathParticles.visible = false;
+    }
+    return;
+  }
 
   const time = performance.now() * 0.001;
 
@@ -349,4 +358,16 @@ export function updateDemonDragon(deltaTime) {
 
 export function isDragonDefeated() {
   return dragonDefeated;
+}
+
+export function hideDragonAfterPortal() {
+  dragonHiddenAfterPortal = true;
+
+  if (demonDragon) {
+    demonDragon.visible = false;
+  }
+
+  if (deathParticles) {
+    deathParticles.visible = false;
+  }
 }

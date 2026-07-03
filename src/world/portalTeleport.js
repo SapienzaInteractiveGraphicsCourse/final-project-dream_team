@@ -1,10 +1,14 @@
 import * as THREE from 'three';
 import { isBridgeBuilt } from '../imported_models/bridge.js';
+import { hideBookAfterPortal } from '../imported_models/book.js';
+import { hideDragonAfterPortal } from '../imported_models/dragon.js';
+import { hideGemAfterPortal } from '../imported_models/gem.js';
+import { startFinale } from './finale.js';
 
 const portalCenter = new THREE.Vector3(243.4, 28.75, -255.4);
 const portalSize = new THREE.Vector3(5, 6, 5);
 const portalBox = new THREE.Box3().setFromCenterAndSize(portalCenter, portalSize);
-const returnPosition = new THREE.Vector3(44, 0.15, -22);
+const returnPosition = new THREE.Vector3(-1.94, 0.15, 26.04);
 
 let hasTeleportedToFirstWorld = false;
 
@@ -57,8 +61,11 @@ export function updatePortalTeleport(player) {
 
   player.position.copy(returnPosition);
   hasTeleportedToFirstWorld = true;
-
-  positionPanel.innerHTML = 'Portale attraversato';
+  hideBookAfterPortal();
+  hideDragonAfterPortal();
+  hideGemAfterPortal();
+  startFinale();
+  positionPanel.innerHTML = 'Portal crossed';
   positionPanel.style.display = 'block';
   console.log('Teleported to first world:', returnPosition);
 }

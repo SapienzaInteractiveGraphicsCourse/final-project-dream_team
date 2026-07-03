@@ -26,7 +26,8 @@ function saveInitialRotations(parts) {
 
 export function createPlayer(scene) {
   const player = new THREE.Group();
-  player.position.set(0, 0.15, 26);  // initial plaza at z = 26
+  player.position.set(236, 28.75, -253);  // world 2 tower position
+  //player.position.set(236, 28.75, -253);
   player.rotation.y = 0;
   scene.add(player);
 
@@ -65,7 +66,7 @@ export function createPlayer(scene) {
         });
 
         if (!skinnedMesh) {
-          console.warn('Nessuna SkinnedMesh trovata nel modello.');
+          console.warn('No SkinnedMesh found in the model.');
         }
 
         const parts = {
@@ -106,7 +107,7 @@ export function createPlayer(scene) {
       undefined,
 
       (error) => {
-        console.error('Errore caricamento schoolboy.glb', error);
+        console.error('Error loading schoolboy.glb', error);
       }
     );
 
@@ -119,7 +120,7 @@ export function animatePlayer(playerObject, isMoving, elapsedTime) {
   const parts = playerObject.parts;
   const initial = playerObject.initialRotations;
 
-  // Reset delle rotazioni alla posa iniziale
+  // Reset rotations to the initial pose.
   for (const key in parts) {
     if (parts[key] && initial[key]) {
       parts[key].rotation.copy(initial[key]);
@@ -138,20 +139,20 @@ export function animatePlayer(playerObject, isMoving, elapsedTime) {
 
   if (!isMoving) return;
 
-  // Movimento oscillante per camminata.
+  // Walking swing movement.
   const swing = Math.sin(elapsedTime * 8);
 
-  // Piccolo movimento del busto
+  // Small torso movement.
   if (parts.spine) {
     parts.spine.rotation.z += Math.sin(elapsedTime * 3) * 0.04;
   }
 
-  // Movimento della testa
+  // Head movement.
   if (parts.head) {
     parts.head.rotation.y += Math.sin(elapsedTime * 2) * 0.12;
   }
 
-  // Braccia alternate: muoviamo le spalle, che sono parent di tutto il braccio.
+  // Alternating arms: shoulders drive the whole arm chain.
   if (parts.leftShoulder) {
     parts.leftShoulder.rotation.x += swing * 0.45;
   }
@@ -160,7 +161,7 @@ export function animatePlayer(playerObject, isMoving, elapsedTime) {
     parts.rightShoulder.rotation.x -= swing * 0.45;
   }
 
-  // Avambracci leggermente piegati, solo come movimento secondario.
+  // Slight forearm bend as secondary motion.
   if (parts.leftForeArm) {
     parts.leftForeArm.rotation.x += Math.max(0, swing) * 0.25;
   }
@@ -169,7 +170,7 @@ export function animatePlayer(playerObject, isMoving, elapsedTime) {
     parts.rightForeArm.rotation.x += Math.max(0, -swing) * 0.25;
   }
 
-  // Gambe alternate
+  // Alternating legs.
   if (parts.leftUpLeg) {
     parts.leftUpLeg.rotation.x += -swing * 0.45;
   }
@@ -178,7 +179,7 @@ export function animatePlayer(playerObject, isMoving, elapsedTime) {
     parts.rightUpLeg.rotation.x += swing * 0.45;
   }
 
-  // Piedi leggermente animati
+  // Slight foot animation.
   if (parts.leftFoot) {
     parts.leftFoot.rotation.x += Math.max(0, -swing) * 0.2;
   }
