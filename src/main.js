@@ -25,7 +25,8 @@ import {
 import { loadShifuTask, startShifuBridgeThanks, updateShifuTask } from './imported_models/shifu.js';
 import { loadWoodTask, updateWoodTask } from './imported_models/wood.js';
 import { isBridgeBuilt, loadBridgeTask, updateBridgeTask } from './imported_models/bridge.js';
-import { createRain, startStorm, updateRain, updateStorm } from './world/rain.js';
+import { createRain, getStormProgress, startStorm, updateRain, updateStorm } from './world/rain.js';
+import { createLampPosts, updateLampPosts } from './world/lampPosts.js';
 import {
   createPortalPositionLogger,
   updatePortalTeleport
@@ -261,6 +262,7 @@ loadModels(scene).then(() => {
     obstacleBounds: modelBounds,
     colliderTargets: modelColliders
   });
+  createLampPosts(scene);
 });
 loadShifuTask(scene);
 loadWoodTask(scene);
@@ -362,6 +364,7 @@ function animate() {
   updatePortalTeleport(playerData.group);
   updateRain(deltaTime, playerData.group);
   updateStorm(deltaTime, scene);
+  updateLampPosts(getStormProgress());
 
   if (isGemDelivered()) {
     if (carpetTravel && carpetTravel.mesh) carpetTravel.mesh.visible = true;
