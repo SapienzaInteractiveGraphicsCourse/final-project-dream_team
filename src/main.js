@@ -327,8 +327,6 @@ function animate() {
     // Se sta già viaggiando o il tappeto non è ancora sbloccato, nascondi il banner
     carpetPrompt.classList.remove('is-visible');
   }
-  
-  playerController.update(deltaTime, !carpetTravel.isTraveling && !isFalling);
 
   // --- INIZIO BLOCCO GESTIONE TELECAMERA E DIALOGHI ---
 

@@ -3,7 +3,9 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const lampLoader = new GLTFLoader();
 const lampPosts = [];
-const glowGeometry = new THREE.SphereGeometry(0.28, 16, 12);
+
+// Rendiamo la geometria del glow leggermente più grande e definita se necessario
+const glowGeometry = new THREE.SphereGeometry(0.4, 16, 16); 
 const glowColor = new THREE.Color(0xffc36a);
 const lightColor = 0xffb35a;
 
@@ -25,8 +27,27 @@ const mainWorldExtraLamps = [
   { x: 38, z: -24, rotationY: Math.PI / 3 }
 ];
 
+function prepareLampMaterial(material) {
+  if (!material) return null;
+
+  // Clona semplicemente il materiale originale senza toccare emissive o colori
+  // Questo garantisce che il legno rimanga legno e il lampione mantenga l'aspetto nativo della GLTF
+  const preparedMaterial = material.clone();
+
+  if (preparedMaterial.map) {
+    preparedMaterial.map.colorSpace = THREE.SRGBColorSpace;
+    preparedMaterial.map.needsUpdate = true;
+  }
+
+  return preparedMaterial;
+}
+
 function cloneLampModel(source) {
   const clone = source.clone(true);
+
+  clone.position.set(0, 0, 0);
+  clone.rotation.set(0, 0, 0);
+  clone.scale.set(1, 1, 1);
 
   clone.traverse((child) => {
     if (!child.isMesh) return;
@@ -34,8 +55,8 @@ function cloneLampModel(source) {
     child.castShadow = true;
     child.receiveShadow = true;
     child.material = Array.isArray(child.material)
-      ? child.material.map((material) => material.clone())
-      : child.material.clone();
+      ? child.material.map((mat) => prepareLampMaterial(mat))
+      : prepareLampMaterial(child.material);
   });
 
   return clone;
@@ -43,16 +64,16 @@ function cloneLampModel(source) {
 
 function alignToGround(model, groundY) {
   model.updateMatrixWorld(true);
-
   const box = new THREE.Box3().setFromObject(model);
   model.position.y += groundY - box.min.y;
   model.updateMatrixWorld(true);
-
   return new THREE.Box3().setFromObject(model);
 }
 
 function createGlow(model, box) {
   const height = box.max.y - box.min.y;
+  
+  // Usiamo MeshBasicMaterial che non risente della luce ambientale ed è perfetto per simulare la lampadina accesa
   const glowMaterial = new THREE.MeshBasicMaterial({
     color: glowColor,
     transparent: true,
@@ -60,6 +81,7 @@ function createGlow(model, box) {
   });
   const glow = new THREE.Mesh(glowGeometry, glowMaterial);
 
+  // Posiziona la sfera esattamente dove c'è la lanterna (circa al 78% dell'altezza del modello)
   glow.position.set(0, height * 0.78, 0);
   glow.visible = false;
   model.add(glow);
@@ -67,28 +89,7 @@ function createGlow(model, box) {
   return glow;
 }
 
-function collectEmissiveMaterials(model) {
-  const materials = [];
-
-  model.traverse((child) => {
-    if (!child.isMesh) return;
-
-    const meshMaterials = Array.isArray(child.material)
-      ? child.material
-      : [child.material];
-
-    meshMaterials.forEach((material) => {
-      if (!material || !material.emissive) return;
-      material.emissive.set(0x000000);
-      material.emissiveIntensity = 0;
-      materials.push(material);
-    });
-  });
-
-  return materials;
-}
-
-function addLamp(scene, source, x, z, rotationY, sideOffset, groundY = 0.49) {
+function addLamp(scene, source, x, z, rotationY, sideOffset, groundY = 0.04) {
   const lamp = cloneLampModel(source);
 
   lamp.name = 'path-lamp-post';
@@ -97,25 +98,28 @@ function addLamp(scene, source, x, z, rotationY, sideOffset, groundY = 0.49) {
   lamp.scale.setScalar(1.35);
 
   const box = alignToGround(lamp, groundY);
-  const glow = createGlow(lamp, box);
+  
+  // Calcoliamo l'altezza per posizionare correttamente la luce al posto della sfera
+  const height = box.max.y - box.min.y;
+  
   const pointLight = new THREE.PointLight(lightColor, 0, 18, 2.1);
-
   pointLight.castShadow = true;
   pointLight.shadow.mapSize.set(512, 512);
   pointLight.shadow.camera.near = 0.4;
   pointLight.shadow.camera.far = 18;
   pointLight.shadow.bias = -0.002;
   pointLight.shadow.normalBias = 0.04;
-  pointLight.position.copy(glow.position);
+  
+  // Posizioniamo la luce dove prima c'era la sfera
+  pointLight.position.set(0, height * 0.78, 0);
+  
   lamp.add(pointLight);
   scene.add(lamp);
 
+  // Salviamo solo ciò che ci serve veramente
   lampPosts.push({
     lamp,
-    glow,
-    glowMaterial: glow.material,
     pointLight,
-    emissiveMaterials: collectEmissiveMaterials(lamp),
     sideOffset
   });
 }
@@ -134,7 +138,7 @@ function addLampsAlongPath(scene, source, path) {
   const normalX = directionZ;
   const normalZ = -directionX;
   const sideDistance = path.sideDistance ?? 7.5;
-  const groundY = path.groundY ?? 0.49;
+  const groundY = path.groundY ?? 0.04;
 
   const placements = path.placements ?? Array.from(
     { length: path.count },
@@ -159,19 +163,21 @@ function addLampsAlongPath(scene, source, path) {
 
 export function createLampPosts(scene) {
   lampLoader.load(
-    '/models/stylized_lamp_post.glb',
+    '/models/props_cart_02.glb',
     (gltf) => {
+      const lampSource = gltf.scene.getObjectByName('props_lamppost_01') ?? gltf.scene;
+
       mainWorldLampPaths.forEach((path) => {
-        addLampsAlongPath(scene, gltf.scene, path);
+        addLampsAlongPath(scene, lampSource, path);
       });
 
       mainWorldExtraLamps.forEach((lamp) => {
-        addLamp(scene, gltf.scene, lamp.x, lamp.z, lamp.rotationY, 0);
+        addLamp(scene, lampSource, lamp.x, lamp.z, lamp.rotationY, 0);
       });
     },
     undefined,
     (error) => {
-      console.error('Error loading lamp post model:', error);
+      console.error('Error loading props_cart_02 lamp post model:', error);
     }
   );
 }
@@ -179,16 +185,13 @@ export function createLampPosts(scene) {
 export function updateLampPosts(stormProgress) {
   const activation = THREE.MathUtils.smoothstep(stormProgress, 0.35, 0.85);
 
-  lampPosts.forEach(({ glow, glowMaterial, pointLight, emissiveMaterials }) => {
+  lampPosts.forEach(({ pointLight }) => {
     const isOn = activation > 0.02;
 
-    glow.visible = isOn;
-    glowMaterial.opacity = activation * 0.95;
+    // Gestiamo solo la PointLight ambientale
+    pointLight.color.setHex(lightColor);
+    pointLight.castShadow = isOn;
     pointLight.intensity = activation * 2.2;
-
-    emissiveMaterials.forEach((material) => {
-      material.emissive.copy(glowColor);
-      material.emissiveIntensity = activation * 0.9;
-    });
+    pointLight.shadow.needsUpdate = isOn;
   });
 }
