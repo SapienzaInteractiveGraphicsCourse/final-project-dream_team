@@ -38,7 +38,7 @@ const mainWorldExtraLamps = [
 // Entrambi sono ora vicinissimi al centro dell'isola (236, -253)
 const worldTwoLamps = [
   // Lampione Sinistro: spostato più indietro e leggermente a destra
-  { x: 232.5, z: -259.0, rotationY: Math.PI, groundY: 28.75 },
+  { x: 232.5, z: -260.0, rotationY: -Math.PI/4, groundY: 28.75 },
   // Lampione Destro: recuperato dal vuoto e messo saldamente sull'erba
   { x: 241.5, z: -250.5, rotationY: Math.PI , groundY: 28.75 }
 ];
