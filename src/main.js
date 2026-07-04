@@ -11,7 +11,7 @@ import { createLights } from './base/lights.js';
 import { materials } from './world/materials.js';
 import { createIsland } from './world/island.js';
 import { createIslandVegetation } from './world/vegetation.js';
-import { createPlayer } from './player/schoolBoyPlayer.js';
+import { createPlayer, animatePlayer } from './player/schoolBoyPlayer.js';
 import { createPlayerController } from './controls/playerControls.js';
 import { loadModels, updateModels, modelColliders, modelBounds } from './imported_models/models.js';
 import { updateBook, isBookDelivered } from './imported_models/book.js';
@@ -42,6 +42,9 @@ const canvas = document.querySelector('#bg');
 const scene = createScene();
 const camera = createCamera();
 const renderer = createRenderer(canvas);
+
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Ombre morbide di alta qualità
 
 setupResize(camera, renderer);
 
@@ -362,6 +365,31 @@ function animate() {
     globalStormProgress = Math.min(1.0, globalStormProgress + deltaTime * 0.2); 
   }
   updateLampPosts(globalStormProgress);
+  
+  // NUOVO: Gestione dello spegnimento del Sole e delle sue ombre
+  scene.traverse((child) => {
+    if (child.isLight) {
+      
+      // Se la luce è attaccata a un lampione, ignoriamola (ci pensa updateLampPosts)
+      if (child.parent && child.parent.name === 'path-lamp-post') return;
+
+      // Se è il Sole (DirectionalLight)
+      if (child.isDirectionalLight) {
+        child.intensity = 1.0 * (1.0 - globalStormProgress);
+        child.castShadow = globalStormProgress <= 0.8;
+      } 
+      // Qualsiasi altra luce (AmbientLight, HemisphereLight, ecc.)
+      else {
+        // Abbassiamo tutto in base alla tempesta, lasciando un piccolissimo 0.05 per non avere uno schermo nero al 100%
+        child.intensity = 0.4 * (1.0 - globalStormProgress * 0.95);
+      }
+    }
+  });
+
+  scene.environmentIntensity = 1.0 - globalStormProgress; 
+  if (scene.backgroundBlurriness !== undefined) {
+    scene.backgroundIntensity = 1.0 - globalStormProgress;
+  }
 
   if (isGemDelivered()) {
     if (carpetTravel && carpetTravel.mesh) carpetTravel.mesh.visible = true;

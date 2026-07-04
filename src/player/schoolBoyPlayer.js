@@ -62,6 +62,25 @@ export function createPlayer(scene) {
           if (child.isMesh || child.isSkinnedMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
+          
+            if (child.material) {
+              const oldMaterials = Array.isArray(child.material) ? child.material : [child.material];
+              
+              // RICOSTRUZIONE FORZATA DEI MATERIALI
+              const newMaterials = oldMaterials.map(oldMat => {
+                // Creiamo un materiale completamente nuovo, prendendo solo il colore o la texture dal vecchio
+                return new THREE.MeshStandardMaterial({
+                  color: oldMat.color ? oldMat.color : new THREE.Color(0xffffff),
+                  map: oldMat.map ? oldMat.map : null,
+                  roughness: 0.8, // Rende i vestiti opachi e realistici
+                  metalness: 0.0,
+                  emissive: new THREE.Color(0x000000) // ZERO luce propria
+                });
+              });
+
+              // Sostituiamo i vecchi materiali corrotti con quelli nuovi e puliti
+              child.material = Array.isArray(child.material) ? newMaterials : newMaterials[0];
+            }
           }
         });
 
