@@ -9,6 +9,7 @@ let gemDelivered = false;
 let isPlayerNearGem = false;
 let canTakeGem = false; 
 let gemStartY = 0.8;    
+let gemHiddenAfterPortal = false;
 
 const gemOffset = new THREE.Vector3(-1.2, 1.8, -1.2); 
 const gemTargetPos = new THREE.Vector3();
@@ -26,6 +27,22 @@ document.body.appendChild(gemPrompt);
 export function isCarryingGem() { return hasGem; }
 export function isGemDelivered() { return gemDelivered; }
 
+export function hideGemAfterPortal() {
+  gemHiddenAfterPortal = true;
+  hasGem = false;
+  canTakeGem = false;
+  isPlayerNearGem = false;
+  gemPrompt.classList.remove('is-visible');
+
+  if (gemModel) {
+    gemModel.visible = false;
+  }
+
+  if (gemParticles) {
+    gemParticles.visible = false;
+  }
+}
+
 export function deliverGemToMage() {
   gemDelivered = true;
   hasGem = false;
@@ -40,6 +57,7 @@ export function registerGem(model, scene) {
   gemModel.visible = false; 
   hasGem = false;
   gemDelivered = false;
+  gemHiddenAfterPortal = false;
   isPlayerNearGem = false;
   gemStartY = model.position.y; 
 
@@ -102,6 +120,12 @@ function createGemParticles(scene) {
 
 export function updateGem(deltaTime, player, mageModel) {
   if (!gemModel) return;
+  if (gemHiddenAfterPortal) {
+    gemModel.visible = false;
+    if (gemParticles) gemParticles.visible = false;
+    gemPrompt.classList.remove('is-visible');
+    return;
+  }
 
   if (!gemModel.visible && !hasGem && !gemDelivered) {
     if (isBookDelivered() && isDragonDefeated()) {

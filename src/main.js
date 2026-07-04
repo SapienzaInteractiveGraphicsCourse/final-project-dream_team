@@ -25,14 +25,14 @@ import {
 import { loadShifuTask, startShifuBridgeThanks, updateShifuTask } from './imported_models/shifu.js';
 import { loadWoodTask, updateWoodTask } from './imported_models/wood.js';
 import { isBridgeBuilt, loadBridgeTask, updateBridgeTask } from './imported_models/bridge.js';
-import { createRain, getStormProgress, startStorm, updateRain, updateStorm } from './world/rain.js';
-import { createLampPosts, updateLampPosts } from './world/lampPosts.js';
+import { createRain, startStorm, updateRain, updateStorm } from './world/rain.js';
 import {
   createPortalPositionLogger,
   updatePortalTeleport
 } from './world/portalTeleport.js';
 import { updateTowerFall } from './world/towerFall.js';
 import { createPuzzleMinigame, getPuzzleDifficulties } from './minigame/puzzle.js';
+import { loadFinale, updateFinale } from './world/finale.js';
 // RETTIFICA: Importiamo updateMage per poterlo usare nel ciclo di animazione
 import { updateMage } from './imported_models/mage.js'; 
 
@@ -233,7 +233,7 @@ window.addEventListener('keydown', (event) => {
   if (event.key.toLowerCase() === 'v') {
     manualFirstPerson = !manualFirstPerson;
     setFirstPersonMode(manualFirstPerson);
-    console.log("Visuale manuale cambiata. Prima persona:", manualFirstPerson);
+    console.log('Manual view changed. First person:', manualFirstPerson);
   }
 
   if (event.key.toLowerCase() === 'r') {
@@ -262,11 +262,11 @@ loadModels(scene).then(() => {
     obstacleBounds: modelBounds,
     colliderTargets: modelColliders
   });
-  createLampPosts(scene);
 });
 loadShifuTask(scene);
 loadWoodTask(scene);
 loadBridgeTask(scene);
+loadFinale(scene);
 
 if (debugMode) {
   const axesHelper = new THREE.AxesHelper(100);
@@ -327,28 +327,25 @@ function animate() {
     // Se sta già viaggiando o il tappeto non è ancora sbloccato, nascondi il banner
     carpetPrompt.classList.remove('is-visible');
   }
+  
+  // --- CAMERA AND DIALOGUE HANDLING START ---
 
-  // --- INIZIO BLOCCO GESTIONE TELECAMERA E DIALOGHI ---
-
-  // 1. Aggiorna il Mago e cattura se STA PARLANDO ATTIVAMENTE (mageIsTalking è true)
+  // 1. Update the mage and capture whether he is actively talking.
   const isTalkingToMage = updateMage(deltaTime, playerData.group);
   const isTalkingToShifu = updateShifuTask(deltaTime, playerData.group);
-  // 2. Controlla le condizioni per FORZARE la prima persona.
-  // IMPORTANTE: Forziamo la 1PV SOLO se il mago sta attivamente parlando (isTalkingToMage è true).
-  // Se siamo solo vicini al Mago (canTalkToMage), la visuale resta in terza persona.
+  // 2. Force first person only while a character is actively talking.
   const shouldBeInFirstPerson = 
     isTalkingToMage || 
-    isTalkingToShifu || 
-    (isBridgeBuilt() && shifuThanksTriggered && !window.shifuThanksEnded);
+    isTalkingToShifu;
 
   if (shouldBeInFirstPerson) {
     setFirstPersonMode(true);
   } else {
-    // Quando nessuno sta parlando, la telecamera torna alla modalità scelta dall'utente (di base Terza Persona)
+    // When nobody is talking, restore the user's chosen camera mode.
     setFirstPersonMode(manualFirstPerson);
   }
 
-  // --- FINE BLOCCO GESTIONE TELECAMERA E DIALOGHI ---
+  // --- CAMERA AND DIALOGUE HANDLING END ---
 
   const pos = playerData.group.position;
   if (debugMode) {
@@ -360,9 +357,9 @@ function animate() {
   updateWoodTask(deltaTime, playerData.group);
   updateBridgeTask(deltaTime, playerData.group);
   updatePortalTeleport(playerData.group);
+  updateFinale(deltaTime, playerData.group);
   updateRain(deltaTime, playerData.group);
   updateStorm(deltaTime, scene);
-  updateLampPosts(getStormProgress());
 
   if (isGemDelivered()) {
     if (carpetTravel && carpetTravel.mesh) carpetTravel.mesh.visible = true;
@@ -391,10 +388,6 @@ function animate() {
     shifuThanksTriggered = true;
     startShifuBridgeThanks();
     startStorm(scene);
-    
-    setTimeout(() => {
-       window.shifuThanksEnded = true; 
-    }, 5000); 
   }
 }
 animate();

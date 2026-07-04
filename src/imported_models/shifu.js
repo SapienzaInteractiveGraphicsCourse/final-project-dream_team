@@ -199,7 +199,7 @@ export function loadShifuTask(scene){
     undefined,
 
     (error) => {
-      console.error('Errore caricamento shifu.glb', error);
+      console.error('Error loading shifu.glb', error);
     }
   );
 }
@@ -242,7 +242,7 @@ export function updateShifuTask (deltaTime, player){
     } else if (taskStarted) {
         shifuDialogue.classList.remove('is-visible');
     } else if (canTalkToShifu) {
-        shifuDialogue.textContent = 'Premi E per parlare con Shifu';
+        shifuDialogue.textContent = 'Press E to talk to Shifu';
         shifuDialogue.classList.add('is-visible');
     } else {
         shifuDialogue.classList.remove('is-visible');
