@@ -6,7 +6,8 @@ let mage = null;
 let mageStartY = 0;
 let canTalkToMage = false;
 let mageIsTalking = false;
-let mageTalkTimer = 0;
+let mageMustLeaveBeforeTalkAgain = false;
+let mageCurrentDialogueText = '';
 let mageMaterials = [];
 
 const mageTintColor = new THREE.Color(0xd9eeff);
@@ -61,15 +62,43 @@ function setMageBrightness(strength) {
   });
 }
 
+function getMageDialogueText() {
+  if (isGemDelivered()) {
+    return "Mage: Incredible! The gem is safe and magic has returned! To thank you for saving the island, I gift you my Flying Carpet.";
+  }
+
+  if (isCarryingGem()) {
+    return "Mage: I see you have the gem! Press F to give it to me!";
+  }
+
+  if (isBookDelivered()) {
+    return "Mage: Now the next step is to retrieve the hidden gem inside the castle, which is guarded by a dragon.";
+  }
+
+  if (isCarryingBook()) {
+    return "Mage: Oh, you found the ancient Grimoire! Press F to hand it over to me!";
+  }
+
+  return "Mage: Welcome! Finally you are here. The island has lost its magic and needs your help to restore it. Help us find the enchanted book.";
+}
+
 // Event listener for the E key
 // --- GESTIONE INPUT UNIFICATA PER IL MAGO ---
 window.addEventListener('keydown', (event) => {
   const key = event.key.toLowerCase();
 
   // Tasto E: Serve solo ad attivare il dialogo parlato
-  if (key === 'e' && canTalkToMage) {
+  if (key === 'e' && canTalkToMage && !mageIsTalking) {
     mageIsTalking = true;
-    mageTalkTimer = 4; // Il fumetto resta visibile per 4 secondi
+    mageCurrentDialogueText = getMageDialogueText();
+    return;
+  }
+
+  if (event.key === 'Enter' && mageIsTalking) {
+    mageIsTalking = false;
+    mageMustLeaveBeforeTalkAgain = true;
+    mageDialogue.classList.remove('is-visible');
+    return;
   }
 
   // Tasto F: Gestisce le consegne degli oggetti della quest al mago
@@ -77,7 +106,7 @@ window.addEventListener('keydown', (event) => {
     if (isCarryingGem() && isBookDelivered()) {
       deliverGemToMage(); // Sposta la gemma in orbita intorno al mago
       mageIsTalking = true;
-      mageTalkTimer = 5;  // Estende il tempo per leggere il ringraziamento finale
+      mageCurrentDialogueText = getMageDialogueText();
       console.log("Gem delivered to the Mage!");
     }
   }
@@ -85,7 +114,7 @@ window.addEventListener('keydown', (event) => {
 
 // Main update function for the mage
 export function updateMage(deltaTime, player) {
-  if (!mage) return;
+  if (!mage) return false;
 
   const time = performance.now() * 0.001;
 
@@ -95,36 +124,26 @@ export function updateMage(deltaTime, player) {
 
   const distance = mage.position.distanceTo(player.position);
   const interactionDistance = 4;
+  const resetDistance = interactionDistance + 1.2;
 
-  canTalkToMage = distance < interactionDistance;
+  if (mageMustLeaveBeforeTalkAgain && distance > resetDistance) {
+    mageMustLeaveBeforeTalkAgain = false;
+  }
 
-  if (canTalkToMage) {
+  canTalkToMage = distance < interactionDistance && !mageMustLeaveBeforeTalkAgain;
+
+  if (distance < interactionDistance) {
     mage.lookAt(player.position.x, mage.position.y, player.position.z);
   }
 
   if (mageIsTalking) {
-    mageTalkTimer -= deltaTime;
-    if (mageTalkTimer <= 0) {
-      mageIsTalking = false;
-    }
-  }
-
-  if (mageIsTalking) {
     // Se sta parlando attivamente, mostra SOLO il testo del dialogo parlato
-    if (isGemDelivered()) {
-      mageDialogue.textContent = "Mage: Incredible! The gem is safe and magic has returned! To thank you for saving the island, I gift you my Flying Carpet.";
-    } else if (isCarryingGem()) {
-      mageDialogue.textContent = "Mage: I see you have the gem! Press F to give it to me!";
-    } else if (isBookDelivered()) {
-      mageDialogue.textContent = "Mage: Now the next step is to retrieve the hidden gem inside the castle, which is guarded by a dragon.";
-    } else if (isCarryingBook()) {
-      mageDialogue.textContent = "Mage: Oh, you found the ancient Grimoire! Press F to hand it over to me!";
-    } else {
-      mageDialogue.textContent = "Mage: Welcome! Finally you are here. The island has lost its magic and needs your help to restore it. Help us find the enchanted book.";
-    }
+    mageDialogue.classList.add('story-dialogue');
+    mageDialogue.textContent = mageCurrentDialogueText;
     mageDialogue.classList.add('is-visible');
   } else if (canTalkToMage) {
     // Mostra i prompt di prossimità SOLO se NON sta parlando
+    mageDialogue.classList.remove('story-dialogue');
     if (isCarryingGem()) {
       mageDialogue.textContent = 'Press F to deliver the gem | Press E to talk';
     } else if (isCarryingBook() && !isBookDelivered()) {
@@ -135,6 +154,7 @@ export function updateMage(deltaTime, player) {
     mageDialogue.classList.add('is-visible');
   } else {
     // Se siamo lontani e non parla, nascondi tutto
+    mageDialogue.classList.remove('story-dialogue');
     mageDialogue.classList.remove('is-visible');
   }
 

@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { createTiledPlazaStoneMaterial } from './materials.js';
 
+const textureLoader = new THREE.TextureLoader();
+
 export function createIsland(scene, materials) {
 
   const islandRadius = 130;
@@ -12,6 +14,129 @@ export function createIsland(scene, materials) {
   islandTop.position.y = 0;
   islandTop.receiveShadow = true;
   scene.add(islandTop);
+
+  function createPondShape(radiusX, radiusZ, points = 48, wobble = 0.12) {
+    const shapePoints = [];
+
+    for (let i = 0; i < points; i += 1) {
+      const angle = (i / points) * Math.PI * 2;
+      const wave =
+        1 +
+        Math.sin(angle * 3 + 0.7) * wobble +
+        Math.cos(angle * 5 - 0.4) * wobble * 0.45;
+
+      shapePoints.push(
+        new THREE.Vector2(
+          Math.cos(angle) * radiusX * wave,
+          Math.sin(angle) * radiusZ * wave
+        )
+      );
+    }
+
+    return new THREE.Shape(shapePoints);
+  }
+
+  function applyPondUVs(geometry, radiusX, radiusZ) {
+    const positions = geometry.attributes.position;
+    const uvs = [];
+
+    for (let i = 0; i < positions.count; i += 1) {
+      const u = THREE.MathUtils.clamp(
+        positions.getX(i) / (radiusX * 2.35) + 0.5,
+        0,
+        1
+      );
+      const v = THREE.MathUtils.clamp(
+        positions.getY(i) / (radiusZ * 2.35) + 0.5,
+        0,
+        1
+      );
+
+      uvs.push(u, v);
+    }
+
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  }
+
+  function createPond(x, z, radiusX = 18, radiusZ = 11) {
+    const pondGroup = new THREE.Group();
+    const outerShape = createPondShape(radiusX + 2.4, radiusZ + 2.2, 56, 0.1);
+    const innerShape = createPondShape(radiusX, radiusZ, 56, 0.12);
+    const innerHole = new THREE.Path(innerShape.getPoints().reverse());
+    const bankTexture = textureLoader.load('/ganges_river_pebbles_diff_4k.jpg');
+    const waterTexture = textureLoader.load('/Ice002_2K-JPG_Color.jpg');
+    const waterNormal = textureLoader.load('/Ice002_2K-JPG_NormalGL.jpg');
+    const waterRoughness = textureLoader.load('/Ice002_2K-JPG_Roughness.jpg');
+
+    bankTexture.colorSpace = THREE.SRGBColorSpace;
+    bankTexture.wrapS = THREE.RepeatWrapping;
+    bankTexture.wrapT = THREE.RepeatWrapping;
+    bankTexture.repeat.set(2.4, 1.7);
+    bankTexture.anisotropy = 8;
+    waterTexture.colorSpace = THREE.SRGBColorSpace;
+    waterTexture.wrapS = THREE.RepeatWrapping;
+    waterTexture.wrapT = THREE.RepeatWrapping;
+    waterTexture.repeat.set(1.15, 1);
+    waterTexture.anisotropy = 8;
+    waterNormal.wrapS = THREE.RepeatWrapping;
+    waterNormal.wrapT = THREE.RepeatWrapping;
+    waterNormal.repeat.copy(waterTexture.repeat);
+    waterNormal.anisotropy = 8;
+    waterRoughness.wrapS = THREE.RepeatWrapping;
+    waterRoughness.wrapT = THREE.RepeatWrapping;
+    waterRoughness.repeat.copy(waterTexture.repeat);
+    waterRoughness.anisotropy = 8;
+
+    outerShape.holes.push(innerHole);
+    const bankGeometry = new THREE.ShapeGeometry(outerShape);
+    const waterGeometry = new THREE.ShapeGeometry(innerShape);
+
+    applyPondUVs(bankGeometry, radiusX + 2.4, radiusZ + 2.2);
+    applyPondUVs(waterGeometry, radiusX, radiusZ);
+
+    const bank = new THREE.Mesh(
+      bankGeometry,
+      new THREE.MeshStandardMaterial({
+        map: bankTexture,
+        color: 0xd8c3a2,
+        roughness: 0.92
+      })
+    );
+
+    const water = new THREE.Mesh(
+      waterGeometry,
+      new THREE.MeshPhysicalMaterial({
+        map: waterTexture,
+        normalMap: waterNormal,
+        normalScale: new THREE.Vector2(0.32, 0.32),
+        roughnessMap: waterRoughness,
+        color: 0xa8e4ef,
+        roughness: 0.22,
+        metalness: 0.02,
+        clearcoat: 0.55,
+        clearcoatRoughness: 0.18,
+        transparent: true,
+        opacity: 0.94,
+        side: THREE.DoubleSide
+      })
+    );
+
+    bank.rotation.x = -Math.PI / 2;
+    water.rotation.x = -Math.PI / 2;
+    bank.position.y = 0.07;
+    water.position.y = 0.09;
+    bank.receiveShadow = true;
+    water.receiveShadow = true;
+    water.name = 'pondWater';
+    pondGroup.name = 'worldOnePond';
+    pondGroup.position.set(x, 0, z);
+    pondGroup.add(bank, water);
+    scene.add(pondGroup);
+
+    return pondGroup;
+  }
+
+  const pond = createPond(-42.93, 17.92, 19, 12);
 
   // Creo un gruppo per contenere tutti i pezzi del sentiero
   const pathGroup = new THREE.Group();
@@ -154,6 +279,7 @@ export function createIsland(scene, materials) {
     islandTop,
     pathGroup,
     centralPlaza,
+    pond,
     radius: islandRadius,
   };
 }
