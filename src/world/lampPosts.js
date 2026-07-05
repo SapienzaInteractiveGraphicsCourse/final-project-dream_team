@@ -103,16 +103,11 @@ function addLamp(scene, source, x, z, rotationY, sideOffset, groundY = 0.04) {
   const box = alignToGround(lamp, groundY);
   const height = box.max.y - box.min.y;
   
+  // Usiamo una sola luce per lampione
   const pointLight = new THREE.PointLight(lightColor, 0, 25, 2);
   
-  pointLight.castShadow = true;
-  pointLight.shadow.mapSize.width = 512;
-  pointLight.shadow.mapSize.height = 512;
-  pointLight.shadow.camera.near = 0.5;
-  pointLight.shadow.camera.far = 25; 
-  pointLight.shadow.radius = 4;
-  pointLight.shadow.bias = -0.002;
-  pointLight.shadow.normalBias = 0.05;
+  // SOLUZIONE CRITICA: Nessuna ombra per i lampioni!
+  pointLight.castShadow = false; 
   
   pointLight.position.set(0, height * 0.78, 0);
   
@@ -189,12 +184,11 @@ export function updateLampPosts(stormProgress) {
   const activation = THREE.MathUtils.smoothstep(stormProgress, 0.35, 0.85);
 
   lampPosts.forEach(({ pointLight }) => {
-    const isOn = activation > 0.02;
+    // La luce si accende solo visivamente (intensità), ma senza creare texture d'ombra
     pointLight.color.setHex(lightColor);
-    pointLight.castShadow = isOn;
-    
     pointLight.intensity = activation * 5.0; 
     
-    pointLight.shadow.needsUpdate = isOn;
+    // Assicuriamoci che castShadow resti sempre falso
+    pointLight.castShadow = false; 
   });
 }

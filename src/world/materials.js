@@ -35,7 +35,7 @@ export function createTiledPlazaStoneMaterial(width, length) {
 export const materials = {
   grass: new THREE.MeshStandardMaterial({
     map: grassTexture,
-    roughness: 0.1
+    roughness: 0.9
   }),
 
   rock: new THREE.MeshStandardMaterial({
