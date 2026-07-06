@@ -227,7 +227,7 @@ export function updateBridgeTask(deltaTime, player) {
     isCarryingWood() && player.position.distanceTo(shifuPosition) < buildDistance;
 
   if (canBuildBridge) {
-    bridgePrompt.textContent = 'Premi F per ricostruire il ponte';
+    bridgePrompt.textContent = 'Press F to rebuild the bridge';
     bridgePrompt.classList.add('is-visible');
   } else {
     bridgePrompt.classList.remove('is-visible');

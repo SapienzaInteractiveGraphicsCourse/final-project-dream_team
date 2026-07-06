@@ -8,6 +8,7 @@ let canTakeBook = false;
 let canDeliverBook = false;
 let hasBook = false;
 let bookDelivered = false;
+let bookHiddenAfterPortal = false;
 
 let bookParticles = null;
 let particleData = []; 
@@ -85,6 +86,7 @@ export function registerBook(model, scene) {
   canDeliverBook = false;
   hasBook = false;
   bookDelivered = false;
+  bookHiddenAfterPortal = false;
   createBookParticles(scene);
 }
 
@@ -94,6 +96,22 @@ export function registerBookDeliveryTarget(model) {
 
 export function isCarryingBook() { return hasBook; }
 export function isBookDelivered() { return bookDelivered; }
+
+export function hideBookAfterPortal() {
+  bookHiddenAfterPortal = true;
+  hasBook = false;
+  canTakeBook = false;
+  canDeliverBook = false;
+  bookPrompt.classList.remove('is-visible');
+
+  if (book) {
+    book.visible = false;
+  }
+
+  if (bookParticles) {
+    bookParticles.visible = false;
+  }
+}
 
 window.addEventListener('keydown', (event) => {
   if (event.key.toLowerCase() !== 'f' || !book) return;
@@ -139,6 +157,12 @@ function animateBookParticles(deltaTime) {
 
 export function updateBook(deltaTime, player) {
   if (!book) return;
+  if (bookHiddenAfterPortal) {
+    book.visible = false;
+    if (bookParticles) bookParticles.visible = false;
+    bookPrompt.classList.remove('is-visible');
+    return;
+  }
   const time = performance.now() * 0.001;
 
   if (bookDelivered) {

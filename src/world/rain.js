@@ -232,3 +232,7 @@ export function updateStorm(deltaTime, scene) {
     light.color.copy(color).lerp(stormLightColor, stormProgress);
   });
 }
+
+export function getStormProgress() {
+  return stormProgress;
+}

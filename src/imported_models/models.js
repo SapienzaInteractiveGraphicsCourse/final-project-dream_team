@@ -82,7 +82,7 @@ function loadModel(scene, path, options = {}) {
       model.scale.set(scale, scale, scale);
       model.rotation.y = rotationY;
 
-      // 2. LOGICA DEL SUOLO: Calcoliamo l'altezza corretta basandoci sulla base del modello
+      // 2. Ground logic: compute the correct height from the model base.
       if (!options.floating) {
         const groundY = options.groundY ?? 0.49;
         const box = new THREE.Box3().setFromObject(model);
@@ -94,7 +94,7 @@ function loadModel(scene, path, options = {}) {
       // Applichiamo l'eventuale offset manuale (se presente nelle opzioni)
       model.position.y += options.offsetY ?? 0;
 
-      // 3. REGISTRAZIONE: Ora che il modello è stabilmente sul suolo, lo passiamo a mage.js
+      // 3. Registration: now that the model is on the ground, pass it to mage.js.
       // In questo modo 'mageStartY' salverà la coordinata Y corretta del terreno!
       if (isMage) {
         mage=model;

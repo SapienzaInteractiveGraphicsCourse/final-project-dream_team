@@ -3,7 +3,7 @@ import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 
 const carpetStartPosition = new THREE.Vector3(44, 0.5, -22);
-const otherWorldPosition = new THREE.Vector3(236, 28.4, -253);
+const otherWorldPosition = new THREE.Vector3(237.79, 28.75, -255.19);
 const playerOnCarpetOffset = new THREE.Vector3(0, 0.35, 0);
 const travelSpeed = 0.12;
 const travelArcHeight = 10;

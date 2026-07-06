@@ -11,6 +11,7 @@ let axe = null;
 let wood = null;
 let axeStartY = 0;
 let axeCollider = null;
+let axeLight = null;
 
 let canTakeAxe = false;
 let hasAxe = false;
@@ -19,7 +20,7 @@ let canCollectWood = false;
 let hasWood = false;
 let woodTaskComplete = false;
 
-const axePosition = new THREE.Vector3(242, 29.4, -254);
+const axePosition = new THREE.Vector3(238.21, 30, -260.24);
 const axeBaseRotationY = Math.PI / 2;
 const woodPosition = new THREE.Vector3(240, 29.4, -263);
 const woodGroundScale = new THREE.Vector3(0.02, 0.02, 0.02);
@@ -44,22 +45,37 @@ function removeAxeCollider() {
 }
 
 function updateAxeAnimation() {
-  if (!axe || hasAxe || !axe.visible) return;
+  if (!axe || hasAxe || !axe.visible) {
+    if (axeLight) {
+      axeLight.visible = false;
+    }
+    return;
+  }
 
   const time = performance.now() * 0.001;
   axe.position.y = axeStartY + Math.sin(time * 2.2) * 0.22;
   axe.rotation.y = axeBaseRotationY;
   axe.rotation.z = Math.sin(time * 2.6) * 0.06;
+
+  if (axeLight) {
+    axeLight.visible = true;
+    axeLight.position.copy(axe.position);
+    axeLight.position.y += 2.2 + Math.sin(time * 3) * 0.18;
+    axeLight.intensity = 4.2 + Math.sin(time * 4) * 0.7;
+  }
 }
 
 window.addEventListener('keydown', (event) => {
   if (event.key.toLowerCase() !== 'f') return;
 
-  if (canTakeAxe) {
-    hasAxe = true;
-    axe.visible = false;
-    removeAxeCollider();
-    if (wood) {
+	  if (canTakeAxe) {
+	    hasAxe = true;
+	    axe.visible = false;
+      if (axeLight) {
+        axeLight.visible = false;
+      }
+	    removeAxeCollider();
+	    if (wood) {
       wood.visible = true;
     }
     canTakeAxe = false;
@@ -80,10 +96,15 @@ export function loadWoodTask(scene) {
 
     axe.position.copy(axePosition);
     axe.scale.set(0.04, 0.04, 0.04);
-    axe.rotation.y = axeBaseRotationY;
-    axeStartY = axe.position.y;
+	    axe.rotation.y = axeBaseRotationY;
+	    axeStartY = axe.position.y;
 
-    axeCollider = new THREE.Box3().setFromCenterAndSize(
+      axeLight = new THREE.PointLight(0xfff0b5, 4.2, 9, 1.6);
+      axeLight.position.copy(axe.position);
+      axeLight.position.y += 2.2;
+      scene.add(axeLight);
+
+	    axeCollider = new THREE.Box3().setFromCenterAndSize(
       axePosition,
       new THREE.Vector3(1.6, 2.2, 1.6)
     );
@@ -163,13 +184,13 @@ export function updateWoodTask(deltaTime, player) {
     hasAxe && !hasWood && wood.position.distanceTo(player.position) < 4;
 
   if (canTakeAxe) {
-    woodTaskPrompt.textContent = 'Premi F per prendere l ascia';
+    woodTaskPrompt.textContent = 'Press F to take the axe';
     woodTaskPrompt.classList.add('is-visible');
   } else if (hasAxe && !hasWood && !canCollectWood) {
-    woodTaskPrompt.textContent = 'Vai verso gli alberi per raccogliere la legna';
+    woodTaskPrompt.textContent = 'Go to the trees to collect wood';
     woodTaskPrompt.classList.add('is-visible');
   } else if (canCollectWood) {
-    woodTaskPrompt.textContent = 'Premi F per raccogliere la legna';
+    woodTaskPrompt.textContent = 'Press F to collect the wood';
     woodTaskPrompt.classList.add('is-visible');
   } else {
     woodTaskPrompt.classList.remove('is-visible');

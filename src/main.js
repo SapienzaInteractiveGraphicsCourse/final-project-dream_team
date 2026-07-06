@@ -32,8 +32,11 @@ import {
 } from './world/portalTeleport.js';
 import { updateTowerFall } from './world/towerFall.js';
 import { createPuzzleMinigame, getPuzzleDifficulties } from './minigame/puzzle.js';
-// RETTIFICA: Importiamo updateMage per poterlo usare nel ciclo di animazione
+import { loadFinale, updateFinale } from './world/finale.js';
 import { updateMage } from './imported_models/mage.js'; 
+
+// MODIFICA: Importo le logiche dei lampioni
+import { createLampPosts, updateLampPosts } from './world/lampPosts.js';
 
 const canvas = document.querySelector('#bg');
 const scene = createScene();
@@ -72,12 +75,14 @@ for (let i = 0; i < cloudsNumber; i++) {
 createRain(scene);
 const carpetTravel = createCarpetTravel(scene);
 
+// MODIFICA: Chiamo la creazione dei lampioni nella scena
+createLampPosts(scene);
+
 if (carpetTravel && carpetTravel.mesh) {
   carpetTravel.mesh.visible = false;
 } else if (carpetTravel && carpetTravel.group) {
   carpetTravel.group.visible = false;
 }
-
 
 const carpetPrompt = document.createElement('div');
 carpetPrompt.className = 'interaction-dialogue carpet-dialogue';
@@ -187,9 +192,8 @@ difficultyOverlay.querySelectorAll('[data-difficulty]').forEach((button) => {
   });
 });
 
-// RETTIFICA: Gestione pulita dello stato della telecamera
 let isFirstPerson = false;
-let manualFirstPerson = false; // Ricorda se l'utente ha attivato la prima persona con il tasto 'V'
+let manualFirstPerson = false; 
 const thirdPersonFov = 65;
 const firstPersonFov = 100;
 
@@ -228,11 +232,10 @@ window.addEventListener('keydown', (event) => {
     tryStartCarpetTravel(carpetTravel);
   }
 
-  // RETTIFICA: Quando premi V, aggiorni lo stato manuale inserito dall'utente
   if (event.key.toLowerCase() === 'v') {
     manualFirstPerson = !manualFirstPerson;
     setFirstPersonMode(manualFirstPerson);
-    console.log("Visuale manuale cambiata. Prima persona:", manualFirstPerson);
+    console.log('Manual view changed. First person:', manualFirstPerson);
   }
 
   if (event.key.toLowerCase() === 'r') {
@@ -265,6 +268,7 @@ loadModels(scene).then(() => {
 loadShifuTask(scene);
 loadWoodTask(scene);
 loadBridgeTask(scene);
+loadFinale(scene);
 
 if (debugMode) {
   const axesHelper = new THREE.AxesHelper(100);
@@ -293,6 +297,9 @@ const castleTriggerBox = new THREE.Box3(
     );
 let shifuThanksTriggered = false;
 
+// MODIFICA: Variabile per simulare l'aumento dell'intensità della tempesta da passare ai lampioni
+let globalStormProgress = 0;
+
 // --------------------------------------------------
 // 18. ANIMATION LOOP
 // --------------------------------------------------
@@ -314,7 +321,7 @@ function animate() {
   
   if (carpetObject && carpetObject.visible && !carpetTravel.isTraveling) {
     const distanceToCarpet = playerData.group.position.distanceTo(carpetObject.position);
-    const carpetInteractionDistance = 4; // Raggio di attivazione (uguale a quello dei personaggi)
+    const carpetInteractionDistance = 4;
 
     if (distanceToCarpet < carpetInteractionDistance) {
       carpetPrompt.classList.add('is-visible');
@@ -322,33 +329,18 @@ function animate() {
       carpetPrompt.classList.remove('is-visible');
     }
   } else {
-    // Se sta già viaggiando o il tappeto non è ancora sbloccato, nascondi il banner
     carpetPrompt.classList.remove('is-visible');
   }
   
-  playerController.update(deltaTime, !carpetTravel.isTraveling && !isFalling);
-
-  // --- INIZIO BLOCCO GESTIONE TELECAMERA E DIALOGHI ---
-
-  // 1. Aggiorna il Mago e cattura se STA PARLANDO ATTIVAMENTE (mageIsTalking è true)
   const isTalkingToMage = updateMage(deltaTime, playerData.group);
   const isTalkingToShifu = updateShifuTask(deltaTime, playerData.group);
-  // 2. Controlla le condizioni per FORZARE la prima persona.
-  // IMPORTANTE: Forziamo la 1PV SOLO se il mago sta attivamente parlando (isTalkingToMage è true).
-  // Se siamo solo vicini al Mago (canTalkToMage), la visuale resta in terza persona.
-  const shouldBeInFirstPerson = 
-    isTalkingToMage || 
-    isTalkingToShifu || 
-    (isBridgeBuilt() && shifuThanksTriggered && !window.shifuThanksEnded);
+  const shouldBeInFirstPerson = isTalkingToMage || isTalkingToShifu;
 
   if (shouldBeInFirstPerson) {
     setFirstPersonMode(true);
   } else {
-    // Quando nessuno sta parlando, la telecamera torna alla modalità scelta dall'utente (di base Terza Persona)
     setFirstPersonMode(manualFirstPerson);
   }
-
-  // --- FINE BLOCCO GESTIONE TELECAMERA E DIALOGHI ---
 
   const pos = playerData.group.position;
   if (debugMode) {
@@ -360,15 +352,22 @@ function animate() {
   updateWoodTask(deltaTime, playerData.group);
   updateBridgeTask(deltaTime, playerData.group);
   updatePortalTeleport(playerData.group);
+  updateFinale(deltaTime, playerData.group);
   updateRain(deltaTime, playerData.group);
   updateStorm(deltaTime, scene);
+
+  // MODIFICA: Aggiornamento lampioni basato sullo stato della tempesta
+  if (shifuThanksTriggered) {
+    // La tempesta sale progressivamente fino a 1 nel giro di qualche secondo
+    globalStormProgress = Math.min(1.0, globalStormProgress + deltaTime * 0.2); 
+  }
+  updateLampPosts(globalStormProgress);
 
   if (isGemDelivered()) {
     if (carpetTravel && carpetTravel.mesh) carpetTravel.mesh.visible = true;
     if (carpetTravel && carpetTravel.group) carpetTravel.group.visible = true;
   }
 
-  // --- CASTLE ZONE CHECK ---
   if (isBookDelivered() && !isDragonDefeated() && !isDragonPuzzleActive && !isChoosingDifficulty) {
     if (castleTriggerBox.containsPoint(playerData.group.position)) {
       isInsideCastle = true;
@@ -390,10 +389,6 @@ function animate() {
     shifuThanksTriggered = true;
     startShifuBridgeThanks();
     startStorm(scene);
-    
-    setTimeout(() => {
-       window.shifuThanksEnded = true; 
-    }, 5000); 
   }
 }
 animate();
