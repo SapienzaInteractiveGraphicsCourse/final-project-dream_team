@@ -348,8 +348,6 @@ Project developed for the Interactive Graphics course at **Sapienza University o
 - Gabriel Adam
 - Martina Ligorio
 
----
-
 ## 📚 Course
 
 **Interactive Graphics**  
