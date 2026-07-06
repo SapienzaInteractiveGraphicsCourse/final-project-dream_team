@@ -8,8 +8,9 @@ const DEFAULT_OPTIONS = {
   pathClearance: 4,
   obstacleClearance: 5,
   placementAttempts: 160,
-  castShadow: false,
-  receiveShadow: false,
+  castShadow: true,
+  receiveShadow: true,
+  yOffset: 0,
   seed: 24681357,
   tree: {
     count: 8,
@@ -200,6 +201,14 @@ function isBlockedByObstacles(point, obstacleBoxes) {
   return obstacleBoxes.some((box) => pointIntersectsBoxXZ(point, box));
 }
 
+function alignModelToGround(model, groundY, yOffset) {
+  model.position.y = groundY + yOffset;
+  model.updateMatrixWorld(true);
+
+  const box = new THREE.Box3().setFromObject(model);
+  model.position.y += groundY + yOffset - box.min.y;
+}
+
 function getRandomIslandPoint(random, islandMetrics, islandMargin) {
   const maxRadius = Math.max(islandMetrics.radius - islandMargin, 0);
   const radius = Math.sqrt(random()) * maxRadius;
@@ -282,6 +291,7 @@ function scatterVegetation({
     model.position.set(point.x, islandMetrics.groundY, point.z);
     model.rotation.y = random() * Math.PI * 2;
     model.scale.setScalar(scale);
+    alignModelToGround(model, islandMetrics.groundY, options.yOffset);
     group.add(model);
 
     if (colliderTargets) {
