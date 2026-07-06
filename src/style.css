@@ -91,6 +91,36 @@ canvas {
   pointer-events: none;
 }
 
+.objective-message {
+  position: fixed;
+  bottom: 34px;
+  left: 50%;
+  z-index: 1001;
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 10px 18px;
+  color: #273244;
+  background: rgba(247, 250, 252, 0.62);
+  border: 1px solid rgba(90, 112, 132, 0.22);
+  border-radius: 8px;
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.38);
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.25;
+  text-align: center;
+  opacity: 0;
+  transform: translate(-50%, 10px);
+  transition: opacity 180ms ease, transform 180ms ease;
+  pointer-events: none;
+}
+
+.objective-message.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
 .intro-overlay {
   position: fixed;
   inset: 0;

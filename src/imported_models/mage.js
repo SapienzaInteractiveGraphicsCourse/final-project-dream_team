@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { isBookDelivered, isCarryingBook } from './book.js';
 import { isCarryingGem, isGemDelivered, deliverGemToMage } from './gem.js';
+import { showObjectiveMessage } from '../ui/objectiveMessage.js';
 
 let mage = null;
 let mageStartY = 0;
@@ -8,6 +9,7 @@ let canTalkToMage = false;
 let mageIsTalking = false;
 let mageMustLeaveBeforeTalkAgain = false;
 let mageCurrentDialogueText = '';
+let carpetObjectiveShown = false;
 let mageMaterials = [];
 
 const mageTintColor = new THREE.Color(0xd9eeff);
@@ -95,9 +97,20 @@ window.addEventListener('keydown', (event) => {
   }
 
   if (event.key === 'Enter' && mageIsTalking) {
+    const shouldShowCarpetObjective =
+      isGemDelivered() &&
+      mageCurrentDialogueText.includes('Flying Carpet') &&
+      !carpetObjectiveShown;
+
     mageIsTalking = false;
     mageMustLeaveBeforeTalkAgain = true;
     mageDialogue.classList.remove('is-visible');
+
+    if (shouldShowCarpetObjective) {
+      carpetObjectiveShown = true;
+      showObjectiveMessage('Find the magic carpet.');
+    }
+
     return;
   }
 

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { isBookDelivered } from './book.js';
+import { showObjectiveMessage } from '../ui/objectiveMessage.js';
 import { isDragonDefeated } from './dragon.js';
 
 let gemModel = null;
@@ -10,6 +11,7 @@ let isPlayerNearGem = false;
 let canTakeGem = false; 
 let gemStartY = 0.8;    
 let gemHiddenAfterPortal = false;
+let gemObjectiveShown = false;
 
 const gemOffset = new THREE.Vector3(-1.2, 1.8, -1.2); 
 const gemTargetPos = new THREE.Vector3();
@@ -32,6 +34,7 @@ export function hideGemAfterPortal() {
   hasGem = false;
   canTakeGem = false;
   isPlayerNearGem = false;
+  gemObjectiveShown = false;
   gemPrompt.classList.remove('is-visible');
 
   if (gemModel) {
@@ -46,6 +49,7 @@ export function hideGemAfterPortal() {
 export function deliverGemToMage() {
   gemDelivered = true;
   hasGem = false;
+  gemObjectiveShown = false;
   if (gemModel) {
     gemModel.scale.set(0.55, 0.55, 0.55); 
   }
@@ -59,6 +63,7 @@ export function registerGem(model, scene) {
   gemDelivered = false;
   gemHiddenAfterPortal = false;
   isPlayerNearGem = false;
+  gemObjectiveShown = false;
   gemStartY = model.position.y; 
 
   createGemParticles(scene);
@@ -153,6 +158,11 @@ export function updateGem(deltaTime, player, mageModel) {
   }
 
   if (hasGem) {
+    if (!gemObjectiveShown) {
+      gemObjectiveShown = true;
+      showObjectiveMessage('Return to the mage with the enchanted gem.');
+    }
+
     gemTargetPos.copy(gemOffset).applyMatrix4(player.matrixWorld);
     gemModel.position.lerp(gemTargetPos, deltaTime * 4);
     gemModel.rotation.y += deltaTime * 1.5;
@@ -227,6 +237,7 @@ window.addEventListener('keydown', (event) => {
 
   if (canTakeGem && !hasGem && !gemDelivered) {
     hasGem = true;
+    gemObjectiveShown = false;
     gemModel.scale.set(0.4, 0.4, 0.4); 
 
     import('./models.js').then(({ modelsToLoad }) => {

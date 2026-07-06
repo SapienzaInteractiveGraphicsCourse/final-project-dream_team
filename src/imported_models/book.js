@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { showObjectiveMessage } from '../ui/objectiveMessage.js';
 
 let book = null;
 let deliveryTarget = null;
@@ -126,6 +127,7 @@ window.addEventListener('keydown', (event) => {
     hasBook = true;
     canTakeBook = false;
     bookPrompt.classList.remove('is-visible');
+    showObjectiveMessage('Return to the mage with the ancient Grimoire.');
   }
 });
 

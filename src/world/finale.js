@@ -2,9 +2,8 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const loader = new GLTFLoader();
-const finaleCharacterPath =
-  '/models/musha_a_cute_girl_can_disguise_as_mushroom.glb';
-const finaleCharacterName = 'Musha';
+const finaleCharacterPath = '/models/shrek.glb';
+const finaleCharacterName = 'Shrek';
 const finaleCharacterPosition = new THREE.Vector3(-8.65, 0.40, 34.79);
 const finaleHouseTarget = new THREE.Vector3(-36.04, 0.15, 62.42);
 const finaleWalkRoute = [
@@ -13,8 +12,8 @@ const finaleWalkRoute = [
   new THREE.Vector3(-30.5, 0.15, 58.5),
   finaleHouseTarget
 ];
-const finaleCharacterScale = 0.01;
-const finaleCharacterRotationY = -0.05;
+const finaleCharacterHeight = 4.2;
+const finaleCharacterRotationY = Math.PI / 2;
 const finaleWalkLoops = false;
 
 let finaleStarted = false;
@@ -39,11 +38,11 @@ let flynnWalkTargetIndex = 0;
 const flynnInteractionDistance = 4;
 const flynnWalkSpeed = 2.2;
 const flynnDialogueText =
-  'Musha: It is raining. Come with me to my house for the night.';
+  'Shrek: It is raining. Come with me to my house for the night.';
 
 const flynnDialogue = document.createElement('div');
 flynnDialogue.className = 'interaction-dialogue';
-flynnDialogue.textContent = 'Press E to talk to Musha';
+flynnDialogue.textContent = 'Press E to talk to Shrek';
 document.body.appendChild(flynnDialogue);
 
 window.addEventListener('keydown', (event) => {
@@ -178,65 +177,43 @@ function settleFlynnIdle() {
 function animateFlynnWalk(time) {
   resetFlynnPose();
 
-  const swing = Math.sin(time * 8);
-  const oppositeSwing = Math.sin(time * 8 + Math.PI);
+  const swing = Math.sin(time * 5.8);
+  const oppositeSwing = -swing;
   const step = Math.abs(swing);
-  const armDown = 0.35;
 
   if (flynnBodyParts.hips) {
-    flynnBodyParts.hips.rotation.x += step * 0.08;
-    flynnBodyParts.hips.rotation.z += Math.sin(time * 4) * 0.08;
-  }
-
-  if (flynnBodyParts.pelvis) {
-    flynnBodyParts.pelvis.rotation.x += step * 0.08;
-    flynnBodyParts.pelvis.rotation.y += swing * 0.08;
+    flynnBodyParts.hips.rotation.z += Math.sin(time * 2.9) * 0.018;
   }
 
   if (flynnBodyParts.spine) {
-    flynnBodyParts.spine.rotation.x += step * 0.06;
-    flynnBodyParts.spine.rotation.z += -swing * 0.1;
+    flynnBodyParts.spine.rotation.z += -swing * 0.018;
   }
 
-  if (flynnBodyParts.neck) {
-    flynnBodyParts.neck.rotation.z += swing * 0.05;
+  if (flynnBodyParts.chest) {
+    flynnBodyParts.chest.rotation.z += -swing * 0.018;
   }
 
   if (flynnBodyParts.head) {
-    flynnBodyParts.head.rotation.y += Math.sin(time * 2) * 0.12;
+    flynnBodyParts.head.rotation.y += Math.sin(time * 2) * 0.08;
   }
 
-  swingBones(flynnBodyParts.leftArm, 'x', armDown + oppositeSwing * 0.85);
-  swingBones(flynnBodyParts.rightArm, 'x', armDown + swing * 0.85);
-  swingBones(flynnBodyParts.leftArm, 'y', oppositeSwing * 0.35);
-  swingBones(flynnBodyParts.rightArm, 'y', swing * 0.35);
-  swingBones(flynnBodyParts.leftArm, 'z', oppositeSwing * 0.45);
-  swingBones(flynnBodyParts.rightArm, 'z', swing * 0.45);
+  swingBones(flynnBodyParts.rightUpLeg, 'x', swing * 0.44);
+  swingBones(flynnBodyParts.leftUpLeg, 'x', oppositeSwing * 0.44);
+  swingBones(flynnBodyParts.rightLeg, 'x', Math.max(0, -swing) * 0.36);
+  swingBones(flynnBodyParts.leftLeg, 'x', Math.max(0, swing) * 0.36);
+  swingBones(flynnBodyParts.rightFoot, 'x', Math.max(0, swing) * 0.14);
+  swingBones(flynnBodyParts.leftFoot, 'x', Math.max(0, oppositeSwing) * 0.14);
 
-  swingBones(flynnBodyParts.leftForeArm, 'x', Math.max(0, oppositeSwing) * 0.55);
-  swingBones(flynnBodyParts.rightForeArm, 'x', Math.max(0, swing) * 0.55);
-  swingBones(flynnBodyParts.leftForeArm, 'z', oppositeSwing * 0.25);
-  swingBones(flynnBodyParts.rightForeArm, 'z', swing * 0.25);
-
-  swingBones(flynnBodyParts.leftHand, 'x', oppositeSwing * 0.22);
-  swingBones(flynnBodyParts.rightHand, 'x', swing * 0.22);
-
-  swingBones(flynnBodyParts.leftUpLeg, 'x', swing * 0.95);
-  swingBones(flynnBodyParts.rightUpLeg, 'x', oppositeSwing * 0.95);
-  swingBones(flynnBodyParts.leftUpLeg, 'y', swing * 0.18);
-  swingBones(flynnBodyParts.rightUpLeg, 'y', oppositeSwing * 0.18);
-  swingBones(flynnBodyParts.leftUpLeg, 'z', swing * 0.35);
-  swingBones(flynnBodyParts.rightUpLeg, 'z', oppositeSwing * 0.35);
-
-  swingBones(flynnBodyParts.leftLeg, 'x', Math.max(0, -swing) * 0.75);
-  swingBones(flynnBodyParts.rightLeg, 'x', Math.max(0, -oppositeSwing) * 0.75);
-  swingBones(flynnBodyParts.leftLeg, 'z', Math.max(0, swing) * 0.35);
-  swingBones(flynnBodyParts.rightLeg, 'z', Math.max(0, oppositeSwing) * 0.35);
-
-  swingBones(flynnBodyParts.leftFoot, 'x', Math.max(0, swing) * 0.45);
-  swingBones(flynnBodyParts.rightFoot, 'x', Math.max(0, oppositeSwing) * 0.45);
-  swingBones(flynnBodyParts.leftFoot, 'z', Math.max(0, -swing) * 0.25);
-  swingBones(flynnBodyParts.rightFoot, 'z', Math.max(0, -oppositeSwing) * 0.25);
+  swingBones(flynnBodyParts.rightShoulder, 'z', oppositeSwing * 0.16);
+  swingBones(flynnBodyParts.leftShoulder, 'z', swing * 0.16);
+  swingBones(flynnBodyParts.rightArm, 'x', 0.22);
+  swingBones(flynnBodyParts.leftArm, 'x', -0.22);
+  swingBones(flynnBodyParts.rightArm, 'z', oppositeSwing * 0.42);
+  swingBones(flynnBodyParts.leftArm, 'z', swing * 0.42);
+  swingBones(flynnBodyParts.rightForeArm, 'z', Math.max(0, oppositeSwing) * 0.12);
+  swingBones(flynnBodyParts.leftForeArm, 'z', Math.max(0, swing) * 0.12);
+  swingBones(flynnBodyParts.rightHand, 'z', oppositeSwing * 0.04);
+  swingBones(flynnBodyParts.leftHand, 'z', swing * 0.04);
 }
 
 function updateFlynnWalk(deltaTime, time) {
@@ -350,15 +327,6 @@ export function loadFinale(scene) {
       flynnBones = [];
       flynnSkinnedMesh = null;
 
-      flynn.position.copy(finaleCharacterPosition);
-      flynn.scale.setScalar(finaleCharacterScale);
-      flynn.rotation.y = finaleCharacterRotationY;
-      flynn.visible = false;
-
-      const box = new THREE.Box3().setFromObject(flynn);
-      flynn.position.y += finaleCharacterPosition.y - box.min.y;
-      flynnStartY = flynn.position.y;
-
       flynn.traverse((child) => {
         if (child.isBone) {
           flynnBones.push(child);
@@ -389,28 +357,43 @@ export function loadFinale(scene) {
         }
       });
 
-      if (!flynnBones.length && flynnSkinnedMesh) {
+      if (flynnSkinnedMesh?.skeleton) {
         flynnBones = flynnSkinnedMesh.skeleton.bones;
       }
 
+      const box = new THREE.Box3().setFromObject(flynn);
+      const size = box.getSize(new THREE.Vector3());
+      const scale = size.y > 0 ? finaleCharacterHeight / size.y : 1;
+      flynn.scale.setScalar(scale);
+      flynn.position.copy(finaleCharacterPosition);
+      flynn.rotation.y = finaleCharacterRotationY;
+      flynn.visible = false;
+
+      const scaledBox = new THREE.Box3().setFromObject(flynn);
+      flynn.position.y += finaleCharacterPosition.y - scaledBox.min.y;
+      flynnStartY = flynn.position.y;
+
       flynnBodyParts = {
-        hips: findFlynnBone('hips_0549') || findFlynnBone('root_07'),
-        pelvis: findFlynnBone('def-pelvis'),
-        spine: findFlynnBone('def-spine.003') || findFlynnBone('def-spine_012'),
-        head: findFlynnBone('head_033'),
-        neck: findFlynnBone('neck_027'),
-        leftArm: findFlynnBone('def-upper_arm.l_0356'),
-        rightArm: findFlynnBone('def-upper_arm.r_0461'),
-        leftForeArm: findFlynnBone('def-forearm.l_0358'),
-        rightForeArm: findFlynnBone('def-forearm.r_0442'),
-        leftHand: findFlynnBone('def-hand.l_0360'),
-        rightHand: findFlynnBone('def-hand.r_0465'),
-        leftUpLeg: findFlynnBone('def-thigh.l_0745'),
-        rightUpLeg: findFlynnBone('def-thigh.r_0776'),
-        leftLeg: findFlynnBone('def-shin.l_0747'),
-        rightLeg: findFlynnBone('def-shin.r_0778'),
-        leftFoot: findFlynnBone('def-foot.l_0749'),
-        rightFoot: findFlynnBone('def-foot.r_0780')
+        hips: flynnBones[3] || null,
+        pelvis: flynnBones[4] || null,
+        spine: flynnBones[13] || null,
+        chest: flynnBones[15] || null,
+        neck: flynnBones[16] || null,
+        head: flynnBones[17] || null,
+        rightUpLeg: flynnBones[5] || null,
+        rightLeg: flynnBones[6] || null,
+        rightFoot: flynnBones[7] || null,
+        leftUpLeg: flynnBones[9] || null,
+        leftLeg: flynnBones[10] || null,
+        leftFoot: flynnBones[11] || null,
+        rightShoulder: flynnBones[56] || null,
+        rightArm: flynnBones[57] || null,
+        rightForeArm: flynnBones[58] || null,
+        rightHand: flynnBones[59] || null,
+        leftShoulder: flynnBones[78] || null,
+        leftArm: flynnBones[79] || null,
+        leftForeArm: flynnBones[80] || null,
+        leftHand: flynnBones[81] || null
       };
       flynnInitialRotations = saveInitialRotations(flynnBodyParts);
       setupFlynnAnimations(gltf);
