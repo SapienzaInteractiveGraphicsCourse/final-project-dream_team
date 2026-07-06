@@ -43,6 +43,56 @@ const scene = createScene();
 const camera = createCamera();
 const renderer = createRenderer(canvas);
 
+// 1. Crea l'AudioListener e attaccalo alla telecamera
+const listener = new THREE.AudioListener();
+camera.add(listener);
+
+// 2. Crea un oggetto Audio globale (per la musica di sottofondo, non posizionale)
+const backgroundMusic = new THREE.Audio(listener);
+
+// Aggiungiamo questa variabile per sapere se il giocatore ha già cliccato
+let hasUserInteracted = false; 
+const audioLoader = new THREE.AudioLoader();
+console.log("Inizio a cercare il file musicale...");
+
+audioLoader.load(
+  '/music/Medieval_Vol.26.mp3',
+  function(buffer) {
+    console.log("SUCCESSO! Il file audio è stato caricato e decodificato.");
+    backgroundMusic.setBuffer(buffer);
+    backgroundMusic.setLoop(true); 
+    backgroundMusic.setVolume(0.4); 
+    
+    if (hasUserInteracted && listener.context.state !== 'suspended') {
+      backgroundMusic.play();
+    }
+  },
+  function(xhr) {
+    // Questo ti mostra la percentuale di caricamento
+    console.log('Scaricamento audio: ' + Math.round(xhr.loaded / xhr.total * 100) + '%');
+  },
+  function(err) {
+    console.error('ERRORE GRAVE: Non riesco a trovare il file /music/Medieval_Vol.26.mp3');
+    console.error('Assicurati che la cartella "music" sia dentro la cartella "public" del progetto!');
+  }
+);
+
+// --- EFFETTO SONORO COLPO MAGICO ---
+const dragonHitSound = new THREE.Audio(listener);
+
+audioLoader.load(
+  '/music/dragon_hit.wav', 
+  function(buffer) {
+    dragonHitSound.setBuffer(buffer);
+    dragonHitSound.setLoop(false); 
+    dragonHitSound.setVolume(0.8); 
+  },
+  undefined,
+  function(err) {
+    console.error('Errore nel caricamento del suono del drago. Assicurati che il file si chiami esattamente dragon_hit.wav');
+  }
+);
+
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Ombre morbide di alta qualità
 
@@ -188,10 +238,24 @@ function attackDragon() {
 }
 
 difficultyOverlay.querySelectorAll('[data-difficulty]').forEach((button) => {
-  button.addEventListener('click', () => {
+  // 1. Aggiunto "async" qui!
+  button.addEventListener('click', async () => { 
     selectedDifficulty = button.dataset.difficulty;
     isChoosingDifficulty = false;
     difficultyOverlay.classList.remove('is-visible');
+
+    // 2. Aggiunto questo per avvisare che il giocatore ha cliccato
+    hasUserInteracted = true; 
+
+    // 3. Aggiunto "await" per aspettare davvero il via libera del browser
+    if (listener.context.state === 'suspended') {
+      await listener.context.resume();
+    }
+    
+    // Se la musica è stata caricata e non sta già suonando, avviala
+    if (backgroundMusic.buffer && !backgroundMusic.isPlaying) {
+      backgroundMusic.play();
+    }
   });
 });
 
