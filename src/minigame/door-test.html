@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Door Minigame Test</title>
+
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e1e2f, #3b2f63);
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding-top: 80px;
+        }
+
+        h1 {
+            color: #ffd76a;
+        }
+
+        p {
+            font-size: 18px;
+        }
+
+        button {
+            padding: 14px 24px;
+            font-size: 18px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: #ffd76a;
+            color: #222;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #ffeb9a;
+        }
+
+        #door-minigame-overlay {
+            position: fixed;
+            inset: 0;
+
+            display: none;
+            justify-content: center;
+            align-items: center;
+
+            background: rgba(0, 0, 0, 0.65);
+            z-index: 999;
+        }
+
+        #door-minigame-box {
+            width: 430px;
+            padding: 30px;
+
+            background: rgba(24, 22, 40, 0.98);
+            border: 2px solid #ffd76a;
+            border-radius: 20px;
+
+            box-shadow: 0 0 35px rgba(255, 215, 106, 0.7);
+        }
+
+        #door-minigame-box h2 {
+            margin-top: 0;
+            color: #ffd76a;
+        }
+
+        #sequence-container {
+            margin: 28px 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .door-key {
+            display: inline-block;
+            min-width: 45px;
+            padding: 12px 14px;
+            margin: 5px;
+
+            background: #353554;
+            color: white;
+
+            border-radius: 10px;
+            border: 2px solid transparent;
+        }
+
+        .door-key.current {
+            background: #6a5acd;
+            border-color: #c9c0ff;
+            box-shadow: 0 0 16px rgba(180, 165, 255, 0.9);
+        }
+
+        .door-key.completed {
+            background: #2f9e44;
+            border-color: #8ce99a;
+        }
+
+        #feedback-text {
+            min-height: 26px;
+            font-size: 18px;
+            color: #ffd76a;
+            font-weight: bold;
+        }
+
+        #close-button {
+            margin-top: 20px;
+            background: #444;
+            color: white;
+            font-size: 15px;
+        }
+
+        #close-button:hover {
+            background: #666;
+        }
+
+        #result-message {
+            margin-top: 30px;
+            font-size: 22px;
+            color: #8ce99a;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Door Minigame Test</h1>
+
+    <p>
+        Press the button to start the door minigame.
+        Then repeat the magic sequence shown on screen.
+    </p>
+
+    <button id="start-button">Start Door Minigame</button>
+
+    <div id="result-message"></div>
+
+    <div id="door-minigame-overlay">
+        <div id="door-minigame-box">
+            <h2>Magic Door Lock</h2>
+
+            <p>Repeat the magical key sequence to open the door.</p>
+
+            <div id="sequence-container"></div>
+
+            <p id="feedback-text">Press the first key...</p>
+
+            <button id="close-button">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        // ===============================
+        // DOOR MINIGAME SETTINGS
+        // ===============================
+
+        // Sequence required to open the door.
+        // The player must press these keys in this exact order.
+        const doorSequence = ["w", "a", "s", "d"];
+
+        // Current position in the sequence.
+        let currentIndex = 0;
+
+        // True only while the minigame is active.
+        let isMinigameActive = false;
+
+        // ===============================
+        // HTML ELEMENTS
+        // ===============================
+
+        const startButton = document.getElementById("start-button");
+        const closeButton = document.getElementById("close-button");
+        const overlay = document.getElementById("door-minigame-overlay");
+        const sequenceContainer = document.getElementById("sequence-container");
+        const feedbackText = document.getElementById("feedback-text");
+        const resultMessage = document.getElementById("result-message");
+
+        // ===============================
+        // START MINIGAME
+        // ===============================
+
+        function startDoorMinigame() {
+            // Activate the minigame.
+            isMinigameActive = true;
+
+            // Reset the sequence progress.
+            currentIndex = 0;
+
+            // Clear previous final message.
+            resultMessage.textContent = "";
+
+            // Show the minigame overlay.
+            overlay.style.display = "flex";
+
+            // Update text and sequence.
+            feedbackText.textContent = "Press the first key...";
+            updateSequenceUI();
+        }
+
+        // ===============================
+        // STOP MINIGAME
+        // ===============================
+
+        function stopDoorMinigame() {
+            // Deactivate the minigame.
+            isMinigameActive = false;
+
+            // Reset progress.
+            currentIndex = 0;
+
+            // Hide overlay.
+            overlay.style.display = "none";
+        }
+
+        // ===============================
+        // HANDLE KEYBOARD INPUT
+        // ===============================
+
+        function handleKeyPress(event) {
+            // Ignore keyboard input if the minigame is not active.
+            if (!isMinigameActive) return;
+
+            // Convert pressed key to lowercase.
+            const pressedKey = event.key.toLowerCase();
+
+            // Accept only W, A, S, D.
+            if (!["w", "a", "s", "d"].includes(pressedKey)) {
+                return;
+            }
+
+            // Get the expected key for this step.
+            const expectedKey = doorSequence[currentIndex];
+
+            // If the player pressed the correct key.
+            if (pressedKey === expectedKey) {
+                currentIndex++;
+
+                feedbackText.textContent = "Correct!";
+                updateSequenceUI();
+
+                // If the entire sequence is completed.
+                if (currentIndex === doorSequence.length) {
+                    feedbackText.textContent = "The magic lock opens!";
+
+                    setTimeout(function () {
+                        completeDoorMinigame();
+                    }, 700);
+                }
+            } 
+            
+            // If the player pressed the wrong key.
+            else {
+                currentIndex = 0;
+
+                feedbackText.textContent = "Wrong key! Start again.";
+                updateSequenceUI();
+            }
+        }
+
+        // ===============================
+        // UPDATE SEQUENCE UI
+        // ===============================
+
+        function updateSequenceUI() {
+            // Clear the current sequence display.
+            sequenceContainer.innerHTML = "";
+
+            doorSequence.forEach(function (key, index) {
+                const keyElement = document.createElement("span");
+
+                keyElement.classList.add("door-key");
+                keyElement.textContent = key.toUpperCase();
+
+                // Keys already completed become green.
+                if (index < currentIndex) {
+                    keyElement.classList.add("completed");
+                }
+
+                // Current key becomes purple.
+                if (index === currentIndex) {
+                    keyElement.classList.add("current");
+                }
+
+                sequenceContainer.appendChild(keyElement);
+
+                // Add arrows between keys.
+                if (index < doorSequence.length - 1) {
+                    const arrow = document.createElement("span");
+                    arrow.textContent = " → ";
+                    sequenceContainer.appendChild(arrow);
+                }
+            });
+        }
+
+        // ===============================
+        // COMPLETE MINIGAME
+        // ===============================
+
+        function completeDoorMinigame() {
+            stopDoorMinigame();
+
+            resultMessage.textContent = "Door opened! The player can enter the house.";
+        }
+
+        // ===============================
+        // EVENT LISTENERS
+        // ===============================
+
+        startButton.addEventListener("click", startDoorMinigame);
+        closeButton.addEventListener("click", stopDoorMinigame);
+        window.addEventListener("keydown", handleKeyPress);
+    </script>
+</body>
+</html>
