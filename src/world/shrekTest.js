@@ -121,8 +121,8 @@ function animateShrekWalk(time) {
   rotatePart(shrekParts.rightShoulder, 'z', oppositeSwing * 0.16);
   rotatePart(shrekParts.leftShoulder, 'z', swing * 0.16);
 
-  rotatePart(shrekParts.rightArm, 'x', 0.22);
-  rotatePart(shrekParts.leftArm, 'x', -0.22);
+  rotatePart(shrekParts.rightArm, 'x', 0.48);
+  rotatePart(shrekParts.leftArm, 'x', -0.48);
   rotatePart(shrekParts.rightArm, 'z', oppositeSwing * 0.42);
   rotatePart(shrekParts.leftArm, 'z', swing * 0.42);
 

@@ -26,8 +26,8 @@ function saveInitialRotations(parts) {
 
 export function createPlayer(scene) {
   const player = new THREE.Group();
-  player.position.set(0, 0.15, 26);  // world 2 tower position
-  //player.position.set(236, 28.75, -253);
+  // player.position.set(0, 0.15, 26);  // world 2 tower position
+  player.position.set(236, 28.75, -253);
   player.rotation.y = 0;
   scene.add(player);
 

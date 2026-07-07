@@ -33,6 +33,7 @@ import {
 import { updateTowerFall } from './world/towerFall.js';
 import { createPuzzleMinigame, getPuzzleDifficulties } from './minigame/puzzle.js';
 import { loadFinale, updateFinale } from './world/finale.js';
+import { loadDonkey, updateDonkey } from './world/donkey.js';
 // RETTIFICA: Importiamo updateMage per poterlo usare nel ciclo di animazione
 import { updateMage } from './imported_models/mage.js'; 
 
@@ -289,6 +290,7 @@ loadShifuTask(scene);
 loadWoodTask(scene);
 loadBridgeTask(scene);
 loadFinale(scene);
+loadDonkey(scene);
 
 if (debugMode) {
   const axesHelper = new THREE.AxesHelper(100);
@@ -377,7 +379,7 @@ function animate() {
   // 1. Update the mage and capture whether he is actively talking.
   const isTalkingToMage = updateMage(deltaTime, playerData.group);
   const isTalkingToShifu = updateShifuTask(deltaTime, playerData.group);
-  const isTalkingToFlynn = updateFinale(deltaTime, playerData.group);
+  const isTalkingToFlynn = updateFinale(deltaTime, playerData.group, camera);
   // 2. Force first person only while a character is actively talking.
   const shouldBeInFirstPerson = 
     isTalkingToMage || 
@@ -402,6 +404,7 @@ function animate() {
   updateBook(deltaTime, playerData.group);
   updateWoodTask(deltaTime, playerData.group);
   updateBridgeTask(deltaTime, playerData.group);
+  updateDonkey(deltaTime, playerData.group);
   updatePortalTeleport(playerData.group);
   updateRain(deltaTime, playerData.group);
   updateStorm(deltaTime, scene);
