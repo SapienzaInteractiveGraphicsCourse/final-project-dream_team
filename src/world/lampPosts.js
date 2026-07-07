@@ -7,6 +7,9 @@ const lampPosts = [];
 const glowGeometry = new THREE.SphereGeometry(0.4, 16, 16); 
 const glowColor = new THREE.Color(0xffc36a);
 const lightColor = 0xffb35a;
+const lampLightDistance = 42;
+const lampLightDecay = 2;
+const lampShadowMapSize = 512;
 
 // lampposts on main street
 const mainWorldLampPaths = [
@@ -30,8 +33,7 @@ const mainWorldLampPaths = [
 
 const mainWorldExtraLamps = [
   { x: 36, z: -18, rotationY: Math.PI },
-  { x: 26, z: -32, rotationY: 0 },           
-  //{ x: -12, z: -48, rotationY: -Math.PI / 4 }  
+  { x: 26, z: -32, rotationY: 0 },
 ];
 
 const worldTwoLamps = [
@@ -59,7 +61,7 @@ function cloneLampModel(source) {
 
   clone.traverse((child) => {
     if (!child.isMesh) return;
-    child.castShadow = false; 
+    child.castShadow = true;
     child.receiveShadow = true;
     child.material = Array.isArray(child.material)
       ? child.material.map((mat) => prepareLampMaterial(mat))
@@ -69,12 +71,95 @@ function cloneLampModel(source) {
   return clone;
 }
 
+function configureLampShadow(pointLight) {
+  pointLight.castShadow = true;
+  pointLight.shadow.mapSize.set(lampShadowMapSize, lampShadowMapSize);
+  pointLight.shadow.camera.near = 0.25;
+  pointLight.shadow.camera.far = pointLight.distance;
+  pointLight.shadow.bias = -0.001;
+  pointLight.shadow.normalBias = 0.04;
+}
+
+function skipOwnLampShadow(lamp, pointLight) {
+  pointLight.shadow.camera.userData.skipLampUuid = lamp.uuid;
+
+  lamp.traverse((child) => {
+    if (!child.isMesh) return;
+
+    const previousBeforeShadow = child.onBeforeShadow;
+    const previousAfterShadow = child.onAfterShadow;
+
+    child.onBeforeShadow = function onBeforeLampShadow(
+      renderer,
+      object,
+      camera,
+      shadowCamera,
+      geometry,
+      depthMaterial,
+      group
+    ) {
+      previousBeforeShadow.call(this, renderer, object, camera, shadowCamera, geometry, depthMaterial, group);
+
+      if (shadowCamera.userData.skipLampUuid !== lamp.uuid) return;
+
+      child.userData.lampShadowMaterialState = {
+        colorWrite: depthMaterial.colorWrite,
+        depthWrite: depthMaterial.depthWrite,
+        depthTest: depthMaterial.depthTest
+      };
+
+      depthMaterial.colorWrite = false;
+      depthMaterial.depthWrite = false;
+      depthMaterial.depthTest = false;
+    };
+
+    child.onAfterShadow = function onAfterLampShadow(
+      renderer,
+      object,
+      camera,
+      shadowCamera,
+      geometry,
+      depthMaterial,
+      group
+    ) {
+      const state = child.userData.lampShadowMaterialState;
+
+      if (state) {
+        depthMaterial.colorWrite = state.colorWrite;
+        depthMaterial.depthWrite = state.depthWrite;
+        depthMaterial.depthTest = state.depthTest;
+        delete child.userData.lampShadowMaterialState;
+      }
+
+      previousAfterShadow.call(this, renderer, object, camera, shadowCamera, geometry, depthMaterial, group);
+    };
+  });
+}
+
 function alignToGround(model, groundY) {
   model.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(model);
   model.position.y += groundY - box.min.y;
   model.updateMatrixWorld(true);
   return new THREE.Box3().setFromObject(model);
+}
+
+function getLampLightWorldPosition(lamp, box) {
+  const height = box.max.y - box.min.y;
+  const lanternMinY = box.min.y + height * 0.65;
+  const lanternBox = new THREE.Box3();
+
+  lamp.traverse((child) => {
+    if (!child.isMesh) return;
+
+    const childBox = new THREE.Box3().setFromObject(child);
+    if (childBox.min.y >= lanternMinY) {
+      lanternBox.union(childBox);
+    }
+  });
+
+  const lightBox = lanternBox.isEmpty() ? box : lanternBox;
+  return lightBox.getCenter(new THREE.Vector3());
 }
 
 function createGlow(model, box) {
@@ -99,13 +184,13 @@ function addLamp(scene, source, x, z, rotationY, sideOffset, groundY = 0.04) {
   lamp.scale.setScalar(1.35);
 
   const box = alignToGround(lamp, groundY);
-  const height = box.max.y - box.min.y;
   
-  const pointLight = new THREE.PointLight(lightColor, 0, 25, 2);
-  
-  pointLight.castShadow = false; 
-  
-  pointLight.position.set(0, height * 0.78, 0);
+  const pointLight = new THREE.PointLight(lightColor, 0, lampLightDistance, lampLightDecay);
+  configureLampShadow(pointLight);
+  skipOwnLampShadow(lamp, pointLight);
+
+  const lightWorldPosition = getLampLightWorldPosition(lamp, box);
+  pointLight.position.copy(lamp.worldToLocal(lightWorldPosition));
   
   lamp.add(pointLight);
   scene.add(lamp);
@@ -180,11 +265,8 @@ export function updateLampPosts(stormProgress) {
   const activation = THREE.MathUtils.smoothstep(stormProgress, 0.35, 0.85);
 
   lampPosts.forEach(({ pointLight }) => {
-    // La luce si accende solo visivamente (intensità), ma senza creare texture d'ombra
     pointLight.color.setHex(lightColor);
-    pointLight.intensity = activation * 5.0;  // TODO: change intesity
-    
-    // Assicuriamoci che castShadow resti sempre falso
-    pointLight.castShadow = false; 
+    pointLight.intensity = activation * 10.0;  // TODO: change intesity
+    pointLight.castShadow = activation > 0.01;
   });
 }

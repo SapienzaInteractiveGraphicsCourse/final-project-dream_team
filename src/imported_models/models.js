@@ -221,11 +221,11 @@ export const modelsToLoad = [
   },
   {
     path: '/models/FantasyHouse.glb',
-    x: 15,
+    x: -22,
     y: 0.45,
-    z: -15,
+    z: 35,
     scale: 5,
-    rotationY: Math.PI / 2,
+    rotationY: Math.PI / 4,
     groundY: 0.49,
     collider: false
   },
