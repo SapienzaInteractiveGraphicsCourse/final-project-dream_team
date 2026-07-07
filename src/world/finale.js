@@ -17,6 +17,9 @@ const finaleWalkRoute = [
 const finaleCharacterHeight = 4.2;
 const finaleCharacterRotationY = Math.PI / 2;
 const finaleWalkLoops = false;
+const finaleGreetingFaceHeight = 3.35;
+const finaleGreetingCameraHeight = 3.05;
+const finaleGreetingCameraDistance = 7.2;
 
 let finaleStarted = false;
 let flynn = null;
@@ -82,7 +85,7 @@ endingOverlay.innerHTML = `
   <section class="ending-panel" role="dialog" aria-modal="true" aria-labelledby="ending-title">
     <p class="ending-kicker">The morning returns</p>
     <h1 id="ending-title">The End</h1>
-    <p>The storm has passed, Shrek is safe at home, and the adventure can begin again.</p>
+    <p>You have helped all the inhabitants of the Lost Magic Isles and restored hope to the kingdom. Now, your journey is not over: it is time to continue your adventure across the world.</p>
     <button class="ending-restart-button" type="button">Restart</button>
   </section>
 `;
@@ -165,7 +168,7 @@ function getDoorMinigame() {
         shrekProblemMarker.classList.remove('is-visible');
         flynnDialogue.classList.add('story-dialogue');
         flynnDialogue.classList.remove('shrek-problem-prompt');
-        flynnDialogue.textContent = `${shrekDoorThanksText} Press Enter.`;
+        flynnDialogue.textContent = shrekDoorThanksText;
         flynnDialogue.classList.add('is-visible');
       }
     });
@@ -198,7 +201,7 @@ function startRestSequence() {
       restOverlay.classList.remove('is-fading-out');
       flynnDialogue.classList.add('story-dialogue');
       flynnDialogue.classList.remove('shrek-problem-prompt');
-      flynnDialogue.textContent = `${shrekGoodbyeText} Press Enter.`;
+      flynnDialogue.textContent = shrekGoodbyeText;
       flynnDialogue.classList.add('is-visible');
     }, 1800);
   }, 10000);
@@ -445,6 +448,26 @@ function updateShrekProblemMarker(camera) {
   shrekProblemMarker.classList.add('is-visible');
 }
 
+function updateFinaleGreetingCamera(camera) {
+  if (!camera || !flynn) return;
+
+  const shrekForward = new THREE.Vector3(0, 0, 1)
+    .applyQuaternion(flynn.quaternion)
+    .setY(0)
+    .normalize();
+
+  const faceTarget = flynn.position.clone();
+  faceTarget.y += finaleGreetingFaceHeight;
+
+  const cameraPosition = faceTarget
+    .clone()
+    .addScaledVector(shrekForward, finaleGreetingCameraDistance);
+  cameraPosition.y = flynn.position.y + finaleGreetingCameraHeight;
+
+  camera.position.copy(cameraPosition);
+  camera.lookAt(faceTarget);
+}
+
 async function prepareFlynnMaterial(material, parser) {
   if (!material) return;
 
@@ -651,6 +674,10 @@ export function updateFinale(deltaTime, player, camera) {
   flynn.rotation.z = 0;
   settleFlynnIdle();
 
+  if (finaleGreeting) {
+    updateFinaleGreetingCamera(camera);
+  }
+
   if (!flynnHasArrivedHome) {
     flynn.lookAt(player.position.x, flynn.position.y, player.position.z);
   }
@@ -685,17 +712,17 @@ export function updateFinale(deltaTime, player, camera) {
   if (shrekDoorThanksIsTalking) {
     flynnDialogue.classList.add('story-dialogue');
     flynnDialogue.classList.remove('shrek-problem-prompt');
-    flynnDialogue.textContent = `${shrekDoorThanksText} Press Enter.`;
+    flynnDialogue.textContent = shrekDoorThanksText;
     flynnDialogue.classList.add('is-visible');
   } else if (finaleGreeting) {
     flynnDialogue.classList.add('story-dialogue');
     flynnDialogue.classList.remove('shrek-problem-prompt');
-    flynnDialogue.textContent = `${shrekGoodbyeText} Press Enter.`;
+    flynnDialogue.textContent = shrekGoodbyeText;
     flynnDialogue.classList.add('is-visible');
   } else if (shrekProblemIsTalking) {
     flynnDialogue.classList.add('story-dialogue');
     flynnDialogue.classList.remove('shrek-problem-prompt');
-    flynnDialogue.textContent = `${shrekProblemDialogueText} Press Enter.`;
+    flynnDialogue.textContent = shrekProblemDialogueText;
     flynnDialogue.classList.add('is-visible');
   } else if (flynnIsTalking) {
     flynnDialogue.classList.add('story-dialogue');

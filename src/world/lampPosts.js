@@ -8,11 +8,11 @@ const glowGeometry = new THREE.SphereGeometry(0.4, 16, 16);
 const glowColor = new THREE.Color(0xffc36a);
 const lightColor = 0xffb35a;
 
-// Lampioni per ogni viale principale del Mondo 1
+// lampposts on main street
 const mainWorldLampPaths = [
   { 
     start: [0, 26], end: [10, -30], 
-    placements: [{ t: 0.2, side: -1 }, { t: 0.5, side: 1 }, { t: 0.8, side: -1 }] 
+    placements: [{ t: 0.2, side: -1 }, { t: 0.3, side: 1 }, { t: 0.8, side: -1 }] 
   },
   { 
     start: [0, 26], end: [50, 30], 
@@ -29,17 +29,15 @@ const mainWorldLampPaths = [
 ];
 
 const mainWorldExtraLamps = [
-  { x: 38, z: -24, rotationY: Math.PI / 3 },
-  { x: 12, z: -25, rotationY: 0 },             
-  { x: -12, z: -48, rotationY: -Math.PI / 4 }  
+  { x: 36, z: -18, rotationY: Math.PI },
+  { x: 26, z: -32, rotationY: 0 },           
+  //{ x: -12, z: -48, rotationY: -Math.PI / 4 }  
 ];
 
-// MODIFICA: Tornati al controllo manuale millimetrico per il Mondo 2!
-// Entrambi sono ora vicinissimi al centro dell'isola (236, -253)
 const worldTwoLamps = [
-  // Lampione Sinistro: spostato più indietro e leggermente a destra
+  // left lamp
   { x: 232.5, z: -260.0, rotationY: -Math.PI/4, groundY: 28.75 },
-  // Lampione Destro: recuperato dal vuoto e messo saldamente sull'erba
+  // right lamp
   { x: 241.5, z: -250.5, rotationY: Math.PI , groundY: 28.75 }
 ];
 
@@ -103,10 +101,8 @@ function addLamp(scene, source, x, z, rotationY, sideOffset, groundY = 0.04) {
   const box = alignToGround(lamp, groundY);
   const height = box.max.y - box.min.y;
   
-  // Usiamo una sola luce per lampione
   const pointLight = new THREE.PointLight(lightColor, 0, 25, 2);
   
-  // SOLUZIONE CRITICA: Nessuna ombra per i lampioni!
   pointLight.castShadow = false; 
   
   pointLight.position.set(0, height * 0.78, 0);
@@ -186,7 +182,7 @@ export function updateLampPosts(stormProgress) {
   lampPosts.forEach(({ pointLight }) => {
     // La luce si accende solo visivamente (intensità), ma senza creare texture d'ombra
     pointLight.color.setHex(lightColor);
-    pointLight.intensity = activation * 5.0; 
+    pointLight.intensity = activation * 5.0;  // TODO: change intesity
     
     // Assicuriamoci che castShadow resti sempre falso
     pointLight.castShadow = false; 

@@ -245,7 +245,6 @@ export function createIsland(scene, materials) {
     return rampGroup;
   }
 
-  // Sentiero principale: parte dalla posizione iniziale del player e prosegue in avanti.
   // initial plaza
   const initialPlaza = createPathJoint(0, 26, 5.2);
 
@@ -259,6 +258,9 @@ export function createIsland(scene, materials) {
     createTiledPlazaStoneMaterial(24, 24)
   );
 
+  // flying carpet plaza
+  const carpetPlaza = createPathJoint(44, -22, 4.9);
+
   centralPlaza.position.set(10, 0.09, -30);
   centralPlaza.receiveShadow = true;
   centralPlaza.userData.radius = 12;
@@ -268,9 +270,7 @@ export function createIsland(scene, materials) {
   createPathBetweenJoints(initialPlaza, rightPlaza, 8, 2);
   createPathBetweenJoints(initialPlaza, stoneBuildingPlaza, 8, 2);
   createPathBetweenJoints(centralPlaza, castelPlaza, 8);
-  
-  // flying carpet plaza
-  const carpetPlaza = createPathJoint(44, -22, 4.9);
+  createPathBetweenJoints(centralPlaza, carpetPlaza, 8, 2);
 
   // ramp for the castle entrance
   createRamp(-15, -54, 4, 18, 8, 4);

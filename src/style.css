@@ -67,6 +67,11 @@ canvas {
   transform: translate(-50%, 0);
 }
 
+body:has(.story-dialogue.is-visible) .mage-dialogue.is-visible:not(.story-dialogue),
+body:has(.story-dialogue.is-visible) .interaction-dialogue.is-visible:not(.story-dialogue) {
+  opacity: 0;
+}
+
 .interaction-dialogue.shrek-problem-prompt {
   color: #fff8e8;
   background: rgba(38, 43, 50, 0.76);
