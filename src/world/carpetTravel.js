@@ -89,12 +89,12 @@ export function updateCarpetTravel(deltaTime, player, carpetTravel) {
 
   if (carpetTravel.hasArrived) {
     carpet.position.copy(otherWorldPosition);
+    carpetTravel.canUse = false;
   } else {
     carpet.position.copy(carpetStartPosition);
+    const distance = player.position.distanceTo(carpet.position);
+    carpetTravel.canUse = distance < 3;
   }
 
   carpet.position.y += floatOffset;
-
-  const distance = player.position.distanceTo(carpet.position);
-  carpetTravel.canUse = distance < 3;
 }

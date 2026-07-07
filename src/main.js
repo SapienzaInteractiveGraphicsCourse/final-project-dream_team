@@ -498,7 +498,7 @@ function animate() {
 
   const carpetObject = carpetTravel.group || carpetTravel.mesh;
   
-  if (carpetObject && carpetObject.visible && !carpetTravel.isTraveling) {
+  if (carpetObject && carpetObject.visible && !carpetTravel.isTraveling && !carpetTravel.hasArrived) {
     const distanceToCarpet = playerData.group.position.distanceTo(carpetObject.position);
     const carpetInteractionDistance = 4;
 
