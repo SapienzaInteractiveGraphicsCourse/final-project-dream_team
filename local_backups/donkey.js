@@ -3,9 +3,9 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const loader = new GLTFLoader();
 const donkeyPath = '/models/donkey_pocket_shrek_and_animations.glb';
-const donkeyPosition = new THREE.Vector3(-7.46, 0, 44.67);
-const donkeyHeight = 4;
-const donkeyRotationOffsetY = Math.PI;
+const donkeyPosition = new THREE.Vector3(-7.46, 0.15, 44.67);
+const donkeyHeight = 2.35;
+const donkeyRotationOffsetY = Math.PI / 2;
 
 let donkey = null;
 let donkeySkinnedMesh = null;
@@ -153,10 +153,10 @@ export function updateDonkey(deltaTime, player) {
   if (!donkey) return;
 
   const time = performance.now() * 0.001;
-  const step = Math.sin(time * 2.8);
-  const oppositeStep = -step;
-  const lift = (Math.sin(time * 5.6) + 1) * 0.5;
-  const oppositeLift = (Math.sin(time * 5.6 + Math.PI) + 1) * 0.5;
+  const hoofTap = Math.sin(time * 4.6);
+  const oppositeHoofTap = -hoofTap;
+  const quickTap = Math.max(0, Math.sin(time * 9.2));
+  const oppositeQuickTap = Math.max(0, Math.sin(time * 9.2 + Math.PI));
   const tailSwing = Math.sin(time * 4.4);
 
   resetDonkeyPose();
@@ -167,7 +167,6 @@ export function updateDonkey(deltaTime, player) {
     const directionX = player.position.x - donkey.position.x;
     const directionZ = player.position.z - donkey.position.z;
     const targetYaw = Math.atan2(directionX, directionZ) + donkeyRotationOffsetY;
-
     donkey.rotation.y = THREE.MathUtils.lerp(
       donkey.rotation.y,
       targetYaw,
@@ -175,29 +174,34 @@ export function updateDonkey(deltaTime, player) {
     );
   }
 
-  rotateBone(donkeyParts.spine, 'z', Math.sin(time * 1.7) * 0.02);
-  rotateBone(donkeyParts.head, 'y', Math.sin(time * 1.3) * 0.12);
-  rotateBone(donkeyParts.head, 'x', Math.sin(time * 1.8) * 0.05);
+  rotateBone(donkeyParts.spine, 'z', Math.sin(time * 1.7) * 0.035);
+  rotateBone(donkeyParts.spine, 'x', Math.sin(time * 2.1) * 0.025);
+  rotateBone(donkeyParts.head, 'y', Math.sin(time * 1.3) * 0.16);
+  rotateBone(donkeyParts.head, 'x', Math.sin(time * 1.9) * 0.07);
 
-  rotateBone(donkeyParts.leftFrontShoulder, 'x', step * 0.18);
-  rotateBone(donkeyParts.leftFrontElbow, 'x', lift * 0.12);
-  rotateBone(donkeyParts.leftFrontWrist, 'x', lift * 0.16);
-  rotateBone(donkeyParts.leftFrontHoof, 'x', lift * 0.2);
+  rotateBone(donkeyParts.leftFrontShoulder, 'z', hoofTap * 0.18);
+  rotateBone(donkeyParts.leftFrontShoulder, 'x', quickTap * 0.12);
+  rotateBone(donkeyParts.leftFrontElbow, 'z', quickTap * 0.22);
+  rotateBone(donkeyParts.leftFrontWrist, 'z', quickTap * 0.28);
+  rotateBone(donkeyParts.leftFrontHoof, 'z', quickTap * 0.35);
+  rotateBone(donkeyParts.leftFrontHoof, 'x', quickTap * 0.16);
 
-  rotateBone(donkeyParts.rightFrontShoulder, 'x', oppositeStep * 0.18);
-  rotateBone(donkeyParts.rightFrontElbow, 'x', oppositeLift * 0.12);
-  rotateBone(donkeyParts.rightFrontWrist, 'x', oppositeLift * 0.16);
-  rotateBone(donkeyParts.rightFrontHoof, 'x', oppositeLift * 0.2);
+  rotateBone(donkeyParts.rightFrontShoulder, 'z', oppositeHoofTap * 0.18);
+  rotateBone(donkeyParts.rightFrontShoulder, 'x', oppositeQuickTap * 0.12);
+  rotateBone(donkeyParts.rightFrontElbow, 'z', oppositeQuickTap * 0.22);
+  rotateBone(donkeyParts.rightFrontWrist, 'z', oppositeQuickTap * 0.28);
+  rotateBone(donkeyParts.rightFrontHoof, 'z', oppositeQuickTap * 0.35);
+  rotateBone(donkeyParts.rightFrontHoof, 'x', oppositeQuickTap * 0.16);
 
-  rotateBone(donkeyParts.leftBackHip, 'x', oppositeStep * 0.14);
-  rotateBone(donkeyParts.leftBackKnee, 'x', oppositeLift * 0.1);
-  rotateBone(donkeyParts.leftBackAnkle, 'x', oppositeLift * 0.14);
-  rotateBone(donkeyParts.leftBackHoof, 'x', oppositeLift * 0.18);
+  rotateBone(donkeyParts.leftBackHip, 'z', oppositeHoofTap * 0.13);
+  rotateBone(donkeyParts.leftBackKnee, 'z', oppositeQuickTap * 0.14);
+  rotateBone(donkeyParts.leftBackAnkle, 'z', oppositeQuickTap * 0.22);
+  rotateBone(donkeyParts.leftBackHoof, 'z', oppositeQuickTap * 0.28);
 
-  rotateBone(donkeyParts.rightBackHip, 'x', step * 0.14);
-  rotateBone(donkeyParts.rightBackKnee, 'x', lift * 0.1);
-  rotateBone(donkeyParts.rightBackAnkle, 'x', lift * 0.14);
-  rotateBone(donkeyParts.rightBackHoof, 'x', lift * 0.18);
+  rotateBone(donkeyParts.rightBackHip, 'z', hoofTap * 0.13);
+  rotateBone(donkeyParts.rightBackKnee, 'z', quickTap * 0.14);
+  rotateBone(donkeyParts.rightBackAnkle, 'z', quickTap * 0.22);
+  rotateBone(donkeyParts.rightBackHoof, 'z', quickTap * 0.28);
 
   donkeyParts.tail.forEach((bone, index) => {
     rotateBone(bone, 'x', tailSwing * (0.12 - index * 0.018));

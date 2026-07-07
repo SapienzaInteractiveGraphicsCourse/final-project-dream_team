@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const loader = new GLTFLoader();
-const shrekStart = new THREE.Vector3(10, 0.15, 28);
-const shrekEnd = new THREE.Vector3(30, 0.15, 28);
+const shrekStart = new THREE.Vector3(10, 0, 28);
+const shrekEnd = new THREE.Vector3(30, 0, 28);
 const shrekSpeed = 1.8;
 const shrekHeight = 4.2;
 
