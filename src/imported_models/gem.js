@@ -171,8 +171,8 @@ export function updateGem(deltaTime, player, mageModel) {
     if (gemParticles) animateParticles(deltaTime);
 
     if (mageModel) {
-      const distanceToMage = player.position.distanceTo(mageModel.position);
-      if (distanceToMage < 4) {
+      const distanceToMageSq = player.position.distanceToSquared(mageModel.position);
+      if (distanceToMageSq < 16) {
         canTakeGem = true;
         gemPrompt.classList.add('is-visible');
       } else {
@@ -184,8 +184,8 @@ export function updateGem(deltaTime, player, mageModel) {
   }
 
   if (!hasGem && !gemDelivered) {
-    const distanceToPlayer = gemModel.position.distanceTo(player.position);
-    canTakeGem = distanceToPlayer < 3;
+    const distanceToPlayerSq = gemModel.position.distanceToSquared(player.position);
+    canTakeGem = distanceToPlayerSq < 9;
 
     gemModel.rotation.y += deltaTime * 1.5;
     gemModel.position.y = gemStartY + Math.sin(time * 4) * 0.08;

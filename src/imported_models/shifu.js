@@ -234,16 +234,18 @@ export function updateShifuTask (deltaTime, player){
         setShifuGlow(0);
     }
 
-    const distance = shifu.position.distanceTo(player.position);
     const resetDistance = interactionDistance + 1.2;
+    const distanceSq = shifu.position.distanceToSquared(player.position);
+    const interactionDistanceSq = interactionDistance * interactionDistance;
+    const resetDistanceSq = resetDistance * resetDistance;
 
-    if (shifuMustLeaveBeforeTalkAgain && distance > resetDistance) {
+    if (shifuMustLeaveBeforeTalkAgain && distanceSq > resetDistanceSq) {
       shifuMustLeaveBeforeTalkAgain = false;
     }
 
-    canTalkToShifu = distance < interactionDistance && !shifuMustLeaveBeforeTalkAgain;
+    canTalkToShifu = distanceSq < interactionDistanceSq && !shifuMustLeaveBeforeTalkAgain;
 
-    if (distance < interactionDistance) {
+    if (distanceSq < interactionDistanceSq) {
     shifuBaseRotationY = getYawToPlayer(player);
     shifu.rotation.x = 0;
     shifu.rotation.y = shifuBaseRotationY;

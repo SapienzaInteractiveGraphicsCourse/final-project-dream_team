@@ -10,6 +10,7 @@ const lightColor = 0xffb35a;
 const lampLightDistance = 42;
 const lampLightDecay = 2;
 const lampShadowMapSize = 512;
+const maxShadowCastingLamps = 2;
 
 // lampposts on main street
 const mainWorldLampPaths = [
@@ -72,7 +73,7 @@ function cloneLampModel(source) {
 }
 
 function configureLampShadow(pointLight) {
-  pointLight.castShadow = true;
+  pointLight.castShadow = false;
   pointLight.shadow.mapSize.set(lampShadowMapSize, lampShadowMapSize);
   pointLight.shadow.camera.near = 0.25;
   pointLight.shadow.camera.far = pointLight.distance;
@@ -261,12 +262,27 @@ export function createLampPosts(scene) {
   );
 }
 
-export function updateLampPosts(stormProgress) {
+export function updateLampPosts(stormProgress, player = null) {
   const activation = THREE.MathUtils.smoothstep(stormProgress, 0.35, 0.85);
+  const playerPosition = player?.position ?? player;
+  const shadowCastingLamps = new Set();
+
+  if (activation > 0.01 && playerPosition) {
+    lampPosts
+      .map((lampPost) => ({
+        lampPost,
+        distanceSq: lampPost.lamp.position.distanceToSquared(playerPosition)
+      }))
+      .sort((a, b) => a.distanceSq - b.distanceSq)
+      .slice(0, maxShadowCastingLamps)
+      .forEach(({ lampPost }) => {
+        shadowCastingLamps.add(lampPost.pointLight);
+      });
+  }
 
   lampPosts.forEach(({ pointLight }) => {
     pointLight.color.setHex(lightColor);
     pointLight.intensity = activation * 10.0;  // TODO: change intesity
-    pointLight.castShadow = activation > 0.01;
+    pointLight.castShadow = shadowCastingLamps.has(pointLight);
   });
 }

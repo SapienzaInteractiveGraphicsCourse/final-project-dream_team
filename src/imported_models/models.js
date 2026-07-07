@@ -1,4 +1,5 @@
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import * as THREE from 'three';
 import { registerBook, registerBookDeliveryTarget } from './book.js';
 import { registerMage, addMageMaterial, updateMage } from './mage.js';
@@ -8,10 +9,12 @@ import { registerDemonDragon, updateDemonDragon, setDragonOrbitCenter } from './
 export const modelColliders = [];
 export const modelBounds = [];
 const gltfLoader = new GLTFLoader();
+gltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
 const demonTintColor = new THREE.Color(0xffc2a0);
 const demonEmissiveColor = new THREE.Color(0x3a160c);
 let mage = null;
+const generalPath = "/models_optimized/";
 
 function brightenDemonMaterial(material) {
   if (!material) return;
@@ -128,9 +131,17 @@ function loadModel(scene, path, options = {}) {
         setDragonOrbitCenter(realCastleCenter.x, dragonFlightHeight, realCastleCenter.z, 45);
       }
       // 4. Gestione dei materiali e delle ombre
+      const canCastShadow = options.castShadow ?? (
+        isMage ||
+        path.includes('demon') ||
+        path.includes('EvilBook') ||
+        path.includes('Gem') ||
+        path.includes('statue')
+      );
+
       model.traverse((child) => {
         if (child.isMesh) {
-          child.castShadow = true;
+          child.castShadow = canCastShadow;
           child.receiveShadow = true;
 
           if (isStoneBuilding) {
@@ -190,7 +201,7 @@ function loadModel(scene, path, options = {}) {
 
 export const gameplayModelsToLoad = [
   {
-    path: '/models/demon.glb',
+    path: generalPath + 'demon.glb',
     x: 38,
     y: 7,
     z: -27,
@@ -200,7 +211,7 @@ export const gameplayModelsToLoad = [
     collider: false
   },
   {
-    path: '/models/Gem.glb',
+    path: generalPath + 'Gem.glb',
     x: -6,
     y: 1,
     z: -46,
@@ -209,7 +220,7 @@ export const gameplayModelsToLoad = [
     collider: false
   },
   {
-    path: '/models/EvilBook.glb',
+    path: generalPath + 'EvilBook.glb',
     x: -10,
     y: 0,
     z: -30,
@@ -219,7 +230,7 @@ export const gameplayModelsToLoad = [
     collider: false
   },
   {
-    path: '/models/pixellabs-cute-skeleton-mage-character-2439.glb',
+    path: generalPath + 'pixellabs-cute-skeleton-mage-character-2439.glb',
     x: 3,
     y: 0,
     z: 2,
@@ -232,7 +243,7 @@ export const gameplayModelsToLoad = [
 
 export const introModelsToLoad = [
   {
-    path: '/models/FantasyHouse.glb',
+    path: generalPath + 'FantasyHouse.glb',
     x: -22,
     y: 0.45,
     z: 35,
@@ -242,7 +253,7 @@ export const introModelsToLoad = [
     collider: false
   },
   {
-    path: '/models/FantasyInn.glb',
+    path: generalPath + 'FantasyInn.glb',
     x: -10,
     y: 0,
     z: -5.13,
@@ -253,7 +264,7 @@ export const introModelsToLoad = [
     collider: false
   },
   {
-    path: '/models/FantasyStable.glb',
+    path: generalPath + 'FantasyStable.glb',
     x: 32,
     y: 0,
     z: -3,
@@ -264,7 +275,7 @@ export const introModelsToLoad = [
     collider: false
   },
   {
-    path: '/models/alchemist_fantasy_house.glb',
+    path: generalPath + 'alchemist_fantasy_house.glb',
     x: 60,
     y: 0,
     z: 30,
@@ -275,7 +286,7 @@ export const introModelsToLoad = [
     collider: true
   },
   {
-    path: '/models/stone_building.glb',
+    path: generalPath + 'stone_building.glb',
     x: -42,
     y: -0.1,
     z: 68,
@@ -285,7 +296,7 @@ export const introModelsToLoad = [
     collider: false
   },
   {
-    path: '/models/fantasy_house_low_poly.glb',
+    path: generalPath + 'fantasy_house_low_poly.glb',
     x: 70,
     y: -0.1,
     z: 90,
@@ -295,7 +306,7 @@ export const introModelsToLoad = [
     collider: false
   },
   {
-    path: '/models/flowers_lib.glb',
+    path: generalPath + 'flowers_lib.glb',
     x: -4,
     y: 0,
     z: 10,
@@ -305,7 +316,7 @@ export const introModelsToLoad = [
     collider: true
   },
   {
-    path: '/models/castle_03.glb',
+    path: generalPath + 'castle_03.glb',
     x: -40,
     y: 0,
     z: -80,
@@ -315,7 +326,7 @@ export const introModelsToLoad = [
     collider: false
   },
   {
-    path: '/models/statue.glb',
+    path: generalPath + 'statue.glb',
     x: 11.29,
     y: 0,
     z: -30.32,
@@ -327,7 +338,7 @@ export const introModelsToLoad = [
 
   /** ISLANDS */
   {
-    path: '/models/floating_island.glb',
+    path: generalPath + 'floating_island.glb',
     x: -300,
     y: -2,
     z: -1,
@@ -337,7 +348,7 @@ export const introModelsToLoad = [
     collider: true
   },
   {
-    path: '/models/floating_island2.glb',
+    path: generalPath + 'floating_island2.glb',
     x: 300,
     y: -2,
     z: -1,
@@ -347,7 +358,7 @@ export const introModelsToLoad = [
     collider: false
   },
   {
-    path: '/models/floating_island3.glb',
+    path: generalPath + 'floating_island3.glb',
     x: 10,
     y: -2,
     z: 500,
@@ -359,7 +370,7 @@ export const introModelsToLoad = [
 
   /** CART AND MARKETS */
   {
-    path: '/models/cart.glb',
+    path: generalPath + 'cart.glb',
     x: -12,
     y: 0,
     z: 47,
@@ -369,7 +380,7 @@ export const introModelsToLoad = [
     collider: false
   },
   {
-    path: '/models/props_cart_02.glb',
+    path: generalPath + 'props_cart_02.glb',
     x: 26,
     y: 0,
     z: -41,

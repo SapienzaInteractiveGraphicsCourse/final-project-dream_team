@@ -135,17 +135,19 @@ export function updateMage(deltaTime, player) {
   mage.position.y = mageStartY + Math.sin(time * 2) * 0.12;
   mage.rotation.y += Math.sin(time * 3) * 0.002;
 
-  const distance = mage.position.distanceTo(player.position);
   const interactionDistance = 4;
   const resetDistance = interactionDistance + 1.2;
+  const distanceSq = mage.position.distanceToSquared(player.position);
+  const interactionDistanceSq = interactionDistance * interactionDistance;
+  const resetDistanceSq = resetDistance * resetDistance;
 
-  if (mageMustLeaveBeforeTalkAgain && distance > resetDistance) {
+  if (mageMustLeaveBeforeTalkAgain && distanceSq > resetDistanceSq) {
     mageMustLeaveBeforeTalkAgain = false;
   }
 
-  canTalkToMage = distance < interactionDistance && !mageMustLeaveBeforeTalkAgain;
+  canTalkToMage = distanceSq < interactionDistanceSq && !mageMustLeaveBeforeTalkAgain;
 
-  if (distance < interactionDistance) {
+  if (distanceSq < interactionDistanceSq) {
     mage.lookAt(player.position.x, mage.position.y, player.position.z);
   }
 

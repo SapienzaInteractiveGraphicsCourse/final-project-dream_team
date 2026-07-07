@@ -121,7 +121,7 @@ setupResize(camera, renderer);
 const clock = new THREE.Clock();
 const debugMode = new URLSearchParams(window.location.search).has('debug');
 
-createLights(scene);
+const lights = createLights(scene);
 const island = createIsland(scene, materials);
 
 function getRndInteger(min, max) {
@@ -456,6 +456,8 @@ function updateIntroCamera(time) {
 // MODIFICA: Variabile per simulare l'aumento dell'intensità della tempesta da passare ai lampioni
 let globalStormProgress = 0;
 let finaleWeatherCleared = false;
+let rainUpdateAccumulator = 0;
+const rainUpdateInterval = 1 / 30;
 
 setFinaleCallbacks({
   onRestComplete: () => {
@@ -541,7 +543,12 @@ function animate() {
       startFinale();
     });
   });
-  updateRain(deltaTime, playerData.group);
+  rainUpdateAccumulator += deltaTime;
+  if (rainUpdateAccumulator >= rainUpdateInterval) {
+    updateRain(rainUpdateAccumulator, playerData.group);
+    rainUpdateAccumulator = 0;
+  }
+
   updateStorm(deltaTime, scene);
 
   // MODIFICA: Aggiornamento lampioni basato sullo stato della tempesta
@@ -549,27 +556,11 @@ function animate() {
     // La tempesta sale progressivamente fino a 1 nel giro di qualche secondo
     globalStormProgress = Math.min(1.0, globalStormProgress + deltaTime * 0.2); 
   }
-  updateLampPosts(globalStormProgress);
+  updateLampPosts(globalStormProgress, playerData.group);
   
-  // NUOVO: Gestione dello spegnimento del Sole e delle sue ombre
-  scene.traverse((child) => {
-    if (child.isLight) {
-      
-      // Se la luce è attaccata a un lampione, ignoriamola (ci pensa updateLampPosts)
-      if (child.parent && child.parent.name === 'path-lamp-post') return;
-
-      // Se è il Sole (DirectionalLight)
-      if (child.isDirectionalLight) {
-        child.intensity = 1.0 * (1.0 - globalStormProgress);
-        child.castShadow = globalStormProgress <= 0.8;
-      } 
-      // Qualsiasi altra luce (AmbientLight, HemisphereLight, ecc.)
-      else {
-        // Abbassiamo tutto in base alla tempesta, lasciando un piccolissimo 0.05 per non avere uno schermo nero al 100%
-        child.intensity = 0.4 * (1.0 - globalStormProgress * 0.95);
-      }
-    }
-  });
+  lights.sunLight.intensity = 1.0 * (1.0 - globalStormProgress);
+  lights.sunLight.castShadow = globalStormProgress <= 0.5;
+  lights.ambientLight.intensity = 0.4 * (1.0 - globalStormProgress * 0.95);
 
   scene.environmentIntensity = 1.0 - globalStormProgress; 
   if (scene.backgroundBlurriness !== undefined) {

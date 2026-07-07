@@ -92,8 +92,7 @@ export function updateCarpetTravel(deltaTime, player, carpetTravel) {
     carpetTravel.canUse = false;
   } else {
     carpet.position.copy(carpetStartPosition);
-    const distance = player.position.distanceTo(carpet.position);
-    carpetTravel.canUse = distance < 3;
+    carpetTravel.canUse = player.position.distanceToSquared(carpet.position) < 9;
   }
 
   carpet.position.y += floatOffset;

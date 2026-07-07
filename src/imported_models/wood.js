@@ -215,9 +215,9 @@ export function updateWoodTask(deltaTime, player) {
     return;
   }
 
-  canTakeAxe = !hasAxe && axe.position.distanceTo(player.position) < 3;
+  canTakeAxe = !hasAxe && axe.position.distanceToSquared(player.position) < 9;
   canCollectWood =
-    hasAxe && !hasWood && wood.position.distanceTo(player.position) < 4;
+    hasAxe && !hasWood && wood.position.distanceToSquared(player.position) < 16;
 
   if (canTakeAxe) {
     woodTaskPrompt.textContent = 'Press F to take the axe';

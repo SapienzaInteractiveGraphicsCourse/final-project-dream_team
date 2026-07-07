@@ -194,7 +194,7 @@ export function updateBook(deltaTime, player) {
     book.rotation.y += deltaTime * 1.8;
     book.rotation.z = Math.sin(time * 3) * 0.12;
 
-    canDeliverBook = deliveryTarget && player.position.distanceTo(deliveryTarget.position) < 4;
+    canDeliverBook = deliveryTarget && player.position.distanceToSquared(deliveryTarget.position) < 16;
     bookPrompt.classList.remove('is-visible');
 
     if (bookParticles) {
@@ -204,8 +204,8 @@ export function updateBook(deltaTime, player) {
     return;
   }
 
-  const distance = book.position.distanceTo(player.position);
-  canTakeBook = distance < 3;
+  const distanceSq = book.position.distanceToSquared(player.position);
+  canTakeBook = distanceSq < 9;
   canDeliverBook = false;
 
   book.rotation.y += deltaTime * 0.8;

@@ -6,6 +6,8 @@ const donkeyPath = '/models/donkey_pocket_shrek_and_animations.glb';
 const donkeyPosition = new THREE.Vector3(-7.46, 0, 44.67);
 const donkeyHeight = 4;
 const donkeyRotationOffsetY = Math.PI;
+const donkeyAnimationDistance = 80;
+const donkeyAnimationDistanceSq = donkeyAnimationDistance * donkeyAnimationDistance;
 
 let donkey = null;
 let donkeySkinnedMesh = null;
@@ -159,7 +161,11 @@ export function loadDonkey(scene) {
 }
 
 export function updateDonkey(deltaTime, player) {
-  if (!donkey) return;
+  if (!donkey || !donkey.visible) return;
+
+  if (player && donkey.position.distanceToSquared(player.position) > donkeyAnimationDistanceSq) {
+    return;
+  }
 
   const time = performance.now() * 0.001;
   const step = Math.sin(time * 2.8);

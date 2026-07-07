@@ -8,8 +8,8 @@ export function createLights(scene) {
   sunLight.position.set(80, 120, 60);
   sunLight.castShadow = true;
 
-  sunLight.shadow.mapSize.width = 2048;
-  sunLight.shadow.mapSize.height = 2048;
+  sunLight.shadow.mapSize.width = 512;
+  sunLight.shadow.mapSize.height = 512;
 
   sunLight.shadow.camera.near = 1;
   sunLight.shadow.camera.far = 260;

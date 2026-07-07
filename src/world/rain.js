@@ -10,8 +10,8 @@ let stormStarted = false;
 let stormProgress = 0;
 let rainAudio = null;
 
-const lineCount = 1500;
-const crystalCount = 750;
+const lineCount = 400;
+const crystalCount = 150;
 const rainArea = 120;
 const rainTop = 105;
 const rainBottom = -55;

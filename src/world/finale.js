@@ -20,6 +20,8 @@ const finaleWalkLoops = false;
 const finaleGreetingFaceHeight = 3.35;
 const finaleGreetingCameraHeight = 3.05;
 const finaleGreetingCameraDistance = 7.2;
+const finaleIdleAnimationDistance = 80;
+const finaleIdleAnimationDistanceSq = finaleIdleAnimationDistance * finaleIdleAnimationDistance;
 
 let finaleStarted = false;
 let flynn = null;
@@ -669,6 +671,20 @@ export function updateFinale(deltaTime, player, camera) {
   if (!flynn || !player) return false;
 
   const time = performance.now() * 0.001;
+  const distanceSq = flynn.position.distanceToSquared(player.position);
+  const resetDistance = flynnInteractionDistance + 1.2;
+  const interactionDistanceSq = flynnInteractionDistance * flynnInteractionDistance;
+  const resetDistanceSq = resetDistance * resetDistance;
+  const shouldAnimateIdle =
+    flynn.visible &&
+    (
+      distanceSq <= finaleIdleAnimationDistanceSq ||
+      flynnIsTalking ||
+      shrekProblemIsTalking ||
+      shrekDoorThanksIsTalking ||
+      finaleResting ||
+      finaleGreeting
+    );
 
   if (flynnIsWalkingHome) {
     updateFlynnWalk(deltaTime, time);
@@ -679,23 +695,23 @@ export function updateFinale(deltaTime, player, camera) {
     return false;
   }
 
-  flynn.position.y = flynnStartY + Math.sin(time * 1.8) * 0.05;
-  flynn.rotation.z = 0;
-  settleFlynnIdle();
+  if (shouldAnimateIdle) {
+    flynn.position.y = flynnStartY + Math.sin(time * 1.8) * 0.05;
+    flynn.rotation.z = 0;
+    settleFlynnIdle();
+  }
 
   if (finaleGreeting) {
     updateFinaleGreetingCamera(camera);
   }
 
-  if (!flynnHasArrivedHome) {
+  if (shouldAnimateIdle && !flynnHasArrivedHome) {
     flynn.lookAt(player.position.x, flynn.position.y, player.position.z);
   }
 
-  const distance = flynn.position.distanceTo(player.position);
-  const resetDistance = flynnInteractionDistance + 1.2;
   updateShrekProblemMarker(camera);
 
-  if (flynnMustLeaveBeforeTalkAgain && distance > resetDistance) {
+  if (flynnMustLeaveBeforeTalkAgain && distanceSq > resetDistanceSq) {
     flynnMustLeaveBeforeTalkAgain = false;
   }
 
@@ -707,7 +723,7 @@ export function updateFinale(deltaTime, player, camera) {
     !finaleGreeting &&
     !finaleFinished &&
     !doorMinigame?.isOpen() &&
-    distance < flynnInteractionDistance;
+    distanceSq < interactionDistanceSq;
 
   canTalkToFlynn =
     !finaleResting &&
@@ -715,7 +731,7 @@ export function updateFinale(deltaTime, player, camera) {
     !finaleFinished &&
     !shrekDoorThanksIsTalking &&
     !flynnHasInvitedPlayer &&
-    distance < flynnInteractionDistance &&
+    distanceSq < interactionDistanceSq &&
     !flynnMustLeaveBeforeTalkAgain;
 
   if (shrekDoorThanksIsTalking) {
