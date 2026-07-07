@@ -9,6 +9,7 @@ let canTalkToShifu = false;
 let shifuIsTalking = false;
 let shifuDialogueIndex = 0;
 let taskStarted = false;
+let shifuMustLeaveBeforeTalkAgain = false;
 let shifuMaterials = [];
 let shifuBaseRotationY = Math.PI;
 let shifuArmParts = {};
@@ -117,6 +118,7 @@ window.addEventListener('keydown', (event) => {
 
     if (shifuDialogueIndex >= activeDialogueLines.length) {
       shifuIsTalking = false;
+      shifuMustLeaveBeforeTalkAgain = true;
 
       if (activeDialogueLines === shifuDialogueLines) {
         taskStarted = true;
@@ -224,9 +226,15 @@ export function updateShifuTask (deltaTime, player){
     }
 
     const distance = shifu.position.distanceTo(player.position);
-    canTalkToShifu = distance < interactionDistance;
+    const resetDistance = interactionDistance + 1.2;
 
-    if (canTalkToShifu) {
+    if (shifuMustLeaveBeforeTalkAgain && distance > resetDistance) {
+      shifuMustLeaveBeforeTalkAgain = false;
+    }
+
+    canTalkToShifu = distance < interactionDistance && !shifuMustLeaveBeforeTalkAgain;
+
+    if (distance < interactionDistance) {
     shifuBaseRotationY = getYawToPlayer(player);
     shifu.rotation.x = 0;
     shifu.rotation.y = shifuBaseRotationY;
@@ -237,14 +245,18 @@ export function updateShifuTask (deltaTime, player){
   }
 
     if (shifuIsTalking) {
+        shifuDialogue.classList.add('story-dialogue');
         shifuDialogue.textContent = activeDialogueLines[shifuDialogueIndex];
         shifuDialogue.classList.add('is-visible');
     } else if (taskStarted) {
+        shifuDialogue.classList.remove('story-dialogue');
         shifuDialogue.classList.remove('is-visible');
     } else if (canTalkToShifu) {
+        shifuDialogue.classList.remove('story-dialogue');
         shifuDialogue.textContent = 'Press E to talk to Shifu';
         shifuDialogue.classList.add('is-visible');
     } else {
+        shifuDialogue.classList.remove('story-dialogue');
         shifuDialogue.classList.remove('is-visible');
     }
     return shifuIsTalking;
@@ -259,6 +271,7 @@ export function startShifuBridgeThanks() {
   activeDialogueLines = shifuBridgeThanksLines;
   shifuDialogueIndex = 0;
   bridgeThanksStarted = true;
+  shifuMustLeaveBeforeTalkAgain = false;
   shifuIsTalking = true;
 }
 

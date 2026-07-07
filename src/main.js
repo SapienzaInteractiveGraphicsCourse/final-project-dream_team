@@ -33,9 +33,10 @@ import {
 import { updateTowerFall } from './world/towerFall.js';
 import { createPuzzleMinigame, getPuzzleDifficulties } from './minigame/puzzle.js';
 import { loadFinale, updateFinale } from './world/finale.js';
+import { loadDonkey, updateDonkey } from './world/donkey.js';
 import { updateMage } from './imported_models/mage.js'; 
 
-// MODIFICA: Importo le logiche dei lampioni
+// lamppost imports
 import { createLampPosts, updateLampPosts } from './world/lampPosts.js';
 
 const canvas = document.querySelector('#bg');
@@ -105,7 +106,7 @@ viewHint.textContent = 'Press V to change view';
 document.body.appendChild(viewHint);
 
 const difficultyOverlay = document.createElement('div');
-difficultyOverlay.className = 'difficulty-overlay is-visible';
+difficultyOverlay.className = 'difficulty-overlay';
 difficultyOverlay.innerHTML = `
   <section class="difficulty-panel" role="dialog" aria-modal="true" aria-labelledby="difficulty-title">
     <p class="difficulty-kicker">Choose your challenge</p>
@@ -120,8 +121,20 @@ difficultyOverlay.innerHTML = `
 `;
 document.body.appendChild(difficultyOverlay);
 
+const introOverlay = document.createElement('div');
+introOverlay.className = 'intro-overlay is-visible';
+introOverlay.innerHTML = `
+  <section class="intro-panel" role="dialog" aria-modal="true" aria-labelledby="intro-title">
+    <h1 id="intro-title">Welcome to the Lost Magic Isles</h1>
+    <p>The magic of the floating isles is fading. Explore, help its guardians, recover ancient relics, and restore the island's power.</p>
+    <button class="intro-start-button" type="button">Start</button>
+  </section>
+`;
+document.body.appendChild(introOverlay);
+
 let selectedDifficulty = 'medium';
 let isChoosingDifficulty = true;
+let isIntroActive = true;
 let dragonPuzzle = null;
 let isDragonPuzzleActive = false;
 let dragonDirectHits = 0;
@@ -192,6 +205,12 @@ difficultyOverlay.querySelectorAll('[data-difficulty]').forEach((button) => {
   });
 });
 
+introOverlay.querySelector('.intro-start-button').addEventListener('click', () => {
+  isIntroActive = false;
+  introOverlay.classList.remove('is-visible');
+  difficultyOverlay.classList.add('is-visible');
+});
+
 let isFirstPerson = false;
 let manualFirstPerson = false; 
 const thirdPersonFov = 65;
@@ -221,6 +240,10 @@ function setFirstPersonMode(enable) {
 
 let isInsideCastle = false;
 window.addEventListener('keydown', (event) => {
+  if (isIntroActive) {
+    return;
+  }
+
   if (isChoosingDifficulty || isDragonPuzzleActive) {
     return;
   }
@@ -269,6 +292,7 @@ loadShifuTask(scene);
 loadWoodTask(scene);
 loadBridgeTask(scene);
 loadFinale(scene);
+loadDonkey(scene);
 
 if (debugMode) {
   const axesHelper = new THREE.AxesHelper(100);
@@ -297,6 +321,19 @@ const castleTriggerBox = new THREE.Box3(
     );
 let shifuThanksTriggered = false;
 
+function updateIntroCamera(time) {
+  const phase = time * 0.12;
+  const sweep = Math.sin(time * 0.22);
+  const radius = 142 + Math.sin(time * 0.16) * 18;
+  const height = 78 + (sweep + 1) * 34;
+  const cameraX = Math.cos(phase) * radius;
+  const cameraZ = Math.sin(phase) * radius;
+  const targetX = Math.sin(time * 0.11) * 18;
+  const targetZ = Math.cos(time * 0.09) * 22;
+
+  camera.position.set(cameraX, height, cameraZ);
+  camera.lookAt(targetX, 0, targetZ);
+}
 // MODIFICA: Variabile per simulare l'aumento dell'intensità della tempesta da passare ai lampioni
 let globalStormProgress = 0;
 
@@ -307,6 +344,14 @@ function animate() {
   requestAnimationFrame(animate);
 
   const deltaTime = clock.getDelta();
+  const time = performance.now() * 0.001;
+
+  if (isIntroActive) {
+    updateIntroCamera(time);
+    updateModels(deltaTime, playerData.group);
+    renderer.render(scene, camera);
+    return;
+  }
 
   updateCarpetTravel(deltaTime, playerData.group, carpetTravel);
   const isFalling = updateTowerFall(
@@ -334,7 +379,12 @@ function animate() {
   
   const isTalkingToMage = updateMage(deltaTime, playerData.group);
   const isTalkingToShifu = updateShifuTask(deltaTime, playerData.group);
-  const shouldBeInFirstPerson = isTalkingToMage || isTalkingToShifu;
+  const isTalkingToFlynn = updateFinale(deltaTime, playerData.group, camera);
+  // 2. Force first person only while a character is actively talking.
+  const shouldBeInFirstPerson = 
+    isTalkingToMage || 
+    isTalkingToShifu ||
+    isTalkingToFlynn;
 
   if (shouldBeInFirstPerson) {
     setFirstPersonMode(true);
@@ -351,8 +401,8 @@ function animate() {
   updateBook(deltaTime, playerData.group);
   updateWoodTask(deltaTime, playerData.group);
   updateBridgeTask(deltaTime, playerData.group);
+  updateDonkey(deltaTime, playerData.group);
   updatePortalTeleport(playerData.group);
-  updateFinale(deltaTime, playerData.group);
   updateRain(deltaTime, playerData.group);
   updateStorm(deltaTime, scene);
 
