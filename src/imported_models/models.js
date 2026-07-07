@@ -188,8 +188,7 @@ function loadModel(scene, path, options = {}) {
   });
 }
 
-export const modelsToLoad = [
-    // TODO: is it useful? i don't see it anywhere
+export const gameplayModelsToLoad = [
   {
     path: '/models/demon.glb',
     x: 38,
@@ -201,8 +200,8 @@ export const modelsToLoad = [
     collider: false
   },
   {
-    path: '/models/Gem.glb', 
-    x: -6, 
+    path: '/models/Gem.glb',
+    x: -6,
     y: 1,
     z: -46,
     scale: 0.7,
@@ -219,6 +218,19 @@ export const modelsToLoad = [
     groundY: 0.49,
     collider: false
   },
+  {
+    path: '/models/pixellabs-cute-skeleton-mage-character-2439.glb',
+    x: 3,
+    y: 0,
+    z: 2,
+    scale: 3,
+    rotationY: Math.PI / 4,
+    groundY: 0.49,
+    collider: true
+  }
+];
+
+export const introModelsToLoad = [
   {
     path: '/models/FantasyHouse.glb',
     x: -22,
@@ -281,16 +293,6 @@ export const modelsToLoad = [
     rotationY: 3*Math.PI/4,
     floating: true,
     collider: false
-  },
-  {
-    path: '/models/pixellabs-cute-skeleton-mage-character-2439.glb',
-    x: 3,
-    y: 0,
-    z: 2,
-    scale: 3,
-    rotationY: Math.PI / 4,
-    groundY: 0.49,
-    collider: true
   },
   {
     path: '/models/flowers_lib.glb',
@@ -377,6 +379,23 @@ export const modelsToLoad = [
     collider: false
   }
 ];
+
+export const modelsToLoad = [
+  ...introModelsToLoad,
+  ...gameplayModelsToLoad
+];
+
+export function loadIntroModels(scene) {
+  return Promise.all(introModelsToLoad.map((item) => {
+    return loadModel(scene, item.path, item);
+  }));
+}
+
+export function loadGameplayModels(scene) {
+  return Promise.all(gameplayModelsToLoad.map((item) => {
+    return loadModel(scene, item.path, item);
+  }));
+}
 
 export function loadModels(scene) {
   return Promise.all(modelsToLoad.map((item) => {

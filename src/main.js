@@ -13,7 +13,13 @@ import { createIsland } from './world/island.js';
 import { createIslandVegetation } from './world/vegetation.js';
 import { createPlayer, animatePlayer } from './player/schoolBoyPlayer.js';
 import { createPlayerController } from './controls/playerControls.js';
-import { loadModels, updateModels, modelColliders, modelBounds } from './imported_models/models.js';
+import {
+  loadGameplayModels,
+  loadIntroModels,
+  updateModels,
+  modelColliders,
+  modelBounds
+} from './imported_models/models.js';
 import { updateBook, isBookDelivered } from './imported_models/book.js';
 import { isGemDelivered } from './imported_models/gem.js';
 import { createCloud } from './world/cloud.js';
@@ -43,6 +49,7 @@ import {
   loadFinale,
   setFinaleCallbacks,
   setFinaleDifficulty,
+  startFinale,
   updateFinale
 } from './world/finale.js';
 import { loadDonkey, updateDonkey } from './world/donkey.js';
@@ -204,8 +211,42 @@ let dragonPuzzle = null;
 let isDragonPuzzleActive = false;
 let dragonDirectHits = 0;
 let finalPuzzleStarted = false;
+let gameplayModelsPromise = null;
+let worldTwoModelsPromise = null;
+let finaleModelsPromise = null;
 const DIRECT_HITS_BEFORE_FINAL_PUZZLE = 3;
 const DRAGON_HIT_DAMAGE = 25;
+
+function ensureGameplayModelsLoaded() {
+  if (!gameplayModelsPromise) {
+    gameplayModelsPromise = loadGameplayModels(scene);
+  }
+
+  return gameplayModelsPromise;
+}
+
+function ensureWorldTwoModelsLoaded() {
+  if (!worldTwoModelsPromise) {
+    worldTwoModelsPromise = Promise.all([
+      loadShifuTask(scene),
+      loadWoodTask(scene),
+      loadBridgeTask(scene)
+    ]);
+  }
+
+  return worldTwoModelsPromise;
+}
+
+function ensureFinaleModelsLoaded() {
+  if (!finaleModelsPromise) {
+    finaleModelsPromise = Promise.all([
+      loadFinale(scene),
+      loadDonkey(scene)
+    ]);
+  }
+
+  return finaleModelsPromise;
+}
 
 function showDragonVictory() {
   dragonPrompt.classList.remove('is-visible');
@@ -289,6 +330,8 @@ introOverlay.querySelector('.intro-start-button').addEventListener('click', () =
   isIntroActive = false;
   introOverlay.classList.remove('is-visible');
   difficultyOverlay.classList.add('is-visible');
+
+  ensureGameplayModelsLoaded();
 });
 
 let isFirstPerson = false;
@@ -332,6 +375,7 @@ window.addEventListener('keydown', (event) => {
     if (!isGemDelivered()) {
       return; 
     }
+    ensureWorldTwoModelsLoaded();
     tryStartCarpetTravel(carpetTravel);
   }
 
@@ -361,18 +405,13 @@ const playerController = createPlayerController(
   modelColliders
 );
 
-loadModels(scene).then(() => {
+loadIntroModels(scene).then(() => {
   createIslandVegetation(scene, {
     island,
     obstacleBounds: modelBounds,
     colliderTargets: modelColliders
   });
 });
-loadShifuTask(scene);
-loadWoodTask(scene);
-loadBridgeTask(scene);
-loadFinale(scene);
-loadDonkey(scene);
 
 if (debugMode) {
   const axesHelper = new THREE.AxesHelper(100);
@@ -497,7 +536,11 @@ function animate() {
   updateWoodTask(deltaTime, playerData.group);
   updateBridgeTask(deltaTime, playerData.group);
   updateDonkey(deltaTime, playerData.group);
-  updatePortalTeleport(playerData.group);
+  updatePortalTeleport(playerData.group, () => {
+    ensureFinaleModelsLoaded().then(() => {
+      startFinale();
+    });
+  });
   updateRain(deltaTime, playerData.group);
   updateStorm(deltaTime, scene);
 

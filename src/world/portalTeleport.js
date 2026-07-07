@@ -54,7 +54,7 @@ export function createPortalPositionLogger(player) {
   });
 }
 
-export function updatePortalTeleport(player) {
+export function updatePortalTeleport(player, onStartFinale = startFinale) {
   if (!isBridgeBuilt()) return;
   if (hasTeleportedToFirstWorld) return;
   if (!portalBox.containsPoint(player.position)) return;
@@ -64,7 +64,7 @@ export function updatePortalTeleport(player) {
   hideBookAfterPortal();
   hideDragonAfterPortal();
   hideGemAfterPortal();
-  startFinale();
+  onStartFinale();
   positionPanel.innerHTML = 'Portal crossed';
   positionPanel.style.display = 'block';
   console.log('Teleported to first world:', returnPosition);

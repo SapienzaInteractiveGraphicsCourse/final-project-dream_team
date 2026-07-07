@@ -28,6 +28,7 @@ const sparkleColors = [
 
 let brokenTower = null;
 let fixedTower = null;
+let bridgeTaskLoadPromise = null;
 let bridgeState = 'waiting';
 let buildTimer = 0;
 let canBuildBridge = false;
@@ -185,20 +186,48 @@ window.addEventListener('keydown', (event) => {
 });
 
 export function loadBridgeTask(scene) {
-  loader.load('/models/tower1.glb', (gltf) => {
-    brokenTower = gltf.scene;
-    prepareTower(brokenTower, true, brokenTowerWorldOffset);
-    scene.add(brokenTower);
+  if (bridgeTaskLoadPromise) return bridgeTaskLoadPromise;
+
+  bridgeTaskLoadPromise = Promise.all([
+    new Promise((resolve) => {
+      loader.load(
+        '/models/tower1.glb',
+        (gltf) => {
+          brokenTower = gltf.scene;
+          prepareTower(brokenTower, true, brokenTowerWorldOffset);
+          scene.add(brokenTower);
+          resolve(brokenTower);
+        },
+        undefined,
+        (error) => {
+          console.error('Error loading tower1.glb', error);
+          resolve(null);
+        }
+      );
+    }),
+    new Promise((resolve) => {
+      loader.load(
+        '/models/tower3.glb',
+        (gltf) => {
+          fixedTower = gltf.scene;
+          prepareTower(fixedTower, false, fixedTowerWorldOffset);
+          hideExportPlaceholderCube(fixedTower);
+          scene.add(fixedTower);
+          resolve(fixedTower);
+        },
+        undefined,
+        (error) => {
+          console.error('Error loading tower3.glb', error);
+          resolve(null);
+        }
+      );
+    })
+  ]).then((models) => {
+    createBuildParticles(scene);
+    return models;
   });
 
-  loader.load('/models/tower3.glb', (gltf) => {
-    fixedTower = gltf.scene;
-    prepareTower(fixedTower, false, fixedTowerWorldOffset);
-    hideExportPlaceholderCube(fixedTower);
-    scene.add(fixedTower);
-  });
-
-  createBuildParticles(scene);
+  return bridgeTaskLoadPromise;
 }
 
 export function updateBridgeTask(deltaTime, player) {

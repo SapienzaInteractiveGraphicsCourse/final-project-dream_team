@@ -12,6 +12,7 @@ let wood = null;
 let axeStartY = 0;
 let axeCollider = null;
 let axeLight = null;
+let woodTaskLoadPromise = null;
 
 let canTakeAxe = false;
 let hasAxe = false;
@@ -91,68 +92,103 @@ window.addEventListener('keydown', (event) => {
 });
 
 export function loadWoodTask(scene) {
-  gltfLoader.load('/models/medieval_axe.glb', (gltf) => {
-    axe = gltf.scene;
+  if (woodTaskLoadPromise) return woodTaskLoadPromise;
 
-    axe.position.copy(axePosition);
-    axe.scale.set(0.04, 0.04, 0.04);
-	    axe.rotation.y = axeBaseRotationY;
-	    axeStartY = axe.position.y;
+  woodTaskLoadPromise = Promise.all([
+    new Promise((resolve) => {
+      gltfLoader.load(
+        '/models/medieval_axe.glb',
+        (gltf) => {
+          axe = gltf.scene;
 
-      axeLight = new THREE.PointLight(0xfff0b5, 4.2, 9, 1.6);
-      axeLight.position.copy(axe.position);
-      axeLight.position.y += 2.2;
-      scene.add(axeLight);
+          axe.position.copy(axePosition);
+          axe.scale.set(0.04, 0.04, 0.04);
+          axe.rotation.y = axeBaseRotationY;
+          axeStartY = axe.position.y;
 
-	    axeCollider = new THREE.Box3().setFromCenterAndSize(
-      axePosition,
-      new THREE.Vector3(1.6, 2.2, 1.6)
-    );
-    modelColliders.push(axeCollider);
+          axeLight = new THREE.PointLight(0xfff0b5, 4.2, 9, 1.6);
+          axeLight.position.copy(axe.position);
+          axeLight.position.y += 2.2;
+          scene.add(axeLight);
 
-    scene.add(axe);
-  });
+          axeCollider = new THREE.Box3().setFromCenterAndSize(
+            axePosition,
+            new THREE.Vector3(1.6, 2.2, 1.6)
+          );
+          modelColliders.push(axeCollider);
 
-  const mtlLoader = new MTLLoader();
-  mtlLoader.setPath('/models/');
-  mtlLoader.setResourcePath('/');
+          scene.add(axe);
+          resolve(axe);
+        },
+        undefined,
+        (error) => {
+          console.error('Error loading medieval_axe.glb', error);
+          resolve(null);
+        }
+      );
+    }),
+    new Promise((resolve) => {
+      const mtlLoader = new MTLLoader();
+      mtlLoader.setPath('/models/');
+      mtlLoader.setResourcePath('/');
 
-  mtlLoader.load('12303_Firewood_Stack_v1_l3.mtl', (materials) => {
-    materials.preload();
+      mtlLoader.load(
+        '12303_Firewood_Stack_v1_l3.mtl',
+        (materials) => {
+          materials.preload();
 
-    const objLoader = new OBJLoader();
-    objLoader.setMaterials(materials);
-    objLoader.setPath('/models/');
+          const objLoader = new OBJLoader();
+          objLoader.setMaterials(materials);
+          objLoader.setPath('/models/');
 
-  objLoader.load('12303_Firewood_Stack_v1_l3.obj', (object) => {
-    wood = object;
+          objLoader.load(
+            '12303_Firewood_Stack_v1_l3.obj',
+            (object) => {
+              wood = object;
 
-    wood.position.copy(woodPosition);
-    wood.scale.copy(woodGroundScale);
-    wood.rotation.x = Math.PI / 2;
-    wood.rotation.y = Math.PI ;
-    wood.visible = false;
+              wood.position.copy(woodPosition);
+              wood.scale.copy(woodGroundScale);
+              wood.rotation.x = Math.PI / 2;
+              wood.rotation.y = Math.PI ;
+              wood.visible = false;
 
-    wood.traverse((child) => {
-      if (child.isMesh) {
-        const materials = Array.isArray(child.material)
-          ? child.material
-          : [child.material];
+              wood.traverse((child) => {
+                if (child.isMesh) {
+                  const materials = Array.isArray(child.material)
+                    ? child.material
+                    : [child.material];
 
-        materials.forEach((material) => {
-          if (material.map) {
-            material.map.colorSpace = THREE.SRGBColorSpace;
-            material.map.needsUpdate = true;
-          }
+                  materials.forEach((material) => {
+                    if (material.map) {
+                      material.map.colorSpace = THREE.SRGBColorSpace;
+                      material.map.needsUpdate = true;
+                    }
 
-          material.needsUpdate = true;
-        });
-      }
-    });
+                    material.needsUpdate = true;
+                  });
+                }
+              });
 
-    scene.add(wood);
-  });
-});
+              scene.add(wood);
+              resolve(wood);
+            },
+            undefined,
+            (error) => {
+              console.error('Error loading 12303_Firewood_Stack_v1_l3.obj', error);
+              resolve(null);
+            }
+          );
+        },
+        undefined,
+        (error) => {
+          console.error('Error loading 12303_Firewood_Stack_v1_l3.mtl', error);
+          resolve(null);
+        }
+      );
+    })
+  ]);
+
+  return woodTaskLoadPromise;
 }
 export function updateWoodTask(deltaTime, player) {
   updateAxeAnimation();

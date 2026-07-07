@@ -51,6 +51,7 @@ let flynnBodyParts = {};
 let flynnInitialRotations = {};
 let flynnBones = [];
 let flynnWalkTargetIndex = 0;
+let finaleLoadPromise = null;
 
 const flynnInteractionDistance = 4;
 const flynnWalkSpeed = 3.0;
@@ -547,9 +548,12 @@ export function setFinaleCallbacks(callbacks = {}) {
 }
 
 export function loadFinale(scene) {
-  loader.load(
-    finaleCharacterPath,
-    (gltf) => {
+  if (finaleLoadPromise) return finaleLoadPromise;
+
+  finaleLoadPromise = new Promise((resolve) => {
+    loader.load(
+      finaleCharacterPath,
+      (gltf) => {
       flynn = gltf.scene;
       const materialPromises = [];
       flynnBones = [];
@@ -639,13 +643,18 @@ export function loadFinale(scene) {
         }
 
         console.log(`${finaleCharacterName} loaded for finale`);
+        resolve(flynn);
       });
     },
     undefined,
     (error) => {
       console.error(`Error loading ${finaleCharacterPath}`, error);
+      resolve(null);
     }
   );
+  });
+
+  return finaleLoadPromise;
 }
 
 export function updateFinale(deltaTime, player, camera) {

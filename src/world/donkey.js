@@ -13,6 +13,7 @@ let donkeyBones = [];
 let donkeyParts = {};
 let donkeyInitialRotations = {};
 let donkeyStartY = donkeyPosition.y;
+let donkeyLoadPromise = null;
 
 function findBone(namePart) {
   return donkeyBones.find((bone) => bone.name.includes(namePart)) || null;
@@ -85,9 +86,12 @@ function buildDonkeyParts() {
 }
 
 export function loadDonkey(scene) {
-  loader.load(
-    donkeyPath,
-    (gltf) => {
+  if (donkeyLoadPromise) return donkeyLoadPromise;
+
+  donkeyLoadPromise = new Promise((resolve) => {
+    loader.load(
+      donkeyPath,
+      (gltf) => {
       donkey = gltf.scene;
       donkeyBones = [];
       donkeySkinnedMesh = null;
@@ -141,12 +145,17 @@ export function loadDonkey(scene) {
 
       scene.add(donkey);
       console.log('Donkey loaded', donkeyParts);
+      resolve(donkey);
     },
     undefined,
     (error) => {
       console.error(`Error loading ${donkeyPath}`, error);
+      resolve(null);
     }
   );
+  });
+
+  return donkeyLoadPromise;
 }
 
 export function updateDonkey(deltaTime, player) {

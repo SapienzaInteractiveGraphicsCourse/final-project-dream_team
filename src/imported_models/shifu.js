@@ -14,6 +14,7 @@ let shifuMaterials = [];
 let shifuBaseRotationY = Math.PI;
 let shifuArmParts = {};
 let shifuArmInitialRotations = {};
+let shifuLoadPromise = null;
 const shifuPosition = new THREE.Vector3(231, 28.4, -258);
 const shifuScale = 2;
 const interactionDistance = 4;
@@ -132,7 +133,10 @@ window.addEventListener('keydown', (event) => {
 });
 
 export function loadShifuTask(scene){
-    loader.load('/models/shifu.glb',
+    if (shifuLoadPromise) return shifuLoadPromise;
+
+    shifuLoadPromise = new Promise((resolve) => {
+      loader.load('/models/shifu.glb',
         (gltf) => {
             shifu = new THREE.Group();
             shifuMaterials = [];
@@ -196,14 +200,19 @@ export function loadShifuTask(scene){
       scene.add(shifu);
 
       console.log('Shifu loaded');
+      resolve(shifu);
     },
 
     undefined,
 
     (error) => {
       console.error('Error loading shifu.glb', error);
+      resolve(null);
     }
   );
+  });
+
+  return shifuLoadPromise;
 }
 
 export function updateShifuTask (deltaTime, player){
