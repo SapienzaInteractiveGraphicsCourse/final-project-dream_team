@@ -236,3 +236,28 @@ export function updateStorm(deltaTime, scene) {
 export function getStormProgress() {
   return stormProgress;
 }
+
+export function stopStormAndRain(scene) {
+  isRaining = false;
+  stormStarted = false;
+  stormProgress = 0;
+
+  if (rainGroup) {
+    rainGroup.visible = false;
+  }
+
+  if (rainAudio) {
+    rainAudio.pause();
+    rainAudio.currentTime = 0;
+  }
+
+  if (scene) {
+    scene.background = daySkyColor.clone();
+
+    originalLights.forEach(({ light, intensity, color }) => {
+      light.intensity = intensity;
+      light.color.copy(color);
+      light.castShadow = true;
+    });
+  }
+}

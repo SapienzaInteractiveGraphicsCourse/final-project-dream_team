@@ -25,14 +25,26 @@ import {
 import { loadShifuTask, startShifuBridgeThanks, updateShifuTask } from './imported_models/shifu.js';
 import { loadWoodTask, updateWoodTask } from './imported_models/wood.js';
 import { isBridgeBuilt, loadBridgeTask, updateBridgeTask } from './imported_models/bridge.js';
-import { createRain, startStorm, updateRain, updateStorm } from './world/rain.js';
+import {
+  createRain,
+  startStorm,
+  stopStormAndRain,
+  updateRain,
+  updateStorm
+} from './world/rain.js';
 import {
   createPortalPositionLogger,
   updatePortalTeleport
 } from './world/portalTeleport.js';
 import { updateTowerFall } from './world/towerFall.js';
 import { createPuzzleMinigame, getPuzzleDifficulties } from './minigame/puzzle.js';
-import { loadFinale, updateFinale } from './world/finale.js';
+import {
+  isFinaleInputLocked,
+  loadFinale,
+  setFinaleCallbacks,
+  setFinaleDifficulty,
+  updateFinale
+} from './world/finale.js';
 import { loadDonkey, updateDonkey } from './world/donkey.js';
 import { updateMage } from './imported_models/mage.js'; 
 
@@ -254,6 +266,7 @@ difficultyOverlay.querySelectorAll('[data-difficulty]').forEach((button) => {
   // 1. Aggiunto "async" qui!
   button.addEventListener('click', async () => { 
     selectedDifficulty = button.dataset.difficulty;
+    setFinaleDifficulty(selectedDifficulty);
     isChoosingDifficulty = false;
     difficultyOverlay.classList.remove('is-visible');
 
@@ -311,7 +324,7 @@ window.addEventListener('keydown', (event) => {
     return;
   }
 
-  if (isChoosingDifficulty || isDragonPuzzleActive) {
+  if (isChoosingDifficulty || isDragonPuzzleActive || isFinaleInputLocked()) {
     return;
   }
 
@@ -403,6 +416,16 @@ function updateIntroCamera(time) {
 }
 // MODIFICA: Variabile per simulare l'aumento dell'intensità della tempesta da passare ai lampioni
 let globalStormProgress = 0;
+let finaleWeatherCleared = false;
+
+setFinaleCallbacks({
+  onRestComplete: () => {
+    finaleWeatherCleared = true;
+    globalStormProgress = 0;
+    stopStormAndRain(scene);
+    updateLampPosts(0);
+  }
+});
 
 // --------------------------------------------------
 // 18. ANIMATION LOOP
@@ -426,7 +449,12 @@ function animate() {
     playerData.group,
     playerData.group.position.y > 20 && !carpetTravel.isTraveling
   );
-  const canControlPlayer = !carpetTravel.isTraveling && !isFalling && !isChoosingDifficulty && !isDragonPuzzleActive;
+  const canControlPlayer =
+    !carpetTravel.isTraveling &&
+    !isFalling &&
+    !isChoosingDifficulty &&
+    !isDragonPuzzleActive &&
+    !isFinaleInputLocked();
   playerController.update(deltaTime, canControlPlayer);
 
   const carpetObject = carpetTravel.group || carpetTravel.mesh;
@@ -474,7 +502,7 @@ function animate() {
   updateStorm(deltaTime, scene);
 
   // MODIFICA: Aggiornamento lampioni basato sullo stato della tempesta
-  if (shifuThanksTriggered) {
+  if (shifuThanksTriggered && !finaleWeatherCleared) {
     // La tempesta sale progressivamente fino a 1 nel giro di qualche secondo
     globalStormProgress = Math.min(1.0, globalStormProgress + deltaTime * 0.2); 
   }
@@ -527,7 +555,7 @@ function animate() {
 
   renderer.render(scene, camera);
 
-  if (isBridgeBuilt() && !shifuThanksTriggered ){
+  if (isBridgeBuilt() && !shifuThanksTriggered && !finaleWeatherCleared ){
     shifuThanksTriggered = true;
     startShifuBridgeThanks();
     startStorm(scene);

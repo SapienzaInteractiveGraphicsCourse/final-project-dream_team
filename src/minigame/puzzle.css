@@ -148,6 +148,86 @@
   text-align: center;
 }
 
+.door-minigame-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: none;
+  place-items: center;
+  padding: 24px;
+  background: rgba(5, 9, 15, 0.72);
+  backdrop-filter: blur(3px);
+}
+
+.door-minigame-overlay.is-visible {
+  display: grid;
+}
+
+.door-minigame-panel {
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  padding: 20px;
+  color: #f7fbff;
+  background: rgba(17, 22, 29, 0.96);
+  border: 1px solid rgba(255, 194, 88, 0.7);
+  border-radius: 8px;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.48), 0 0 34px rgba(255, 133, 66, 0.2);
+}
+
+.door-sequence {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 74px;
+  margin: 22px 0 12px;
+  padding: 12px;
+  background: rgba(3, 5, 8, 0.44);
+  border: 1px solid rgba(255, 194, 88, 0.45);
+  border-radius: 8px;
+}
+
+.door-key {
+  display: inline-grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  color: #f7fbff;
+  background: rgba(88, 103, 132, 0.56);
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-radius: 7px;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.door-key.current {
+  color: #111820;
+  background: #ffcf6c;
+  border-color: #fff1c2;
+  box-shadow: 0 0 16px rgba(255, 207, 108, 0.58);
+}
+
+.door-key.completed {
+  color: #07130b;
+  background: #8ce99a;
+  border-color: #ccffd4;
+}
+
+.door-arrow {
+  color: #f5e8c9;
+  font-weight: 700;
+}
+
+.door-feedback {
+  min-height: 24px;
+  margin: 12px 0 0;
+  color: #ffcf6c;
+  font-weight: 700;
+  text-align: center;
+}
+
 @media (max-width: 620px) {
   .puzzle-overlay {
     padding: 12px;
@@ -169,5 +249,20 @@
   .puzzle-pieces {
     grid-template-columns: repeat(auto-fit, minmax(54px, 1fr));
     gap: 6px;
+  }
+
+  .door-minigame-overlay {
+    padding: 12px;
+  }
+
+  .door-minigame-panel {
+    width: calc(100vw - 24px);
+    padding: 14px;
+  }
+
+  .door-key {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
   }
 }

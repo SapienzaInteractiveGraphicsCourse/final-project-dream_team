@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { showObjectiveMessage } from '../ui/objectiveMessage.js';
+import { createDoorMinigame } from '../minigame/door.js';
 
 const loader = new GLTFLoader();
 const finaleCharacterPath = '/models/shrek.glb';
@@ -29,6 +30,15 @@ let flynnHasArrivedHome = false;
 let canTalkToShrekProblem = false;
 let shrekProblemIsTalking = false;
 let shrekProblemDone = false;
+let shrekDoorThanksIsTalking = false;
+let finaleDifficulty = 'medium';
+let doorMinigame = null;
+let finaleResting = false;
+let finaleGreeting = false;
+let finaleFinished = false;
+let finaleCallbacks = {
+  onRestComplete: () => {}
+};
 let flynnSkinnedMesh = null;
 let flynnMixer = null;
 let flynnIdleAction = null;
@@ -45,7 +55,11 @@ const shrekArmRestOffset = 0.48;
 const flynnDialogueText =
   'Shrek: It is raining. Come with me to my house for the night.';
 const shrekProblemDialogueText =
-  'Shrek: Oh no, the door will not open. We need to solve a riddle. Help me.';
+  'Shrek: The door is stuck, and I need your help to open it.';
+const shrekDoorThanksText =
+  "Shrek: Thank you for helping me. Now let's go inside and get some rest.";
+const shrekGoodbyeText =
+  'Shrek: Thank you for helping me. Have a good adventure, brave traveler.';
 
 const flynnDialogue = document.createElement('div');
 flynnDialogue.className = 'interaction-dialogue';
@@ -54,17 +68,57 @@ document.body.appendChild(flynnDialogue);
 
 const shrekProblemMarker = document.createElement('div');
 shrekProblemMarker.className = 'shrek-problem-marker';
-shrekProblemMarker.textContent = '!';
+shrekProblemMarker.textContent = '?';
 document.body.appendChild(shrekProblemMarker);
+
+const restOverlay = document.createElement('div');
+restOverlay.className = 'rest-overlay';
+restOverlay.innerHTML = '<p>Our hero is resting...</p>';
+document.body.appendChild(restOverlay);
+
+const endingOverlay = document.createElement('div');
+endingOverlay.className = 'ending-overlay';
+endingOverlay.innerHTML = `
+  <section class="ending-panel" role="dialog" aria-modal="true" aria-labelledby="ending-title">
+    <p class="ending-kicker">The morning returns</p>
+    <h1 id="ending-title">The End</h1>
+    <p>The storm has passed, Shrek is safe at home, and the adventure can begin again.</p>
+    <button class="ending-restart-button" type="button">Restart</button>
+  </section>
+`;
+document.body.appendChild(endingOverlay);
+
+endingOverlay
+  .querySelector('.ending-restart-button')
+  .addEventListener('click', () => {
+    window.location.reload();
+  });
 
 window.addEventListener('keydown', (event) => {
   if (!finaleStarted) return;
 
+  if (event.key === 'Enter' && shrekDoorThanksIsTalking) {
+    shrekDoorThanksIsTalking = false;
+    flynnDialogue.classList.remove('story-dialogue');
+    flynnDialogue.classList.remove('is-visible');
+    startRestSequence();
+    return;
+  }
+
+  if (event.key === 'Enter' && finaleGreeting) {
+    finaleGreeting = false;
+    finaleFinished = true;
+    flynnDialogue.classList.remove('story-dialogue');
+    flynnDialogue.classList.remove('is-visible');
+    endingOverlay.classList.add('is-visible');
+    return;
+  }
+
   if (event.key === 'Enter' && shrekProblemIsTalking) {
     shrekProblemIsTalking = false;
-    shrekProblemDone = true;
     flynnDialogue.classList.remove('is-visible');
     shrekProblemMarker.classList.remove('is-visible');
+    startDoorProblem();
     return;
   }
 
@@ -95,6 +149,60 @@ window.addEventListener('keydown', (event) => {
 
   flynnIsTalking = true;
 });
+
+function getDoorMinigame() {
+  if (!doorMinigame) {
+    doorMinigame = createDoorMinigame({
+      difficulty: finaleDifficulty,
+      title: 'Magic Door Lock',
+      instruction: 'Repeat the magic sequence so Shrek can open his door.',
+      allowClose: false,
+      onSolved: () => {
+        shrekProblemDone = true;
+        shrekProblemIsTalking = false;
+        shrekDoorThanksIsTalking = true;
+        canTalkToShrekProblem = false;
+        shrekProblemMarker.classList.remove('is-visible');
+        flynnDialogue.classList.add('story-dialogue');
+        flynnDialogue.classList.remove('shrek-problem-prompt');
+        flynnDialogue.textContent = `${shrekDoorThanksText} Press Enter.`;
+        flynnDialogue.classList.add('is-visible');
+      }
+    });
+  }
+
+  doorMinigame.setDifficulty(finaleDifficulty);
+  return doorMinigame;
+}
+
+function startDoorProblem() {
+  if (shrekProblemDone) return;
+
+  getDoorMinigame().open(finaleDifficulty);
+}
+
+function startRestSequence() {
+  if (finaleResting || finaleGreeting || finaleFinished) return;
+
+  finaleResting = true;
+  restOverlay.classList.add('is-visible');
+
+  setTimeout(() => {
+    finaleCallbacks.onRestComplete();
+    restOverlay.classList.add('is-fading-out');
+
+    setTimeout(() => {
+      finaleResting = false;
+      finaleGreeting = true;
+      restOverlay.classList.remove('is-visible');
+      restOverlay.classList.remove('is-fading-out');
+      flynnDialogue.classList.add('story-dialogue');
+      flynnDialogue.classList.remove('shrek-problem-prompt');
+      flynnDialogue.textContent = `${shrekGoodbyeText} Press Enter.`;
+      flynnDialogue.classList.add('is-visible');
+    }, 1800);
+  }, 10000);
+}
 
 function findFlynnBone(namePart) {
   if (!flynnBones.length) return null;
@@ -307,7 +415,13 @@ function updateFlynnWalk(deltaTime, time) {
 }
 
 function updateShrekProblemMarker(camera) {
-  if (!camera || !flynn || !flynnHasArrivedHome || shrekProblemDone) {
+  if (
+    !camera ||
+    !flynn ||
+    !flynnHasArrivedHome ||
+    shrekProblemDone ||
+    doorMinigame?.isOpen()
+  ) {
     shrekProblemMarker.classList.remove('is-visible');
     return;
   }
@@ -380,6 +494,33 @@ export function startFinale() {
 
 export function isFinaleStarted() {
   return finaleStarted;
+}
+
+export function setFinaleDifficulty(difficulty) {
+  finaleDifficulty = difficulty;
+
+  if (doorMinigame) {
+    doorMinigame.setDifficulty(difficulty);
+  }
+}
+
+export function isFinaleInputLocked() {
+  return (
+    flynnIsTalking ||
+    shrekProblemIsTalking ||
+    shrekDoorThanksIsTalking ||
+    finaleResting ||
+    finaleGreeting ||
+    finaleFinished ||
+    Boolean(doorMinigame?.isOpen())
+  );
+}
+
+export function setFinaleCallbacks(callbacks = {}) {
+  finaleCallbacks = {
+    ...finaleCallbacks,
+    ...callbacks
+  };
 }
 
 export function loadFinale(scene) {
@@ -525,14 +666,33 @@ export function updateFinale(deltaTime, player, camera) {
   canTalkToShrekProblem =
     flynnHasArrivedHome &&
     !shrekProblemDone &&
+    !shrekDoorThanksIsTalking &&
+    !finaleResting &&
+    !finaleGreeting &&
+    !finaleFinished &&
+    !doorMinigame?.isOpen() &&
     distance < flynnInteractionDistance;
 
   canTalkToFlynn =
+    !finaleResting &&
+    !finaleGreeting &&
+    !finaleFinished &&
+    !shrekDoorThanksIsTalking &&
     !flynnHasInvitedPlayer &&
     distance < flynnInteractionDistance &&
     !flynnMustLeaveBeforeTalkAgain;
 
-  if (shrekProblemIsTalking) {
+  if (shrekDoorThanksIsTalking) {
+    flynnDialogue.classList.add('story-dialogue');
+    flynnDialogue.classList.remove('shrek-problem-prompt');
+    flynnDialogue.textContent = `${shrekDoorThanksText} Press Enter.`;
+    flynnDialogue.classList.add('is-visible');
+  } else if (finaleGreeting) {
+    flynnDialogue.classList.add('story-dialogue');
+    flynnDialogue.classList.remove('shrek-problem-prompt');
+    flynnDialogue.textContent = `${shrekGoodbyeText} Press Enter.`;
+    flynnDialogue.classList.add('is-visible');
+  } else if (shrekProblemIsTalking) {
     flynnDialogue.classList.add('story-dialogue');
     flynnDialogue.classList.remove('shrek-problem-prompt');
     flynnDialogue.textContent = `${shrekProblemDialogueText} Press Enter.`;
@@ -558,5 +718,5 @@ export function updateFinale(deltaTime, player, camera) {
     flynnDialogue.classList.remove('is-visible');
   }
 
-  return flynnIsTalking || shrekProblemIsTalking;
+  return isFinaleInputLocked();
 }
