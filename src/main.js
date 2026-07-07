@@ -34,8 +34,10 @@ import { updateTowerFall } from './world/towerFall.js';
 import { createPuzzleMinigame, getPuzzleDifficulties } from './minigame/puzzle.js';
 import { loadFinale, updateFinale } from './world/finale.js';
 import { loadDonkey, updateDonkey } from './world/donkey.js';
-// RETTIFICA: Importiamo updateMage per poterlo usare nel ciclo di animazione
 import { updateMage } from './imported_models/mage.js'; 
+
+// lamppost imports
+import { createLampPosts, updateLampPosts } from './world/lampPosts.js';
 
 const canvas = document.querySelector('#bg');
 const scene = createScene();
@@ -74,12 +76,14 @@ for (let i = 0; i < cloudsNumber; i++) {
 createRain(scene);
 const carpetTravel = createCarpetTravel(scene);
 
+// MODIFICA: Chiamo la creazione dei lampioni nella scena
+createLampPosts(scene);
+
 if (carpetTravel && carpetTravel.mesh) {
   carpetTravel.mesh.visible = false;
 } else if (carpetTravel && carpetTravel.group) {
   carpetTravel.group.visible = false;
 }
-
 
 const carpetPrompt = document.createElement('div');
 carpetPrompt.className = 'interaction-dialogue carpet-dialogue';
@@ -207,9 +211,8 @@ introOverlay.querySelector('.intro-start-button').addEventListener('click', () =
   difficultyOverlay.classList.add('is-visible');
 });
 
-// RETTIFICA: Gestione pulita dello stato della telecamera
 let isFirstPerson = false;
-let manualFirstPerson = false; // Ricorda se l'utente ha attivato la prima persona con il tasto 'V'
+let manualFirstPerson = false; 
 const thirdPersonFov = 65;
 const firstPersonFov = 100;
 
@@ -252,7 +255,6 @@ window.addEventListener('keydown', (event) => {
     tryStartCarpetTravel(carpetTravel);
   }
 
-  // RETTIFICA: Quando premi V, aggiorni lo stato manuale inserito dall'utente
   if (event.key.toLowerCase() === 'v') {
     manualFirstPerson = !manualFirstPerson;
     setFirstPersonMode(manualFirstPerson);
@@ -332,6 +334,8 @@ function updateIntroCamera(time) {
   camera.position.set(cameraX, height, cameraZ);
   camera.lookAt(targetX, 0, targetZ);
 }
+// MODIFICA: Variabile per simulare l'aumento dell'intensità della tempesta da passare ai lampioni
+let globalStormProgress = 0;
 
 // --------------------------------------------------
 // 18. ANIMATION LOOP
@@ -362,7 +366,7 @@ function animate() {
   
   if (carpetObject && carpetObject.visible && !carpetTravel.isTraveling) {
     const distanceToCarpet = playerData.group.position.distanceTo(carpetObject.position);
-    const carpetInteractionDistance = 4; // Raggio di attivazione (uguale a quello dei personaggi)
+    const carpetInteractionDistance = 4;
 
     if (distanceToCarpet < carpetInteractionDistance) {
       carpetPrompt.classList.add('is-visible');
@@ -370,13 +374,9 @@ function animate() {
       carpetPrompt.classList.remove('is-visible');
     }
   } else {
-    // Se sta già viaggiando o il tappeto non è ancora sbloccato, nascondi il banner
     carpetPrompt.classList.remove('is-visible');
   }
   
-  // --- CAMERA AND DIALOGUE HANDLING START ---
-
-  // 1. Update the mage and capture whether he is actively talking.
   const isTalkingToMage = updateMage(deltaTime, playerData.group);
   const isTalkingToShifu = updateShifuTask(deltaTime, playerData.group);
   const isTalkingToFlynn = updateFinale(deltaTime, playerData.group, camera);
@@ -389,11 +389,8 @@ function animate() {
   if (shouldBeInFirstPerson) {
     setFirstPersonMode(true);
   } else {
-    // When nobody is talking, restore the user's chosen camera mode.
     setFirstPersonMode(manualFirstPerson);
   }
-
-  // --- CAMERA AND DIALOGUE HANDLING END ---
 
   const pos = playerData.group.position;
   if (debugMode) {
@@ -409,12 +406,18 @@ function animate() {
   updateRain(deltaTime, playerData.group);
   updateStorm(deltaTime, scene);
 
+  // MODIFICA: Aggiornamento lampioni basato sullo stato della tempesta
+  if (shifuThanksTriggered) {
+    // La tempesta sale progressivamente fino a 1 nel giro di qualche secondo
+    globalStormProgress = Math.min(1.0, globalStormProgress + deltaTime * 0.2); 
+  }
+  updateLampPosts(globalStormProgress);
+
   if (isGemDelivered()) {
     if (carpetTravel && carpetTravel.mesh) carpetTravel.mesh.visible = true;
     if (carpetTravel && carpetTravel.group) carpetTravel.group.visible = true;
   }
 
-  // --- CASTLE ZONE CHECK ---
   if (isBookDelivered() && !isDragonDefeated() && !isDragonPuzzleActive && !isChoosingDifficulty) {
     if (castleTriggerBox.containsPoint(playerData.group.position)) {
       isInsideCastle = true;
