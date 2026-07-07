@@ -4,55 +4,64 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 const lampLoader = new GLTFLoader();
 const lampPosts = [];
 
-// Rendiamo la geometria del glow leggermente più grande e definita se necessario
 const glowGeometry = new THREE.SphereGeometry(0.4, 16, 16); 
 const glowColor = new THREE.Color(0xffc36a);
 const lightColor = 0xffb35a;
 
+// Lampioni per ogni viale principale del Mondo 1
 const mainWorldLampPaths = [
-  { start: [0, 26], end: [10, -30], count: 2 },
-  { start: [0, 26], end: [50, 30], count: 2 },
-  { start: [0, 26], end: [-42, 68], count: 2 },
+  { 
+    start: [0, 26], end: [10, -30], 
+    placements: [{ t: 0.2, side: -1 }, { t: 0.5, side: 1 }, { t: 0.8, side: -1 }] 
+  },
+  { 
+    start: [0, 26], end: [50, 30], 
+    placements: [{ t: 0.25, side: 1 }, { t: 0.55, side: -1 }, { t: 0.85, side: 1 }] 
+  },
+  { 
+    start: [0, 26], end: [-42, 68], 
+    placements: [{ t: 0.2, side: -1 }, { t: 0.5, side: 1 }, { t: 0.8, side: -1 }] 
+  },
   {
-    start: [10, -30],
-    end: [-30, -70],
-    placements: [
-      { t: 0.33, side: -1 },
-      { t: 0.55, side: 1 }
-    ]
+    start: [10, -30], end: [-30, -70],
+    placements: [{ t: 0.25, side: -1 }, { t: 0.5, side: 1 }, { t: 0.75, side: -1 }]
   }
 ];
 
 const mainWorldExtraLamps = [
-  { x: 38, z: -24, rotationY: Math.PI / 3 }
+  { x: 38, z: -24, rotationY: Math.PI / 3 },
+  { x: 12, z: -25, rotationY: 0 },             
+  { x: -12, z: -48, rotationY: -Math.PI / 4 }  
+];
+
+// MODIFICA: Tornati al controllo manuale millimetrico per il Mondo 2!
+// Entrambi sono ora vicinissimi al centro dell'isola (236, -253)
+const worldTwoLamps = [
+  // Lampione Sinistro: spostato più indietro e leggermente a destra
+  { x: 232.5, z: -260.0, rotationY: -Math.PI/4, groundY: 28.75 },
+  // Lampione Destro: recuperato dal vuoto e messo saldamente sull'erba
+  { x: 241.5, z: -250.5, rotationY: Math.PI , groundY: 28.75 }
 ];
 
 function prepareLampMaterial(material) {
   if (!material) return null;
-
-  // Clona semplicemente il materiale originale senza toccare emissive o colori
-  // Questo garantisce che il legno rimanga legno e il lampione mantenga l'aspetto nativo della GLTF
   const preparedMaterial = material.clone();
-
   if (preparedMaterial.map) {
     preparedMaterial.map.colorSpace = THREE.SRGBColorSpace;
     preparedMaterial.map.needsUpdate = true;
   }
-
   return preparedMaterial;
 }
 
 function cloneLampModel(source) {
   const clone = source.clone(true);
-
   clone.position.set(0, 0, 0);
   clone.rotation.set(0, 0, 0);
   clone.scale.set(1, 1, 1);
 
   clone.traverse((child) => {
     if (!child.isMesh) return;
-
-    child.castShadow = true;
+    child.castShadow = false; 
     child.receiveShadow = true;
     child.material = Array.isArray(child.material)
       ? child.material.map((mat) => prepareLampMaterial(mat))
@@ -72,56 +81,40 @@ function alignToGround(model, groundY) {
 
 function createGlow(model, box) {
   const height = box.max.y - box.min.y;
-  
-  // Usiamo MeshBasicMaterial che non risente della luce ambientale ed è perfetto per simulare la lampadina accesa
   const glowMaterial = new THREE.MeshBasicMaterial({
     color: glowColor,
     transparent: true,
     opacity: 0
   });
   const glow = new THREE.Mesh(glowGeometry, glowMaterial);
-
-  // Posiziona la sfera esattamente dove c'è la lanterna (circa al 78% dell'altezza del modello)
   glow.position.set(0, height * 0.78, 0);
   glow.visible = false;
   model.add(glow);
-
   return glow;
 }
 
 function addLamp(scene, source, x, z, rotationY, sideOffset, groundY = 0.04) {
   const lamp = cloneLampModel(source);
-
   lamp.name = 'path-lamp-post';
   lamp.position.set(x, groundY, z);
   lamp.rotation.y = rotationY;
   lamp.scale.setScalar(1.35);
 
   const box = alignToGround(lamp, groundY);
-  
-  // Calcoliamo l'altezza per posizionare correttamente la luce al posto della sfera
   const height = box.max.y - box.min.y;
   
-  const pointLight = new THREE.PointLight(lightColor, 0, 18, 2.1);
-  pointLight.castShadow = true;
-  pointLight.shadow.mapSize.set(512, 512);
-  pointLight.shadow.camera.near = 0.4;
-  pointLight.shadow.camera.far = 18;
-  pointLight.shadow.bias = -0.002;
-  pointLight.shadow.normalBias = 0.04;
+  // Usiamo una sola luce per lampione
+  const pointLight = new THREE.PointLight(lightColor, 0, 25, 2);
   
-  // Posizioniamo la luce dove prima c'era la sfera
+  // SOLUZIONE CRITICA: Nessuna ombra per i lampioni!
+  pointLight.castShadow = false; 
+  
   pointLight.position.set(0, height * 0.78, 0);
   
   lamp.add(pointLight);
   scene.add(lamp);
 
-  // Salviamo solo ciò che ci serve veramente
-  lampPosts.push({
-    lamp,
-    pointLight,
-    sideOffset
-  });
+  lampPosts.push({ lamp, pointLight, sideOffset });
 }
 
 function addLampsAlongPath(scene, source, path) {
@@ -174,6 +167,11 @@ export function createLampPosts(scene) {
       mainWorldExtraLamps.forEach((lamp) => {
         addLamp(scene, lampSource, lamp.x, lamp.z, lamp.rotationY, 0);
       });
+
+      // MODIFICA: Li carichiamo con le coordinate manuali per il Mondo 2
+      worldTwoLamps.forEach((lamp) => {
+        addLamp(scene, lampSource, lamp.x, lamp.z, lamp.rotationY, 0, lamp.groundY);
+      });
     },
     undefined,
     (error) => {
@@ -186,12 +184,11 @@ export function updateLampPosts(stormProgress) {
   const activation = THREE.MathUtils.smoothstep(stormProgress, 0.35, 0.85);
 
   lampPosts.forEach(({ pointLight }) => {
-    const isOn = activation > 0.02;
-
-    // Gestiamo solo la PointLight ambientale
+    // La luce si accende solo visivamente (intensità), ma senza creare texture d'ombra
     pointLight.color.setHex(lightColor);
-    pointLight.castShadow = isOn;
-    pointLight.intensity = activation * 2.2;
-    pointLight.shadow.needsUpdate = isOn;
+    pointLight.intensity = activation * 5.0; 
+    
+    // Assicuriamoci che castShadow resti sempre falso
+    pointLight.castShadow = false; 
   });
 }

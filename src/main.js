@@ -11,7 +11,7 @@ import { createLights } from './base/lights.js';
 import { materials } from './world/materials.js';
 import { createIsland } from './world/island.js';
 import { createIslandVegetation } from './world/vegetation.js';
-import { createPlayer } from './player/schoolBoyPlayer.js';
+import { createPlayer, animatePlayer } from './player/schoolBoyPlayer.js';
 import { createPlayerController } from './controls/playerControls.js';
 import { loadModels, updateModels, modelColliders, modelBounds } from './imported_models/models.js';
 import { updateBook, isBookDelivered } from './imported_models/book.js';
@@ -43,6 +43,59 @@ const canvas = document.querySelector('#bg');
 const scene = createScene();
 const camera = createCamera();
 const renderer = createRenderer(canvas);
+
+// 1. Crea l'AudioListener e attaccalo alla telecamera
+const listener = new THREE.AudioListener();
+camera.add(listener);
+
+// 2. Crea un oggetto Audio globale (per la musica di sottofondo, non posizionale)
+const backgroundMusic = new THREE.Audio(listener);
+
+// Aggiungiamo questa variabile per sapere se il giocatore ha già cliccato
+let hasUserInteracted = false; 
+const audioLoader = new THREE.AudioLoader();
+console.log("Inizio a cercare il file musicale...");
+
+audioLoader.load(
+  '/music/Medieval_Vol.26.mp3',
+  function(buffer) {
+    console.log("SUCCESSO! Il file audio è stato caricato e decodificato.");
+    backgroundMusic.setBuffer(buffer);
+    backgroundMusic.setLoop(true); 
+    backgroundMusic.setVolume(0.4); 
+    
+    if (hasUserInteracted && listener.context.state !== 'suspended') {
+      backgroundMusic.play();
+    }
+  },
+  function(xhr) {
+    // Questo ti mostra la percentuale di caricamento
+    console.log('Scaricamento audio: ' + Math.round(xhr.loaded / xhr.total * 100) + '%');
+  },
+  function(err) {
+    console.error('ERRORE GRAVE: Non riesco a trovare il file /music/Medieval_Vol.26.mp3');
+    console.error('Assicurati che la cartella "music" sia dentro la cartella "public" del progetto!');
+  }
+);
+
+// --- EFFETTO SONORO COLPO MAGICO ---
+const dragonHitSound = new THREE.Audio(listener);
+
+audioLoader.load(
+  '/music/dragon_hit.wav', 
+  function(buffer) {
+    dragonHitSound.setBuffer(buffer);
+    dragonHitSound.setLoop(false); 
+    dragonHitSound.setVolume(0.8); 
+  },
+  undefined,
+  function(err) {
+    console.error('Errore nel caricamento del suono del drago. Assicurati che il file si chiami esattamente dragon_hit.wav');
+  }
+);
+
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Ombre morbide di alta qualità
 
 setupResize(camera, renderer);
 
@@ -198,10 +251,24 @@ function attackDragon() {
 }
 
 difficultyOverlay.querySelectorAll('[data-difficulty]').forEach((button) => {
-  button.addEventListener('click', () => {
+  // 1. Aggiunto "async" qui!
+  button.addEventListener('click', async () => { 
     selectedDifficulty = button.dataset.difficulty;
     isChoosingDifficulty = false;
     difficultyOverlay.classList.remove('is-visible');
+
+    // 2. Aggiunto questo per avvisare che il giocatore ha cliccato
+    hasUserInteracted = true; 
+
+    // 3. Aggiunto "await" per aspettare davvero il via libera del browser
+    if (listener.context.state === 'suspended') {
+      await listener.context.resume();
+    }
+    
+    // Se la musica è stata caricata e non sta già suonando, avviala
+    if (backgroundMusic.buffer && !backgroundMusic.isPlaying) {
+      backgroundMusic.play();
+    }
   });
 });
 
@@ -412,6 +479,31 @@ function animate() {
     globalStormProgress = Math.min(1.0, globalStormProgress + deltaTime * 0.2); 
   }
   updateLampPosts(globalStormProgress);
+  
+  // NUOVO: Gestione dello spegnimento del Sole e delle sue ombre
+  scene.traverse((child) => {
+    if (child.isLight) {
+      
+      // Se la luce è attaccata a un lampione, ignoriamola (ci pensa updateLampPosts)
+      if (child.parent && child.parent.name === 'path-lamp-post') return;
+
+      // Se è il Sole (DirectionalLight)
+      if (child.isDirectionalLight) {
+        child.intensity = 1.0 * (1.0 - globalStormProgress);
+        child.castShadow = globalStormProgress <= 0.8;
+      } 
+      // Qualsiasi altra luce (AmbientLight, HemisphereLight, ecc.)
+      else {
+        // Abbassiamo tutto in base alla tempesta, lasciando un piccolissimo 0.05 per non avere uno schermo nero al 100%
+        child.intensity = 0.4 * (1.0 - globalStormProgress * 0.95);
+      }
+    }
+  });
+
+  scene.environmentIntensity = 1.0 - globalStormProgress; 
+  if (scene.backgroundBlurriness !== undefined) {
+    scene.backgroundIntensity = 1.0 - globalStormProgress;
+  }
 
   if (isGemDelivered()) {
     if (carpetTravel && carpetTravel.mesh) carpetTravel.mesh.visible = true;
