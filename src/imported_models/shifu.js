@@ -1,7 +1,9 @@
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import * as THREE from 'three';
 
 const loader = new GLTFLoader();
+loader.setMeshoptDecoder(MeshoptDecoder);
 
 let shifu = null;
 let shifuStartY = 0;
@@ -136,7 +138,7 @@ export function loadShifuTask(scene){
     if (shifuLoadPromise) return shifuLoadPromise;
 
     shifuLoadPromise = new Promise((resolve) => {
-      loader.load('/models/shifu.glb',
+      loader.load('/models_optimized/shifu.glb',
         (gltf) => {
             shifu = new THREE.Group();
             shifuMaterials = [];

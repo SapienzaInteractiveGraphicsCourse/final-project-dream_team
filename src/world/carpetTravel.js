@@ -26,14 +26,14 @@ export function createCarpetTravel(scene) {
 
 
   const mtlLoader = new MTLLoader();
-  mtlLoader.setPath('/models/');
+  mtlLoader.setPath('/models_optimized/');
 
   mtlLoader.load('materials.mtl', (materials) => {
     materials.preload();
 
     const objLoader = new OBJLoader();
     objLoader.setMaterials(materials);
-    objLoader.setPath('/models/');
+    objLoader.setPath('/models_optimized/');
 
     objLoader.load('model.obj', (object) => {
       object.scale.setScalar(1);   // modified scale of the carpet

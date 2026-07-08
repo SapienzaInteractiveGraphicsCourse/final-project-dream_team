@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { enableShadows } from '../base/helpers.js';
 
 const loader = new GLTFLoader();
+loader.setMeshoptDecoder(MeshoptDecoder);
 
 function findBone(skinnedMesh, namePart) {
   if (!skinnedMesh) return null;
@@ -41,7 +43,7 @@ export function createPlayer(scene) {
   };
 
   loader.load(
-      '/models/schoolboy.glb',
+      '/models_optimized/schoolboy.glb',
 
       (gltf) => {
         const model = gltf.scene;

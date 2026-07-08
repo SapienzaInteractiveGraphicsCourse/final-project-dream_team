@@ -19,11 +19,15 @@ export function createPlayerController(playerObject, camera, colliders = []) {
   let cameraDistance = 9;
   let isFirstPerson = false;
   let firstPersonPitch = 0;
+  let thirdPersonCameraInitialized = false;
+  const smoothedCameraTarget = new THREE.Vector3();
 
   const cameraMinDistance = 2.5;
   const cameraMaxDistance = 30;
   const cameraHeight = 4.2;
   const cameraLookHeight = 2.4;
+  const cameraFollowSmoothness = 9;
+  const cameraLookSmoothness = 14;
   const firstPersonEyeHeight = 2.5;
   const firstPersonPitchSpeed = 3.8;
   const firstPersonMinPitch = THREE.MathUtils.degToRad(-75);
@@ -178,7 +182,10 @@ export function createPlayerController(playerObject, camera, colliders = []) {
       player.position.z *= maxDistance / distanceFromCenter;
     }
 
+    const safeDeltaTime = Math.min(deltaTime, 1 / 30);
+
     if (isFirstPerson) {
+      thirdPersonCameraInitialized = false;
       camera.position.copy(player.position);
       camera.position.y += firstPersonEyeHeight;
       camera.rotation.set(firstPersonPitch, cameraAngle, 0, 'YXZ');
@@ -190,14 +197,28 @@ export function createPlayerController(playerObject, camera, colliders = []) {
       );
 
       const desiredCameraPosition = player.position.clone().add(cameraOffset);
-
-      camera.position.lerp(desiredCameraPosition, 0.08);
-
-      camera.lookAt(
+      const desiredCameraTarget = new THREE.Vector3(
         player.position.x,
         player.position.y + cameraLookHeight,
         player.position.z
       );
+
+      if (!thirdPersonCameraInitialized) {
+        camera.position.copy(desiredCameraPosition);
+        smoothedCameraTarget.copy(desiredCameraTarget);
+        thirdPersonCameraInitialized = true;
+      } else {
+        camera.position.lerp(
+          desiredCameraPosition,
+          1 - Math.exp(-cameraFollowSmoothness * safeDeltaTime)
+        );
+        smoothedCameraTarget.lerp(
+          desiredCameraTarget,
+          1 - Math.exp(-cameraLookSmoothness * safeDeltaTime)
+        );
+      }
+
+      camera.lookAt(smoothedCameraTarget);
     }
   }
 

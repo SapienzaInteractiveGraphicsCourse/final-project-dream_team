@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 const loader = new GLTFLoader();
-const donkeyPath = '/models/donkey_pocket_shrek_and_animations.glb';
+loader.setMeshoptDecoder(MeshoptDecoder);
+const donkeyPath = '/models_optimized/donkey_pocket_shrek_and_animations.glb';
 const donkeyPosition = new THREE.Vector3(-7.46, 0, 44.67);
 const donkeyHeight = 4;
 const donkeyRotationOffsetY = Math.PI;

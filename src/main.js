@@ -53,7 +53,6 @@ import {
   updateFinale
 } from './world/finale.js';
 import { loadDonkey, updateDonkey } from './world/donkey.js';
-import { updateMage } from './imported_models/mage.js'; 
 
 // lamppost imports
 import { createLampPosts, updateLampPosts } from './world/lampPosts.js';
@@ -114,7 +113,7 @@ audioLoader.load(
 );
 
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Ombre morbide di alta qualità
+renderer.shadowMap.type = THREE.PCFShadowMap;
 
 setupResize(camera, renderer);
 
@@ -214,12 +213,18 @@ let finalPuzzleStarted = false;
 let gameplayModelsPromise = null;
 let worldTwoModelsPromise = null;
 let finaleModelsPromise = null;
+let gameplayModelsLoaded = false;
+let worldTwoModelsLoaded = false;
+let finaleModelsLoaded = false;
 const DIRECT_HITS_BEFORE_FINAL_PUZZLE = 3;
 const DRAGON_HIT_DAMAGE = 25;
 
 function ensureGameplayModelsLoaded() {
   if (!gameplayModelsPromise) {
-    gameplayModelsPromise = loadGameplayModels(scene);
+    gameplayModelsPromise = loadGameplayModels(scene).then((models) => {
+      gameplayModelsLoaded = true;
+      return models;
+    });
   }
 
   return gameplayModelsPromise;
@@ -231,7 +236,10 @@ function ensureWorldTwoModelsLoaded() {
       loadShifuTask(scene),
       loadWoodTask(scene),
       loadBridgeTask(scene)
-    ]);
+    ]).then((models) => {
+      worldTwoModelsLoaded = true;
+      return models;
+    });
   }
 
   return worldTwoModelsPromise;
@@ -242,7 +250,10 @@ function ensureFinaleModelsLoaded() {
     finaleModelsPromise = Promise.all([
       loadFinale(scene),
       loadDonkey(scene)
-    ]);
+    ]).then((models) => {
+      finaleModelsLoaded = true;
+      return models;
+    });
   }
 
   return finaleModelsPromise;
@@ -479,7 +490,9 @@ function animate() {
 
   if (isIntroActive) {
     updateIntroCamera(time);
-    updateModels(deltaTime, playerData.group);
+    if (gameplayModelsLoaded) {
+      updateModels(deltaTime, playerData.group);
+    }
     renderer.render(scene, camera);
     return;
   }
@@ -513,9 +526,18 @@ function animate() {
     carpetPrompt.classList.remove('is-visible');
   }
   
-  const isTalkingToMage = updateMage(deltaTime, playerData.group);
-  const isTalkingToShifu = updateShifuTask(deltaTime, playerData.group);
-  const isTalkingToFlynn = updateFinale(deltaTime, playerData.group, camera);
+  let isTalkingToMage = false;
+  if (gameplayModelsLoaded) {
+    isTalkingToMage = updateModels(deltaTime, playerData.group);
+    updateBook(deltaTime, playerData.group);
+  }
+
+  const isTalkingToShifu = worldTwoModelsLoaded
+    ? updateShifuTask(deltaTime, playerData.group)
+    : false;
+  const isTalkingToFlynn = finaleModelsLoaded
+    ? updateFinale(deltaTime, playerData.group, camera)
+    : false;
   // 2. Force first person only while a character is actively talking.
   const shouldBeInFirstPerson = 
     isTalkingToMage || 
@@ -533,30 +555,39 @@ function animate() {
     playerCoords.textContent = `X: ${pos.x.toFixed(2)}  Y: ${pos.y.toFixed(2)}  Z: ${pos.z.toFixed(2)}`;
   }
 
-  updateModels(deltaTime, playerData.group);
-  updateBook(deltaTime, playerData.group);
-  updateWoodTask(deltaTime, playerData.group);
-  updateBridgeTask(deltaTime, playerData.group);
-  updateDonkey(deltaTime, playerData.group);
-  updatePortalTeleport(playerData.group, () => {
-    ensureFinaleModelsLoaded().then(() => {
-      startFinale();
+  if (worldTwoModelsLoaded) {
+    updateWoodTask(deltaTime, playerData.group);
+    updateBridgeTask(deltaTime, playerData.group);
+    updatePortalTeleport(playerData.group, () => {
+      ensureFinaleModelsLoaded().then(() => {
+        startFinale();
+      });
     });
-  });
-  rainUpdateAccumulator += deltaTime;
-  if (rainUpdateAccumulator >= rainUpdateInterval) {
-    updateRain(rainUpdateAccumulator, playerData.group);
-    rainUpdateAccumulator = 0;
   }
 
-  updateStorm(deltaTime, scene);
+  if (finaleModelsLoaded) {
+    updateDonkey(deltaTime, playerData.group);
+  }
+  if (shifuThanksTriggered && !finaleWeatherCleared) {
+    rainUpdateAccumulator += deltaTime;
+    if (rainUpdateAccumulator >= rainUpdateInterval) {
+      updateRain(rainUpdateAccumulator, playerData.group);
+      rainUpdateAccumulator = 0;
+    }
+  }
+
+  if (shifuThanksTriggered && !finaleWeatherCleared) {
+    updateStorm(deltaTime, scene);
+  }
 
   // MODIFICA: Aggiornamento lampioni basato sullo stato della tempesta
   if (shifuThanksTriggered && !finaleWeatherCleared) {
     // La tempesta sale progressivamente fino a 1 nel giro di qualche secondo
     globalStormProgress = Math.min(1.0, globalStormProgress + deltaTime * 0.2); 
   }
-  updateLampPosts(globalStormProgress, playerData.group);
+  if (globalStormProgress > 0 || (shifuThanksTriggered && !finaleWeatherCleared)) {
+    updateLampPosts(globalStormProgress, playerData.group);
+  }
   
   lights.sunLight.intensity = 1.0 * (1.0 - globalStormProgress);
   lights.sunLight.castShadow = globalStormProgress <= 0.5;

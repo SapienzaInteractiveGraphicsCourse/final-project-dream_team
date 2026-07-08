@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
-const VEGETATION_MODEL_PATH = '/models/procedural_tree_generator.glb';
+const VEGETATION_MODEL_PATH = '/models_optimized/procedural_tree_generator.glb';
 
 const DEFAULT_OPTIONS = {
   islandMargin: 12,
@@ -314,6 +315,8 @@ export function createIslandVegetation(scene, config = {}) {
   const mergedOptions = mergeOptions(options);
   const islandMetrics = getIslandMetrics(island);
   const loader = new GLTFLoader();
+  loader.setMeshoptDecoder(MeshoptDecoder);
+  
   const group = new THREE.Group();
   group.name = 'island-vegetation';
   scene.add(group);

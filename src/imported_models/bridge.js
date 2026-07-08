@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { consumeCarriedWood, isCarryingWood } from './wood.js';
 
 const loader = new GLTFLoader();
+loader.setMeshoptDecoder(MeshoptDecoder);
 
 const towerPosition = new THREE.Vector3(85, 12, -120);
 const brokenTowerWorldOffset = new THREE.Vector3(0, 1, 0);
@@ -191,7 +193,7 @@ export function loadBridgeTask(scene) {
   bridgeTaskLoadPromise = Promise.all([
     new Promise((resolve) => {
       loader.load(
-        '/models/tower1.glb',
+        '/models_optimized/tower1.glb',
         (gltf) => {
           brokenTower = gltf.scene;
           prepareTower(brokenTower, true, brokenTowerWorldOffset);
@@ -207,7 +209,7 @@ export function loadBridgeTask(scene) {
     }),
     new Promise((resolve) => {
       loader.load(
-        '/models/tower3.glb',
+        '/models_optimized/tower3.glb',
         (gltf) => {
           fixedTower = gltf.scene;
           prepareTower(fixedTower, false, fixedTowerWorldOffset);

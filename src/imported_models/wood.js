@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { isShifuTaskStarted } from './shifu.js';
 import { modelColliders } from './models.js';
 
 const gltfLoader = new GLTFLoader();
+gltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
 let axe = null;
 let wood = null;
@@ -97,7 +99,7 @@ export function loadWoodTask(scene) {
   woodTaskLoadPromise = Promise.all([
     new Promise((resolve) => {
       gltfLoader.load(
-        '/models/medieval_axe.glb',
+        '/models_optimized/medieval_axe.glb',
         (gltf) => {
           axe = gltf.scene;
 
@@ -129,7 +131,7 @@ export function loadWoodTask(scene) {
     }),
     new Promise((resolve) => {
       const mtlLoader = new MTLLoader();
-      mtlLoader.setPath('/models/');
+      mtlLoader.setPath('/models_optimized/');
       mtlLoader.setResourcePath('/');
 
       mtlLoader.load(
@@ -139,7 +141,7 @@ export function loadWoodTask(scene) {
 
           const objLoader = new OBJLoader();
           objLoader.setMaterials(materials);
-          objLoader.setPath('/models/');
+          objLoader.setPath('/models_optimized/');
 
           objLoader.load(
             '12303_Firewood_Stack_v1_l3.obj',

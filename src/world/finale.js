@@ -1,10 +1,13 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { showObjectiveMessage } from '../ui/objectiveMessage.js';
 import { createDoorMinigame } from '../minigame/door.js';
 
 const loader = new GLTFLoader();
-const finaleCharacterPath = '/models/shrek.glb';
+loader.setMeshoptDecoder(MeshoptDecoder);
+
+const finaleCharacterPath = '/models_optimized/shrek.glb';
 const finaleCharacterName = 'Shrek';
 const finaleCharacterPosition = new THREE.Vector3(-8.65, 0.40, 34.79);
 const finaleHouseTarget = new THREE.Vector3(-36.04, 0.15, 62.42);

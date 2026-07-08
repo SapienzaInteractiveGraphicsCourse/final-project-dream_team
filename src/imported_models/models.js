@@ -245,7 +245,7 @@ export const introModelsToLoad = [
   {
     path: generalPath + 'FantasyHouse.glb',
     x: -22,
-    y: 0.45,
+    y: 0,
     z: 35,
     scale: 5,
     rotationY: Math.PI / 4,
@@ -418,10 +418,11 @@ export function loadModels(scene) {
 // Sostituisci la funzione in fondo a models.js
 export function updateModels(deltaTime, player) {
   updateDemonDragon(deltaTime, player);
-  updateMage(deltaTime, player);
+  const isTalkingToMage = updateMage(deltaTime, player);
   
-  // Recuperiamo direttamente la variabile globale 'mage' registrata a riga 73
   if (mage) {
     updateGem(deltaTime, player, mage);
   }
+
+  return isTalkingToMage;
 }

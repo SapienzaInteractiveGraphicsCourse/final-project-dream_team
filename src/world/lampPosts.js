@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 const lampLoader = new GLTFLoader();
+lampLoader.setMeshoptDecoder(MeshoptDecoder);
 const lampPosts = [];
 
 const glowGeometry = new THREE.SphereGeometry(0.4, 16, 16); 
@@ -238,9 +240,14 @@ function addLampsAlongPath(scene, source, path) {
 
 export function createLampPosts(scene) {
   lampLoader.load(
-    '/models/props_cart_02.glb',
+    '/models_optimized/props_cart_02.glb',
     (gltf) => {
-      const lampSource = gltf.scene.getObjectByName('props_lamppost_01') ?? gltf.scene;
+      const lampSource = gltf.scene.getObjectByName('props_lamppost_01');
+
+      if (!lampSource) {
+        console.error('Lamp post node "props_lamppost_01" not found in props_cart_02.glb');
+        return;
+      }
 
       mainWorldLampPaths.forEach((path) => {
         addLampsAlongPath(scene, lampSource, path);
