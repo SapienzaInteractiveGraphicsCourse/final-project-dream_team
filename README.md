@@ -212,7 +212,7 @@ This prevents the player from walking through objects such as:
 final-project-dream_team/
 │
 ├── public/
-│   ├── models/              # Imported GLB / GLTF models
+│   ├── models_optimized/    # Imported GLB / GLTF models and optimized with gltfpack
 │   ├── textures/            # Textures used in the scene
 │   ├── music/               # Audio files
 │   └── ...
