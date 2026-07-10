@@ -15,6 +15,7 @@ let axe = null;
 let wood = null;
 let axeStartY = 0;
 let axeCollider = null;
+let woodCollider = null; // <- Nuova variabile per il collider del legno
 let axeLight = null;
 let woodTaskLoadPromise = null;
 
@@ -52,6 +53,19 @@ function removeAxeCollider() {
     modelColliders.splice(index, 1);
   }
   axeCollider = null;
+}
+
+/**
+ * Removes the wood's collision box from the physics array once picked up.
+ */
+function removeWoodCollider() {
+  if (!woodCollider) return;
+
+  const index = modelColliders.indexOf(woodCollider);
+  if (index !== -1) {
+    modelColliders.splice(index, 1);
+  }
+  woodCollider = null;
 }
 
 /**
@@ -100,6 +114,10 @@ window.addEventListener('keydown', (event) => {
     // Reveal the wood once the player has the axe
     if (wood) {
       wood.visible = true;
+      // Attiviamo il collider del legno ora che è visibile!
+      if (woodCollider && !modelColliders.includes(woodCollider)) {
+        modelColliders.push(woodCollider);
+      }
     }
     
     canTakeAxe = false;
@@ -111,6 +129,7 @@ window.addEventListener('keydown', (event) => {
   if (canCollectWood) {
     hasWood = true;
     canCollectWood = false;
+    removeWoodCollider(); // <- Rimuoviamo il collider perché stiamo trasportando la legna!
     woodTaskPrompt.classList.remove('is-visible');
   }
 });
@@ -185,6 +204,20 @@ export function loadWoodTask(scene) {
               wood.rotation.x = Math.PI / 2;
               wood.rotation.y = Math.PI;
               
+              
+              wood.updateMatrixWorld(true);
+
+              
+              woodCollider = new THREE.Box3().setFromObject(wood);
+              
+              
+              const center = woodCollider.getCenter(new THREE.Vector3());
+              const size = woodCollider.getSize(new THREE.Vector3());
+              size.x *= 0.8;
+              size.z *= 0.8;
+              woodCollider.setFromCenterAndSize(center, size);
+              // NON lo aggiungiamo in modelColliders adesso, verrà aggiunto al pickup dell'ascia
+
               // Keep wood hidden until the player picks up the axe
               wood.visible = false;
 
@@ -289,6 +322,9 @@ export function consumeCarriedWood() {
   if (wood) {
     wood.visible = false;
   }
+  
+  // Per sicurezza, se per qualche motivo il collider fosse ancora lì, lo leviamo
+  removeWoodCollider();
 
   woodTaskPrompt.classList.remove('is-visible');
 }

@@ -114,7 +114,6 @@ function loadModel(scene, path, options = {}) {
         model.position.y += options.offsetY ?? 0;
 
         // 3. Registration: Now that the model is on the ground, pass it to specific managers.
-        // This way 'mageStartY' will save the correct ground Y coordinate!
         if (isMage) {
           mage = model;
           registerMage(model);
@@ -196,18 +195,31 @@ function loadModel(scene, path, options = {}) {
 
         // Store bounding boxes and colliders for physics/interactions
         const box = new THREE.Box3().setFromObject(model);
+        
+        
+        if (options.colliderScale) {
+          const center = box.getCenter(new THREE.Vector3());
+          const size = box.getSize(new THREE.Vector3());
+          
+          // Scala la hitbox sui rispettivi assi per una precisione maggiore
+          size.x *= options.colliderScale.x || 1;
+          size.y *= options.colliderScale.y || 1;
+          size.z *= options.colliderScale.z || 1;
+          
+          box.setFromCenterAndSize(center, size);
+        }
+
         modelBounds.push(box);
 
         if (options.collider) {
           modelColliders.push(box);
         }
 
-        console.log(`Loaded model: ${path}`);
+        console.log(`Loaded model with collider: ${path}`);
         resolve(model);
       },
       (xhr) => {
-        // Uncomment if you want detailed load progress logs
-        // console.log(`${path}: ${(xhr.loaded / xhr.total) * 100}% loaded`);
+        // progress logs
       },
       (error) => {
         console.error(`Error loading model: ${path}`, error);
@@ -237,7 +249,8 @@ export const gameplayModelsToLoad = [
     z: -46,
     scale: 0.7,
     floating: true,
-    collider: false
+    collider: true,
+    colliderScale: { x: 0.6, y: 1, z: 0.6 }
   },
   {
     path: generalPath + 'EvilBook.glb',
@@ -247,7 +260,8 @@ export const gameplayModelsToLoad = [
     scale: 1,
     rotationY: Math.PI,
     groundY: 0.49,
-    collider: false
+    collider: true,
+    colliderScale: { x: 0.6, y: 1, z: 0.6 }
   },
   {
     path: generalPath + 'pixellabs-cute-skeleton-mage-character-2439.glb',
@@ -257,7 +271,8 @@ export const gameplayModelsToLoad = [
     scale: 3,
     rotationY: Math.PI / 4,
     groundY: 0.49,
-    collider: true
+    collider: true,
+    colliderScale: { x: 0.6, y: 1, z: 0.6 }
   }
 ];
 
@@ -270,7 +285,8 @@ export const introModelsToLoad = [
     scale: 5,
     rotationY: Math.PI / 4,
     groundY: 0.49,
-    collider: false
+    collider: true,
+    colliderScale: { x: 0.4, y: 1, z: 0.4 }
   },
   {
     path: generalPath + 'FantasyInn.glb',
@@ -281,7 +297,8 @@ export const introModelsToLoad = [
     rotationY: Math.PI / 2.3,
     groundY: 0.49,
     floating: true,
-    collider: false
+    collider: true,
+    colliderScale: { x: 0.7, y: 1, z: 0.7 }
   },
   {
     path: generalPath + 'FantasyStable.glb',
@@ -292,7 +309,8 @@ export const introModelsToLoad = [
     rotationY: -0.05,
     groundY: 0.49,
     floating: true,
-    collider: false
+    collider: true,
+    colliderScale: { x: 0.9, y: 1, z: 0.9 }
   },
   {
     path: generalPath + 'alchemist_fantasy_house.glb',
@@ -303,7 +321,8 @@ export const introModelsToLoad = [
     rotationY: 3 * Math.PI / 2,
     groundY: 0.49,
     floating: true,
-    collider: true
+    collider: true,
+    colliderScale: { x: 0.75, y: 1, z: 0.75 }
   },
   {
     path: generalPath + 'stone_building.glb',
@@ -323,7 +342,8 @@ export const introModelsToLoad = [
     scale: 1,
     rotationY: 3 * Math.PI / 4,
     floating: true,
-    collider: false
+    collider: true,
+    colliderScale: { x: 0.9, y: 1, z: 0.9 }
   },
   {
     path: generalPath + 'flowers_lib.glb',
@@ -333,7 +353,8 @@ export const introModelsToLoad = [
     scale: 0.75,
     rotationY: 0.3,
     floating: true,
-    collider: true
+    collider: true,
+    colliderScale: { x: 0.6, y: 1, z: 0.6 }
   },
   {
     path: generalPath + 'castle_03.glb',
@@ -343,7 +364,8 @@ export const introModelsToLoad = [
     scale: 5,
     offsetY: -0.5,
     rotationY: Math.PI / 4,
-    collider: false
+    collider: true, 
+    colliderScale: { x: 0.7, y: 1, z: 0.7 }
   },
   {
     path: generalPath + 'statue.glb',
@@ -353,7 +375,8 @@ export const introModelsToLoad = [
     scale: 2,
     offsetY: -0.5,
     rotationY: -3 * Math.PI / 4,
-    collider: true
+    collider: true,
+    colliderScale: { x: 0.6, y: 1, z: 0.6 }
   },
 
   /** ISLANDS */
@@ -397,7 +420,8 @@ export const introModelsToLoad = [
     scale: 1.5,
     rotation: 0,
     floating: true,
-    collider: false
+    collider: true,
+    colliderScale: { x: 0.8, y: 1, z: 0.8 }
   },
   {
     path: generalPath + 'props_cart_02.glb',
@@ -407,7 +431,8 @@ export const introModelsToLoad = [
     scale: 2,
     rotationY: 0.3,
     floating: true,
-    collider: false
+    collider: true,
+    colliderScale: { x: 0.8, y: 1, z: 0.8 }
   }
 ];
 
@@ -438,9 +463,6 @@ export function loadModels(scene) {
 
 // --- GLOBAL UPDATE LOOP ---
 
-/**
- * Updates dynamic models. The mage logic is delegated to mage.js.
- */
 export function updateModels(deltaTime, player) {
   updateDemonDragon(deltaTime, player);
   

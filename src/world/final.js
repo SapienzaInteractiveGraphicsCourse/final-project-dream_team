@@ -3,6 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { showObjectiveMessage } from '../ui/objectiveMessage.js';
 import { createDoorMinigame } from '../minigame/door.js';
+import { modelColliders } from '../imported_models/models.js'; // Importiamo le collisioni
 
 const loader = new GLTFLoader();
 loader.setMeshoptDecoder(MeshoptDecoder);
@@ -30,6 +31,7 @@ const finaleIdleAnimationDistanceSq = finaleIdleAnimationDistance * finaleIdleAn
 // --- STATE VARIABLES ---
 let finaleStarted = false;
 let shrek = null;
+let shrekCollider = null; // Collider di Shrek
 let shrekStartY = 0;
 let canTalkToShrek = false;
 let shrekIsTalking = false;
@@ -544,6 +546,10 @@ export function loadFinale(scene) {
         shrek.position.y += finaleCharacterPosition.y - scaledBox.min.y;
         shrekStartY = shrek.position.y;
 
+        // Inizializziamo il collider per Shrek
+        shrekCollider = new THREE.Box3();
+        modelColliders.push(shrekCollider);
+
         shrekBodyParts = {
           hips: shrekBones[3] || null,
           pelvis: shrekBones[4] || null,
@@ -596,6 +602,19 @@ export function updateFinale(deltaTime, player, camera) {
   }
 
   if (!shrek || !player) return false;
+
+  // Aggiorniamo dinamicamente il collider di Shrek per seguire i suoi movimenti
+  if (shrekCollider && shrek.visible) {
+    shrekCollider.setFromObject(shrek);
+    const center = shrekCollider.getCenter(new THREE.Vector3());
+    const size = shrekCollider.getSize(new THREE.Vector3());
+    size.x *= 0.6; // Stringiamo le spalle per evitare blocchi
+    size.z *= 0.6;
+    shrekCollider.setFromCenterAndSize(center, size);
+  } else if (shrekCollider && !shrek.visible) {
+    // Se è nascosto, spostiamo il collider lontano o lo azzeriamo
+    shrekCollider.makeEmpty(); 
+  }
 
   const time = performance.now() * 0.001;
   const distanceSq = shrek.position.distanceToSquared(player.position);

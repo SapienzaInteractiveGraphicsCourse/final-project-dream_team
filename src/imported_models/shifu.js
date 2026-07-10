@@ -1,6 +1,7 @@
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import * as THREE from 'three';
+import { modelColliders } from '../imported_models/models.js'; // Importiamo le collisioni
 
 // --- INITIALIZATION ---
 const loader = new GLTFLoader();
@@ -8,6 +9,7 @@ loader.setMeshoptDecoder(MeshoptDecoder);
 
 // --- STATE VARIABLES ---
 let shifu = null;
+let shifuCollider = null; // Collider di Shifu
 let shifuStartY = 0;
 let canTalkToShifu = false;
 let shifuIsTalking = false;
@@ -56,9 +58,6 @@ document.body.appendChild(shifuDialogue);
 
 // --- UTILITY FUNCTIONS ---
 
-/**
- * Adjusts the emissive intensity of Shifu's materials.
- */
 function setShifuGlow(strength) {
   shifuMaterials.forEach((material) => {
     if (material.emissive) {
@@ -69,17 +68,11 @@ function setShifuGlow(strength) {
   });
 }
 
-/**
- * Finds a specific bone by name within a skinned mesh.
- */
 function findBone(skinnedMesh, name) {
   if (!skinnedMesh) return null;
   return skinnedMesh.skeleton.bones.find((bone) => bone.name === name);
 }
 
-/**
- * Saves the original resting rotations of the specified bones.
- */
 function saveInitialRotations(parts) {
   const rotations = {};
   for (const key in parts) {
@@ -90,30 +83,22 @@ function saveInitialRotations(parts) {
   return rotations;
 }
 
-/**
- * Applies a custom pose to Shifu's arms to make them look more natural.
- */
 function poseShifuArms() {
   const parts = shifuArmParts;
   const initial = shifuArmInitialRotations;
 
-  // Reset to initial rotations first
   for (const key in parts) {
     if (parts[key] && initial[key]) {
       parts[key].rotation.copy(initial[key]);
     }
   }
 
-  // Apply custom offsets
   if (parts.leftUpperArm) parts.leftUpperArm.rotation.x -= upperArmDown;
   if (parts.rightUpperArm) parts.rightUpperArm.rotation.x -= upperArmDown;
   if (parts.leftLowerArm) parts.leftLowerArm.rotation.x -= foreArmRelax;
   if (parts.rightLowerArm) parts.rightLowerArm.rotation.x -= foreArmRelax;
 }
 
-/**
- * Calculates the Y-axis rotation required for Shifu to look at the player.
- */
 function getYawToPlayer(player) {
   const directionX = player.position.x - shifu.position.x;
   const directionZ = player.position.z - shifu.position.z;
@@ -132,7 +117,6 @@ window.addEventListener('keydown', (event) => {
   if (event.key === 'Enter' && shifuIsTalking) {
     shifuDialogueIndex += 1;
 
-    // Check if the current dialogue sequence has finished
     if (shifuDialogueIndex >= activeDialogueLines.length) {
       shifuIsTalking = false;
       shifuMustLeaveBeforeTalkAgain = true;
@@ -150,9 +134,6 @@ window.addEventListener('keydown', (event) => {
 
 // --- CORE EXPORTS ---
 
-/**
- * Loads the Shifu model, processes its materials, and maps its skeleton.
- */
 export function loadShifuTask(scene) {
   if (shifuLoadPromise) return shifuLoadPromise;
 
@@ -173,7 +154,6 @@ export function loadShifuTask(scene) {
 
         model.scale.set(shifuScale, shifuScale, shifuScale);
 
-        // Center the model based on its bounding box
         const box = new THREE.Box3().setFromObject(model);
         const center = box.getCenter(new THREE.Vector3());
         
@@ -181,7 +161,10 @@ export function loadShifuTask(scene) {
         model.position.z -= center.z;
         model.position.y -= box.min.y;
 
-        // Process materials and identify skinned meshes for bones
+        // Inizializziamo il collider per Shifu
+        shifuCollider = new THREE.Box3();
+        modelColliders.push(shifuCollider);
+
         model.traverse((child) => {
           if (child.isSkinnedMesh) {
             skinnedMesh = child;
@@ -209,7 +192,6 @@ export function loadShifuTask(scene) {
           }
         });
 
-        // Map and pose arm bones if found
         if (skinnedMesh) {
           shifuArmParts = {
             leftUpperArm: findBone(skinnedMesh, 'upperarm_l_26'),
@@ -238,9 +220,6 @@ export function loadShifuTask(scene) {
   return shifuLoadPromise;
 }
 
-/**
- * Main update loop for Shifu, handling animations, proximity, and dialogue UI.
- */
 export function updateShifuTask(deltaTime, player) {
   if (!shifu) return;
 
@@ -249,7 +228,6 @@ export function updateShifuTask(deltaTime, player) {
 
   const idleBob = Math.sin(time * 1.8) * 0.16;
 
-  // Handle idle floating animations and glowing based on quest state
   if (!taskStarted && !shifuIsTalking) {
     shifu.position.y = shifuStartY + idleBob + Math.abs(Math.sin(time * 2)) * 0.25;
     shifu.rotation.z = 0;
@@ -260,7 +238,16 @@ export function updateShifuTask(deltaTime, player) {
     setShifuGlow(0);
   }
 
-  // Check proximity to player
+  // Aggiorniamo dinamicamente il collider ogni frame (stringendolo un po')
+  if (shifuCollider) {
+    shifuCollider.setFromObject(shifu);
+    const center = shifuCollider.getCenter(new THREE.Vector3());
+    const size = shifuCollider.getSize(new THREE.Vector3());
+    size.x *= 0.5;
+    size.z *= 0.5;
+    shifuCollider.setFromCenterAndSize(center, size);
+  }
+
   const resetDistance = interactionDistance + 1.2;
   const distanceSq = shifu.position.distanceToSquared(player.position);
   const interactionDistanceSq = interactionDistance * interactionDistance;
@@ -272,7 +259,6 @@ export function updateShifuTask(deltaTime, player) {
 
   canTalkToShifu = distanceSq < interactionDistanceSq && !shifuMustLeaveBeforeTalkAgain;
 
-  // Orient Shifu towards the player when close
   if (distanceSq < interactionDistanceSq) {
     shifuBaseRotationY = getYawToPlayer(player);
     shifu.rotation.x = 0;
@@ -283,7 +269,6 @@ export function updateShifuTask(deltaTime, player) {
     shifu.rotation.y = shifuBaseRotationY + Math.sin(time * 1.4) * 0.08;
   }
 
-  // Handle Dialogue UI visibility
   if (shifuIsTalking) {
     shifuDialogue.classList.add('story-dialogue');
     shifuDialogue.textContent = activeDialogueLines[shifuDialogueIndex];
