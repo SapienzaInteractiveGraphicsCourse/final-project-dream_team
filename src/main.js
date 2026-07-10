@@ -165,6 +165,27 @@ viewHint.className = 'view-hint';
 viewHint.textContent = 'Press V to change view';
 document.body.appendChild(viewHint);
 
+const controlsLegend = document.createElement('div');
+controlsLegend.className = 'controls-legend'; // Nasce senza 'is-visible'
+controlsLegend.innerHTML = `
+  <div class="legend-group">
+    <div class="keys-cluster">
+      <div class="key-row"><kbd>W</kbd></div>
+      <div class="key-row"><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div>
+    </div>
+    <span class="legend-label">Move</span>
+  </div>
+  
+  <div class="legend-group">
+    <div class="keys-cluster">
+      <div class="key-row"><kbd>▲</kbd></div>
+      <div class="key-row"><kbd>◄</kbd><kbd>▼</kbd><kbd>►</kbd></div>
+    </div>
+    <span class="legend-label">Orient</span>
+  </div>
+`;
+document.body.appendChild(controlsLegend);
+
 const difficultyOverlay = document.createElement('div');
 difficultyOverlay.className = 'difficulty-overlay';
 difficultyOverlay.innerHTML = `
@@ -306,6 +327,14 @@ function attackDragon() {
 }
 
 // --- EVENT LISTENERS ---
+introOverlay.querySelector('.intro-start-button').addEventListener('click', () => {
+  isIntroActive = false;
+  introOverlay.classList.remove('is-visible');
+  difficultyOverlay.classList.add('is-visible');
+  
+  ensureGameplayModelsLoaded();
+});
+
 difficultyOverlay.querySelectorAll('[data-difficulty]').forEach((button) => {
   button.addEventListener('click', async () => { 
     selectedDifficulty = button.dataset.difficulty;
@@ -313,27 +342,20 @@ difficultyOverlay.querySelectorAll('[data-difficulty]').forEach((button) => {
     isChoosingDifficulty = false;
     difficultyOverlay.classList.remove('is-visible');
 
-    // Mark that the user has interacted to allow audio
-    hasUserInteracted = true; 
+    controlsLegend.classList.add('is-visible');
+    
+    setTimeout(() => {
+      controlsLegend.classList.remove('is-visible');
+    }, 4000); 
 
-    // Await audio context resume to satisfy browser autoplay policies
+    hasUserInteracted = true; 
     if (listener.context.state === 'suspended') {
       await listener.context.resume();
     }
-    
-    // Play background music if it's loaded and not already playing
     if (backgroundMusic.buffer && !backgroundMusic.isPlaying) {
       backgroundMusic.play();
     }
   });
-});
-
-introOverlay.querySelector('.intro-start-button').addEventListener('click', () => {
-  isIntroActive = false;
-  introOverlay.classList.remove('is-visible');
-  difficultyOverlay.classList.add('is-visible');
-
-  ensureGameplayModelsLoaded();
 });
 
 // Camera View Logic
