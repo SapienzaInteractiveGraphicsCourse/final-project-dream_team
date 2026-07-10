@@ -65,10 +65,10 @@ export function createIsland(scene, materials) {
     const innerHole = new THREE.Path(innerShape.getPoints().reverse());
     
     // Load textures
-    const bankTexture = textureLoader.load('/ganges_river_pebbles_diff_4k.jpg');
-    const waterTexture = textureLoader.load('/Ice002_2K-JPG_Color.jpg');
-    const waterNormal = textureLoader.load('/Ice002_2K-JPG_NormalGL.jpg');
-    const waterRoughness = textureLoader.load('/Ice002_2K-JPG_Roughness.jpg');
+    const bankTexture = textureLoader.load('ganges_river_pebbles_diff_4k.jpg');
+    const waterTexture = textureLoader.load('Ice002_2K-JPG_Color.jpg');
+    const waterNormal = textureLoader.load('Ice002_2K-JPG_NormalGL.jpg');
+    const waterRoughness = textureLoader.load('Ice002_2K-JPG_Roughness.jpg');
 
     bankTexture.colorSpace = THREE.SRGBColorSpace;
     bankTexture.wrapS = THREE.RepeatWrapping;

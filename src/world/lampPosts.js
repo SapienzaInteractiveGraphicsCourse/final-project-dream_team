@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-// Importiamo gli array per le collisioni dal file dei modelli
 import { modelBounds, modelColliders } from '../imported_models/models.js';
 
 const lampLoader = new GLTFLoader();
@@ -197,14 +196,10 @@ function addLamp(scene, source, x, z, rotationY, sideOffset, groundY = 0.04) {
 
   const box = alignToGround(lamp, groundY);
   
-  // --- LOGICA COLLISIONI AGGIUNTA ---
   const colliderBox = box.clone();
   const center = colliderBox.getCenter(new THREE.Vector3());
   const size = colliderBox.getSize(new THREE.Vector3());
   
-  // Stringiamo il collider del palo (x e z al 40%) 
-  // in modo che il giocatore possa camminare sotto la lanterna 
-  // sbattendo solo contro il palo centrale
   size.x *= 0.4;
   size.z *= 0.4;
   
@@ -266,7 +261,7 @@ function addLampsAlongPath(scene, source, path) {
 
 export function createLampPosts(scene) {
   lampLoader.load(
-    '/models_optimized/props_cart_02.glb',
+    'models_optimized/props_cart_02.glb',
     (gltf) => {
       const lampSource = gltf.scene.getObjectByName('props_lamppost_01');
 

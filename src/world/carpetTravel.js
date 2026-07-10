@@ -24,7 +24,7 @@ export function createCarpetTravel(scene) {
   scene.add(carpetGroup);
 
   const mtlLoader = new MTLLoader();
-  mtlLoader.setPath('/models_optimized/');
+  mtlLoader.setPath('models_optimized/');
 
   mtlLoader.load('materials.mtl', (materials) => {
     materials.preload();

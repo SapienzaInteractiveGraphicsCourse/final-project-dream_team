@@ -15,7 +15,7 @@ let axe = null;
 let wood = null;
 let axeStartY = 0;
 let axeCollider = null;
-let woodCollider = null; // <- Nuova variabile per il collider del legno
+let woodCollider = null;
 let axeLight = null;
 let woodTaskLoadPromise = null;
 
@@ -216,9 +216,6 @@ export function loadWoodTask(scene) {
               size.x *= 0.8;
               size.z *= 0.8;
               woodCollider.setFromCenterAndSize(center, size);
-              // NON lo aggiungiamo in modelColliders adesso, verrà aggiunto al pickup dell'ascia
-
-              // Keep wood hidden until the player picks up the axe
               wood.visible = false;
 
               // Process material to ensure correct color space
@@ -323,7 +320,6 @@ export function consumeCarriedWood() {
     wood.visible = false;
   }
   
-  // Per sicurezza, se per qualche motivo il collider fosse ancora lì, lo leviamo
   removeWoodCollider();
 
   woodTaskPrompt.classList.remove('is-visible');

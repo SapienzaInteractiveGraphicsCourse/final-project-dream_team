@@ -9,7 +9,7 @@ const loader = new GLTFLoader();
 loader.setMeshoptDecoder(MeshoptDecoder);
 
 // --- CONSTANTS & CONFIGURATION ---
-const finaleCharacterPath = '/models_optimized/shrek.glb';
+const finaleCharacterPath = 'models_optimized/shrek.glb';
 const finaleCharacterName = 'Shrek';
 const finaleCharacterPosition = new THREE.Vector3(-8.65, 0.40, 34.79);
 const finaleHouseTarget = new THREE.Vector3(-36.04, 0.15, 62.42);
@@ -546,7 +546,6 @@ export function loadFinale(scene) {
         shrek.position.y += finaleCharacterPosition.y - scaledBox.min.y;
         shrekStartY = shrek.position.y;
 
-        // Inizializziamo il collider per Shrek
         shrekCollider = new THREE.Box3();
         modelColliders.push(shrekCollider);
 
@@ -603,16 +602,14 @@ export function updateFinale(deltaTime, player, camera) {
 
   if (!shrek || !player) return false;
 
-  // Aggiorniamo dinamicamente il collider di Shrek per seguire i suoi movimenti
   if (shrekCollider && shrek.visible) {
     shrekCollider.setFromObject(shrek);
     const center = shrekCollider.getCenter(new THREE.Vector3());
     const size = shrekCollider.getSize(new THREE.Vector3());
-    size.x *= 0.6; // Stringiamo le spalle per evitare blocchi
+    size.x *= 0.6; 
     size.z *= 0.6;
     shrekCollider.setFromCenterAndSize(center, size);
   } else if (shrekCollider && !shrek.visible) {
-    // Se è nascosto, spostiamo il collider lontano o lo azzeriamo
     shrekCollider.makeEmpty(); 
   }
 

@@ -75,7 +75,7 @@ const audioLoader = new THREE.AudioLoader();
 console.log("Starting to load the music file...");
 
 audioLoader.load(
-  '/music/Medieval_Vol.26.mp3',
+  'music/Medieval_Vol.26.mp3',
   function(buffer) {
     console.log("SUCCESS! The audio file has been loaded and decoded.");
     backgroundMusic.setBuffer(buffer);
@@ -166,7 +166,7 @@ viewHint.textContent = 'Press V to change view';
 document.body.appendChild(viewHint);
 
 const controlsLegend = document.createElement('div');
-controlsLegend.className = 'controls-legend'; // Nasce senza 'is-visible'
+controlsLegend.className = 'controls-legend'; 
 controlsLegend.innerHTML = `
   <div class="legend-group">
     <div class="keys-cluster">

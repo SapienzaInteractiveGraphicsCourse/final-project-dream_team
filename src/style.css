@@ -11,7 +11,6 @@ canvas {
   display: block;
 }
 
-/* Contenitore principale in basso a sinistra (invisibile all'avvio) */
 .controls-legend {
   position: absolute;
   bottom: 20px; /* Avvicinato un po' di più al bordo */
@@ -26,19 +25,16 @@ canvas {
   z-index: 1000;
   pointer-events: none;
   
-  /* Logica di apparizione/sparizione fluida */
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.5s ease, visibility 0.5s;
 }
 
-/* Classe aggiunta da JS per farlo apparire */
 .controls-legend.is-visible {
   opacity: 1;
   visibility: visible;
 }
 
-/* Struttura interna per allineare tasti e testo */
 .legend-group {
   display: flex;
   align-items: center;
@@ -55,7 +51,6 @@ canvas {
   gap: 3px; /* Spazio ridotto tra tasto e tasto */
 }
 
-/* IL DESIGN DEI TASTI FISICI (Rimpicciolito) */
 kbd {
   display: inline-flex;
   align-items: center;
@@ -73,7 +68,6 @@ kbd {
   box-shadow: 0 1px 0 rgba(0,0,0,0.2);
 }
 
-/* Testo "MOVE" e "ORIENT" */
 .legend-label {
   font-size: 14px; /* Testo più piccolo (prima era 18px) */
   font-weight: bold;

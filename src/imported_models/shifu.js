@@ -9,7 +9,7 @@ loader.setMeshoptDecoder(MeshoptDecoder);
 
 // --- STATE VARIABLES ---
 let shifu = null;
-let shifuCollider = null; // Collider di Shifu
+let shifuCollider = null; 
 let shifuStartY = 0;
 let canTalkToShifu = false;
 let shifuIsTalking = false;
@@ -139,7 +139,7 @@ export function loadShifuTask(scene) {
 
   shifuLoadPromise = new Promise((resolve) => {
     loader.load(
-      '/models_optimized/shifu.glb',
+      'models_optimized/shifu.glb',
       (gltf) => {
         shifu = new THREE.Group();
         shifuMaterials = [];
@@ -161,7 +161,6 @@ export function loadShifuTask(scene) {
         model.position.z -= center.z;
         model.position.y -= box.min.y;
 
-        // Inizializziamo il collider per Shifu
         shifuCollider = new THREE.Box3();
         modelColliders.push(shifuCollider);
 
@@ -238,7 +237,6 @@ export function updateShifuTask(deltaTime, player) {
     setShifuGlow(0);
   }
 
-  // Aggiorniamo dinamicamente il collider ogni frame (stringendolo un po')
   if (shifuCollider) {
     shifuCollider.setFromObject(shifu);
     const center = shifuCollider.getCenter(new THREE.Vector3());

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
-const VEGETATION_MODEL_PATH = '/models_optimized/procedural_tree_generator.glb';
+const VEGETATION_MODEL_PATH = 'models_optimized/procedural_tree_generator.glb';
 
 // --- DEFAULT SETTINGS ---
 const DEFAULT_OPTIONS = {

@@ -3,8 +3,8 @@ import * as THREE from 'three';
 const textureLoader = new THREE.TextureLoader();
 
 // Load Textures
-const plazaTexture = textureLoader.load('/textures/pav3.jpg');
-const grassTexture = textureLoader.load('/textures/ground.jpg');
+const plazaTexture = textureLoader.load('textures/pav3.jpg');
+const grassTexture = textureLoader.load('textures/ground.jpg');
 
 grassTexture.colorSpace = THREE.SRGBColorSpace;
 grassTexture.wrapS = THREE.RepeatWrapping;
