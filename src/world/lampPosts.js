@@ -14,7 +14,7 @@ const lampLightDecay = 2;
 const lampShadowMapSize = 512;
 const maxShadowCastingLamps = 2;
 
-// lampposts on main street
+// Lampposts on the main street
 const mainWorldLampPaths = [
   { 
     start: [0, 26], end: [10, -30], 
@@ -37,22 +37,25 @@ const mainWorldLampPaths = [
 const mainWorldExtraLamps = [
   { x: 36, z: -18, rotationY: Math.PI },
   { x: 26, z: -32, rotationY: 0 },
+  { x: -10, z: 44, rotationY: Math.PI}
 ];
 
 const worldTwoLamps = [
-  // left lamp
+  // Left lamp
   { x: 232.5, z: -260.0, rotationY: -Math.PI/4, groundY: 28.75 },
-  // right lamp
+  // Right lamp
   { x: 241.5, z: -250.5, rotationY: Math.PI , groundY: 28.75 }
 ];
 
 function prepareLampMaterial(material) {
   if (!material) return null;
   const preparedMaterial = material.clone();
+  
   if (preparedMaterial.map) {
     preparedMaterial.map.colorSpace = THREE.SRGBColorSpace;
     preparedMaterial.map.needsUpdate = true;
   }
+  
   return preparedMaterial;
 }
 
@@ -64,6 +67,7 @@ function cloneLampModel(source) {
 
   clone.traverse((child) => {
     if (!child.isMesh) return;
+    
     child.castShadow = true;
     child.receiveShadow = true;
     child.material = Array.isArray(child.material)
@@ -144,6 +148,7 @@ function alignToGround(model, groundY) {
   const box = new THREE.Box3().setFromObject(model);
   model.position.y += groundY - box.min.y;
   model.updateMatrixWorld(true);
+  
   return new THREE.Box3().setFromObject(model);
 }
 
@@ -172,10 +177,12 @@ function createGlow(model, box) {
     transparent: true,
     opacity: 0
   });
+  
   const glow = new THREE.Mesh(glowGeometry, glowMaterial);
   glow.position.set(0, height * 0.78, 0);
   glow.visible = false;
   model.add(glow);
+  
   return glow;
 }
 
@@ -257,7 +264,7 @@ export function createLampPosts(scene) {
         addLamp(scene, lampSource, lamp.x, lamp.z, lamp.rotationY, 0);
       });
 
-      // MODIFICA: Li carichiamo con le coordinate manuali per il Mondo 2
+      // MODIFICATION: Load them with manual coordinates for World 2
       worldTwoLamps.forEach((lamp) => {
         addLamp(scene, lampSource, lamp.x, lamp.z, lamp.rotationY, 0, lamp.groundY);
       });
@@ -289,7 +296,7 @@ export function updateLampPosts(stormProgress, player = null) {
 
   lampPosts.forEach(({ pointLight }) => {
     pointLight.color.setHex(lightColor);
-    pointLight.intensity = activation * 10.0;  // TODO: change intesity
+    pointLight.intensity = activation * 10.0;
     pointLight.castShadow = shadowCastingLamps.has(pointLight);
   });
 }

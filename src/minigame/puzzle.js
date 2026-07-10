@@ -1,21 +1,9 @@
 import './puzzle.css';
 
 const DIFFICULTIES = {
-  easy: {
-    label: 'Easy',
-    size: 2,
-    folder: 'easy_fight'
-  },
-  medium: {
-    label: 'Medium',
-    size: 3,
-    folder: 'medium_fight'
-  },
-  hard: {
-    label: 'Hard',
-    size: 4,
-    folder: 'hard_fight'
-  }
+  easy: { label: 'Easy', size: 2, folder: 'easy_fight' },
+  medium: { label: 'Medium', size: 3, folder: 'medium_fight' },
+  hard: { label: 'Hard', size: 4, folder: 'hard_fight' }
 };
 
 function getImageUrl(folder, piece) {
@@ -28,12 +16,10 @@ function getBlankUrl() {
 
 function shuffle(items) {
   const shuffled = [...items];
-
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-
   return shuffled;
 }
 
@@ -46,9 +32,7 @@ function makeTile(pieceId, src, className) {
   return tile;
 }
 
-export function getPuzzleDifficulties() {
-  return DIFFICULTIES;
-}
+export function getPuzzleDifficulties() { return DIFFICULTIES; }
 
 export function createPuzzleMinigame({
   difficulty = 'medium',
@@ -102,9 +86,7 @@ export function createPuzzleMinigame({
   board.style.setProperty('--puzzle-size', config.size);
   closeButton.hidden = !allowClose;
 
-  function updateTurns() {
-    turnsText.textContent = String(turns);
-  }
+  function updateTurns() { turnsText.textContent = String(turns); }
 
   function checkSolved() {
     const boardTiles = [...board.querySelectorAll('.puzzle-tile')];
@@ -117,10 +99,7 @@ export function createPuzzleMinigame({
 
     setTimeout(() => {
       close();
-      onSolved({
-        difficulty,
-        turns
-      });
+      onSolved({ difficulty, turns });
     }, 650);
   }
 
@@ -138,27 +117,19 @@ export function createPuzzleMinigame({
     checkSolved();
   }
 
-  function handleDragStart(event) {
-    selectedTile = event.currentTarget;
-  }
-
-  function handleDragOver(event) {
-    event.preventDefault();
-  }
-
+  // Event handlers
+  function handleDragStart(event) { selectedTile = event.currentTarget; }
+  function handleDragOver(event) { event.preventDefault(); }
   function handleDrop(event) {
     event.preventDefault();
     const targetTile = event.currentTarget;
-
     if (!selectedTile || selectedTile === targetTile || isSolved) return;
-
     swapTiles(selectedTile, targetTile);
     selectedTile = null;
   }
 
   function handleClick(event) {
     const targetTile = event.currentTarget;
-
     if (isSolved) return;
 
     if (!selectedTile) {
@@ -168,11 +139,7 @@ export function createPuzzleMinigame({
     }
 
     selectedTile.classList.remove('is-selected');
-
-    if (selectedTile !== targetTile) {
-      swapTiles(selectedTile, targetTile);
-    }
-
+    if (selectedTile !== targetTile) swapTiles(selectedTile, targetTile);
     selectedTile = null;
   }
 
@@ -207,7 +174,6 @@ export function createPuzzleMinigame({
 
   function open() {
     if (isOpen) return;
-
     reset();
     isOpen = true;
     overlay.classList.add('is-visible');
@@ -216,7 +182,6 @@ export function createPuzzleMinigame({
 
   function close() {
     if (!isOpen) return;
-
     isOpen = false;
     overlay.classList.remove('is-visible');
     overlay.setAttribute('aria-hidden', 'true');
@@ -225,28 +190,14 @@ export function createPuzzleMinigame({
 
   closeButton.addEventListener('click', close);
   overlay.addEventListener('click', (event) => {
-    if (allowClose && event.target === overlay) {
-      close();
-    }
+    if (allowClose && event.target === overlay) close();
   });
 
   window.addEventListener('keydown', (event) => {
-    if (allowClose && event.key === 'Escape' && isOpen) {
-      close();
-    }
+    if (allowClose && event.key === 'Escape' && isOpen) close();
   });
 
   document.body.append(overlay);
 
-  return {
-    open,
-    close,
-    isOpen: () => isOpen
-  };
-}
-
-const standaloneBoard = document.getElementById('board');
-
-if (standaloneBoard) {
-  createPuzzleMinigame({ difficulty: 'medium' }).open();
+  return { open, close, isOpen: () => isOpen };
 }

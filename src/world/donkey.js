@@ -4,6 +4,8 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 const loader = new GLTFLoader();
 loader.setMeshoptDecoder(MeshoptDecoder);
+
+// --- CONFIGURATION ---
 const donkeyPath = '/models_optimized/donkey_pocket_shrek_and_animations.glb';
 const donkeyPosition = new THREE.Vector3(-7.46, 0, 44.67);
 const donkeyHeight = 4;
@@ -11,6 +13,7 @@ const donkeyRotationOffsetY = Math.PI;
 const donkeyAnimationDistance = 80;
 const donkeyAnimationDistanceSq = donkeyAnimationDistance * donkeyAnimationDistance;
 
+// --- STATE VARIABLES ---
 let donkey = null;
 let donkeySkinnedMesh = null;
 let donkeyBones = [];
@@ -19,13 +22,14 @@ let donkeyInitialRotations = {};
 let donkeyStartY = donkeyPosition.y;
 let donkeyLoadPromise = null;
 
+// --- UTILITY FUNCTIONS ---
+
 function findBone(namePart) {
   return donkeyBones.find((bone) => bone.name.includes(namePart)) || null;
 }
 
 function saveInitialRotations(parts) {
   const rotations = {};
-
   for (const key in parts) {
     if (Array.isArray(parts[key])) {
       rotations[key] = parts[key].map((part) => part.rotation.clone());
@@ -33,7 +37,6 @@ function saveInitialRotations(parts) {
       rotations[key] = parts[key].rotation.clone();
     }
   }
-
   return rotations;
 }
 
@@ -89,6 +92,8 @@ function buildDonkeyParts() {
   };
 }
 
+// --- MAIN EXPORTS ---
+
 export function loadDonkey(scene) {
   if (donkeyLoadPromise) return donkeyLoadPromise;
 
@@ -96,67 +101,63 @@ export function loadDonkey(scene) {
     loader.load(
       donkeyPath,
       (gltf) => {
-      donkey = gltf.scene;
-      donkeyBones = [];
-      donkeySkinnedMesh = null;
+        donkey = gltf.scene;
+        donkeyBones = [];
+        donkeySkinnedMesh = null;
 
-      if (gltf.animations.length) {
-        console.log('Donkey clips ignored; using custom idle:', gltf.animations.map((clip) => clip.name));
-      }
-
-      donkey.traverse((child) => {
-        if (child.isBone) {
-          donkeyBones.push(child);
+        if (gltf.animations.length) {
+          console.log('Donkey clips ignored; using custom idle:', gltf.animations.map((clip) => clip.name));
         }
 
-        if (child.isSkinnedMesh) {
-          donkeySkinnedMesh = child;
-        }
+        donkey.traverse((child) => {
+          if (child.isBone) donkeyBones.push(child);
+          if (child.isSkinnedMesh) donkeySkinnedMesh = child;
 
-        if (child.name.includes('CFXM3') || child.name.includes('MagicAura')) {
-          child.visible = false;
-        }
-
-        if (child.isMesh || child.isSkinnedMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-          child.frustumCulled = false;
-
-          if (child.material?.map) {
-            child.material.map.colorSpace = THREE.SRGBColorSpace;
-            child.material.map.needsUpdate = true;
+          if (child.name.includes('CFXM3') || child.name.includes('MagicAura')) {
+            child.visible = false;
           }
+
+          if (child.isMesh || child.isSkinnedMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            child.frustumCulled = false;
+
+            if (child.material?.map) {
+              child.material.map.colorSpace = THREE.SRGBColorSpace;
+              child.material.map.needsUpdate = true;
+            }
+          }
+        });
+
+        if (donkeySkinnedMesh?.skeleton) {
+          donkeyBones = donkeySkinnedMesh.skeleton.bones;
         }
-      });
 
-      if (donkeySkinnedMesh?.skeleton) {
-        donkeyBones = donkeySkinnedMesh.skeleton.bones;
+        // Adjust scale and position based on bounding box
+        const box = new THREE.Box3().setFromObject(donkey);
+        const size = box.getSize(new THREE.Vector3());
+        const scale = size.y > 0 ? donkeyHeight / size.y : 1;
+        donkey.scale.setScalar(scale);
+
+        const scaledBox = new THREE.Box3().setFromObject(donkey);
+        donkey.position.copy(donkeyPosition);
+        donkey.position.y += donkeyPosition.y - scaledBox.min.y;
+        donkeyStartY = donkey.position.y;
+        donkey.rotation.y = donkeyRotationOffsetY;
+
+        donkeyParts = buildDonkeyParts();
+        donkeyInitialRotations = saveInitialRotations(donkeyParts);
+
+        scene.add(donkey);
+        console.log('Donkey loaded', donkeyParts);
+        resolve(donkey);
+      },
+      undefined,
+      (error) => {
+        console.error(`Error loading ${donkeyPath}`, error);
+        resolve(null);
       }
-
-      const box = new THREE.Box3().setFromObject(donkey);
-      const size = box.getSize(new THREE.Vector3());
-      const scale = size.y > 0 ? donkeyHeight / size.y : 1;
-      donkey.scale.setScalar(scale);
-
-      const scaledBox = new THREE.Box3().setFromObject(donkey);
-      donkey.position.copy(donkeyPosition);
-      donkey.position.y += donkeyPosition.y - scaledBox.min.y;
-      donkeyStartY = donkey.position.y;
-      donkey.rotation.y = donkeyRotationOffsetY;
-
-      donkeyParts = buildDonkeyParts();
-      donkeyInitialRotations = saveInitialRotations(donkeyParts);
-
-      scene.add(donkey);
-      console.log('Donkey loaded', donkeyParts);
-      resolve(donkey);
-    },
-    undefined,
-    (error) => {
-      console.error(`Error loading ${donkeyPath}`, error);
-      resolve(null);
-    }
-  );
+    );
   });
 
   return donkeyLoadPromise;
@@ -165,6 +166,7 @@ export function loadDonkey(scene) {
 export function updateDonkey(deltaTime, player) {
   if (!donkey || !donkey.visible) return;
 
+  // Skip animation if the player is too far away
   if (player && donkey.position.distanceToSquared(player.position) > donkeyAnimationDistanceSq) {
     return;
   }
@@ -178,8 +180,10 @@ export function updateDonkey(deltaTime, player) {
 
   resetDonkeyPose();
 
+  // Idle floating/breathing animation
   donkey.position.y = donkeyStartY + Math.sin(time * 1.6) * 0.012;
 
+  // Make donkey look at player
   if (player) {
     const directionX = player.position.x - donkey.position.x;
     const directionZ = player.position.z - donkey.position.z;
@@ -192,6 +196,7 @@ export function updateDonkey(deltaTime, player) {
     );
   }
 
+  // Animate specific bone parts
   rotateBone(donkeyParts.spine, 'z', Math.sin(time * 1.7) * 0.02);
   rotateBone(donkeyParts.head, 'y', Math.sin(time * 1.3) * 0.12);
   rotateBone(donkeyParts.head, 'x', Math.sin(time * 1.8) * 0.05);

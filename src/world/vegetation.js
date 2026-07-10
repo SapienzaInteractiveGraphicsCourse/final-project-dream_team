@@ -4,6 +4,7 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 const VEGETATION_MODEL_PATH = '/models_optimized/procedural_tree_generator.glb';
 
+// --- DEFAULT SETTINGS ---
 const DEFAULT_OPTIONS = {
   islandMargin: 12,
   pathClearance: 4,
@@ -27,6 +28,7 @@ const DEFAULT_OPTIONS = {
   }
 };
 
+// --- RANDOM SEED GENERATOR ---
 function createRandom(seed) {
   return function random() {
     seed |= 0;
@@ -37,6 +39,7 @@ function createRandom(seed) {
   };
 }
 
+// --- VEGETATION PROTOTYPING ---
 function createNormalizedPrototype(source, options) {
   const model = source.clone(true);
 
@@ -46,10 +49,7 @@ function createNormalizedPrototype(source, options) {
     child.castShadow = options.castShadow;
     child.receiveShadow = options.receiveShadow;
 
-    const materials = Array.isArray(child.material)
-      ? child.material
-      : [child.material];
-
+    const materials = Array.isArray(child.material) ? child.material : [child.material];
     materials.forEach((material) => {
       if (material?.map) {
         material.map.colorSpace = THREE.SRGBColorSpace;
@@ -95,6 +95,8 @@ function createClusterPrototype(source, children, options) {
     const childBox = new THREE.Box3().setFromObject(child);
     const childCenter = new THREE.Vector3();
     childBox.getCenter(childCenter);
+    
+    // Group children nearby to the main tree structure
     const isNearTreeLine = Math.abs(childCenter.x - sourceCenter.x) < 4.6
       && childCenter.z > sourceBox.min.z - 1.5
       && childCenter.z < sourceBox.max.z + 1.5;
@@ -108,10 +110,7 @@ function createClusterPrototype(source, children, options) {
 }
 
 function createTreePrototypes(children, options) {
-  const treeSources = children.filter((child) => {
-    return /^Tree_set_[123]002_/.test(child.name);
-  });
-
+  const treeSources = children.filter((child) => /^Tree_set_[123]002_/.test(child.name));
   return treeSources.map((source) => createClusterPrototype(source, children, options));
 }
 
@@ -123,23 +122,15 @@ function mergeOptions(options = {}) {
   return {
     ...DEFAULT_OPTIONS,
     ...options,
-    tree: {
-      ...DEFAULT_OPTIONS.tree,
-      ...options.tree
-    },
-    bush: {
-      ...DEFAULT_OPTIONS.bush,
-      ...options.bush
-    }
+    tree: { ...DEFAULT_OPTIONS.tree, ...options.tree },
+    bush: { ...DEFAULT_OPTIONS.bush, ...options.bush }
   };
 }
 
+// --- UTILITIES FOR SCATTERING ---
 function getIslandMetrics(island) {
   const islandTop = island?.islandTop;
-
-  if (!islandTop) {
-    return null;
-  }
+  if (!islandTop) return null;
 
   islandTop.updateMatrixWorld(true);
 
@@ -159,31 +150,22 @@ function getIslandMetrics(island) {
 
 function expandBoxXZ(box, clearance) {
   const expandedBox = box.clone();
-
   expandedBox.min.x -= clearance;
   expandedBox.max.x += clearance;
   expandedBox.min.z -= clearance;
   expandedBox.max.z += clearance;
-
   return expandedBox;
 }
 
 function createPathObstacleBoxes(pathGroup, clearance) {
-  if (!pathGroup) {
-    return [];
-  }
-
+  if (!pathGroup) return [];
   pathGroup.updateMatrixWorld(true);
-
   const boxes = [];
-
   pathGroup.traverse((child) => {
     if (!child.isMesh) return;
-
     const box = new THREE.Box3().setFromObject(child);
     boxes.push(expandBoxXZ(box, clearance));
   });
-
   return boxes;
 }
 
@@ -191,21 +173,16 @@ function createModelObstacleBoxes(bounds, clearance) {
   return bounds.map((box) => expandBoxXZ(box, clearance));
 }
 
-function pointIntersectsBoxXZ(point, box) {
-  return point.x >= box.min.x
-    && point.x <= box.max.x
-    && point.z >= box.min.z
-    && point.z <= box.max.z;
-}
-
 function isBlockedByObstacles(point, obstacleBoxes) {
-  return obstacleBoxes.some((box) => pointIntersectsBoxXZ(point, box));
+  return obstacleBoxes.some((box) => 
+    point.x >= box.min.x && point.x <= box.max.x && 
+    point.z >= box.min.z && point.z <= box.max.z
+  );
 }
 
 function alignModelToGround(model, groundY, yOffset) {
   model.position.y = groundY + yOffset;
   model.updateMatrixWorld(true);
-
   const box = new THREE.Box3().setFromObject(model);
   model.position.y += groundY + yOffset - box.min.y;
 }
@@ -214,27 +191,17 @@ function getRandomIslandPoint(random, islandMetrics, islandMargin) {
   const maxRadius = Math.max(islandMetrics.radius - islandMargin, 0);
   const radius = Math.sqrt(random()) * maxRadius;
   const angle = random() * Math.PI * 2;
-
   return {
     x: islandMetrics.center.x + Math.cos(angle) * radius,
     z: islandMetrics.center.z + Math.sin(angle) * radius
   };
 }
 
-function createPlacement({
-  random,
-  placedPoints,
-  minDistance,
-  islandMetrics,
-  obstacleBoxes,
-  options
-}) {
+function createPlacement({ random, placedPoints, minDistance, islandMetrics, obstacleBoxes, options }) {
   for (let attempt = 0; attempt < options.placementAttempts; attempt++) {
     const point = getRandomIslandPoint(random, islandMetrics, options.islandMargin);
 
-    if (isBlockedByObstacles(point, obstacleBoxes)) {
-      continue;
-    }
+    if (isBlockedByObstacles(point, obstacleBoxes)) continue;
 
     const overlaps = placedPoints.some((placedPoint) => {
       const dx = point.x - placedPoint.x;
@@ -244,46 +211,20 @@ function createPlacement({
     });
 
     if (!overlaps) {
-      placedPoints.push({
-        x: point.x,
-        z: point.z,
-        radius: minDistance
-      });
-
+      placedPoints.push({ x: point.x, z: point.z, radius: minDistance });
       return point;
     }
   }
-
   return null;
 }
 
 function scatterVegetation({
-  group,
-  prototypes,
-  count,
-  minScale,
-  maxScale,
-  minDistance,
-  random,
-  placedPoints,
-  islandMetrics,
-  obstacleBoxes,
-  options,
-  colliderTargets = null
+  group, prototypes, count, minScale, maxScale, minDistance,
+  random, placedPoints, islandMetrics, obstacleBoxes, options, colliderTargets = null
 }) {
   for (let i = 0; i < count; i++) {
-    const point = createPlacement({
-      random,
-      placedPoints,
-      minDistance,
-      islandMetrics,
-      obstacleBoxes,
-      options
-    });
-
-    if (!point) {
-      continue;
-    }
+    const point = createPlacement({ random, placedPoints, minDistance, islandMetrics, obstacleBoxes, options });
+    if (!point) continue;
 
     const prototype = prototypes[Math.floor(random() * prototypes.length)];
     const model = prototype.clone(true);
@@ -302,18 +243,13 @@ function scatterVegetation({
   }
 }
 
+// --- INITIALIZATION ---
 export function createIslandVegetation(scene, config = {}) {
-  const normalizedConfig = Array.isArray(config)
-    ? { colliderTargets: config }
-    : config;
-  const {
-    island,
-    obstacleBounds = [],
-    colliderTargets = [],
-    options = {}
-  } = normalizedConfig;
+  const normalizedConfig = Array.isArray(config) ? { colliderTargets: config } : config;
+  const { island, obstacleBounds = [], colliderTargets = [], options = {} } = normalizedConfig;
   const mergedOptions = mergeOptions(options);
   const islandMetrics = getIslandMetrics(island);
+  
   const loader = new GLTFLoader();
   loader.setMeshoptDecoder(MeshoptDecoder);
   
@@ -348,32 +284,17 @@ export function createIslandVegetation(scene, config = {}) {
       }
 
       scatterVegetation({
-        group,
-        prototypes: treePrototypes,
-        count: mergedOptions.tree.count,
-        minScale: mergedOptions.tree.minScale,
-        maxScale: mergedOptions.tree.maxScale,
-        minDistance: mergedOptions.tree.minDistance,
-        random,
-        placedPoints,
-        islandMetrics,
-        obstacleBoxes,
-        options: mergedOptions,
-        colliderTargets
+        group, prototypes: treePrototypes, count: mergedOptions.tree.count,
+        minScale: mergedOptions.tree.minScale, maxScale: mergedOptions.tree.maxScale,
+        minDistance: mergedOptions.tree.minDistance, random, placedPoints,
+        islandMetrics, obstacleBoxes, options: mergedOptions, colliderTargets
       });
 
       scatterVegetation({
-        group,
-        prototypes: bushPrototypes,
-        count: mergedOptions.bush.count,
-        minScale: mergedOptions.bush.minScale,
-        maxScale: mergedOptions.bush.maxScale,
-        minDistance: mergedOptions.bush.minDistance,
-        random,
-        placedPoints,
-        islandMetrics,
-        obstacleBoxes,
-        options: mergedOptions
+        group, prototypes: bushPrototypes, count: mergedOptions.bush.count,
+        minScale: mergedOptions.bush.minScale, maxScale: mergedOptions.bush.maxScale,
+        minDistance: mergedOptions.bush.minDistance, random, placedPoints,
+        islandMetrics, obstacleBoxes, options: mergedOptions
       });
 
       console.log(`Vegetation loaded: ${group.children.length} trees and bushes placed.`);

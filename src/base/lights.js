@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 
+/**
+ * Sets up the scene lighting, including ambient and directional light with shadows.
+ */
 export function createLights(scene) {
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.35);
   scene.add(ambientLight);
@@ -8,9 +11,11 @@ export function createLights(scene) {
   sunLight.position.set(80, 120, 60);
   sunLight.castShadow = true;
 
+  // Shadow Map configuration
   sunLight.shadow.mapSize.width = 512;
   sunLight.shadow.mapSize.height = 512;
 
+  // Camera settings for shadows to fit the scene
   sunLight.shadow.camera.near = 1;
   sunLight.shadow.camera.far = 260;
   sunLight.shadow.camera.left = -145;

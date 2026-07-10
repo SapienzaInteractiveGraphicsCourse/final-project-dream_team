@@ -3,8 +3,9 @@ import { isBridgeBuilt } from '../imported_models/bridge.js';
 import { hideBookAfterPortal } from '../imported_models/book.js';
 import { hideDragonAfterPortal } from '../imported_models/dragon.js';
 import { hideGemAfterPortal } from '../imported_models/gem.js';
-import { startFinale } from './finale.js';
+import { startFinale } from './final.js';
 
+// --- CONFIGURATION ---
 const portalCenter = new THREE.Vector3(243.4, 28.75, -255.4);
 const portalSize = new THREE.Vector3(5, 6, 5);
 const portalBox = new THREE.Box3().setFromCenterAndSize(portalCenter, portalSize);
@@ -12,6 +13,7 @@ const returnPosition = new THREE.Vector3(-1.94, 0.15, 26.04);
 
 let hasTeleportedToFirstWorld = false;
 
+// --- DEBUG UI ---
 const positionPanel = document.createElement('div');
 positionPanel.style.position = 'fixed';
 positionPanel.style.left = '16px';
@@ -31,6 +33,7 @@ function formatNumber(value) {
   return Number(value.toFixed(2));
 }
 
+// Development utility to log the player's current position
 export function createPortalPositionLogger(player) {
   window.addEventListener('keydown', (event) => {
     if (event.key.toLowerCase() !== 'p') return;
@@ -54,17 +57,23 @@ export function createPortalPositionLogger(player) {
   });
 }
 
+// Handles transitioning the player back through the portal
 export function updatePortalTeleport(player, onStartFinale = startFinale) {
   if (!isBridgeBuilt()) return;
   if (hasTeleportedToFirstWorld) return;
   if (!portalBox.containsPoint(player.position)) return;
 
+  // Execute Teleport
   player.position.copy(returnPosition);
   hasTeleportedToFirstWorld = true;
+  
+  // Cleanup World 1 Objects
   hideBookAfterPortal();
   hideDragonAfterPortal();
   hideGemAfterPortal();
+  
   onStartFinale();
+  
   positionPanel.innerHTML = 'Portal crossed';
   positionPanel.style.display = 'block';
   console.log('Teleported to first world:', returnPosition);

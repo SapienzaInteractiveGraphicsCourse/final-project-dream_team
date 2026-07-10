@@ -51,75 +51,61 @@ import {
   setFinaleDifficulty,
   startFinale,
   updateFinale
-} from './world/finale.js';
+} from './world/final.js';
 import { loadDonkey, updateDonkey } from './world/donkey.js';
-
-// lamppost imports
 import { createLampPosts, updateLampPosts } from './world/lampPosts.js';
 
+// --- SCENE SETUP ---
 const canvas = document.querySelector('#bg');
 const scene = createScene();
 const camera = createCamera();
 const renderer = createRenderer(canvas);
 
-// 1. Crea l'AudioListener e attaccalo alla telecamera
+// --- AUDIO SETUP ---
+// 1. Create the AudioListener and attach it to the camera
 const listener = new THREE.AudioListener();
 camera.add(listener);
 
-// 2. Crea un oggetto Audio globale (per la musica di sottofondo, non posizionale)
+// 2. Create a global Audio object for background music
 const backgroundMusic = new THREE.Audio(listener);
 
-// Aggiungiamo questa variabile per sapere se il giocatore ha già cliccato
+// Track if the player has interacted with the UI to allow audio playback
 let hasUserInteracted = false; 
 const audioLoader = new THREE.AudioLoader();
-console.log("Inizio a cercare il file musicale...");
+console.log("Starting to load the music file...");
 
 audioLoader.load(
   '/music/Medieval_Vol.26.mp3',
   function(buffer) {
-    console.log("SUCCESSO! Il file audio è stato caricato e decodificato.");
+    console.log("SUCCESS! The audio file has been loaded and decoded.");
     backgroundMusic.setBuffer(buffer);
     backgroundMusic.setLoop(true); 
     backgroundMusic.setVolume(0.4); 
     
+    // Play immediately if the user has already interacted
     if (hasUserInteracted && listener.context.state !== 'suspended') {
       backgroundMusic.play();
     }
   },
   function(xhr) {
-    // Questo ti mostra la percentuale di caricamento
-    console.log('Scaricamento audio: ' + Math.round(xhr.loaded / xhr.total * 100) + '%');
+    // Log the downloading progress
+    console.log(`Audio downloading: ${Math.round((xhr.loaded / xhr.total) * 100)}%`);
   },
   function(err) {
-    console.error('ERRORE GRAVE: Non riesco a trovare il file /music/Medieval_Vol.26.mp3');
-    console.error('Assicurati che la cartella "music" sia dentro la cartella "public" del progetto!');
+    console.error('CRITICAL ERROR: Cannot find the file /music/Medieval_Vol.26.mp3');
+    console.error('Make sure the "music" folder is inside the "public" folder of the project!');
   }
 );
 
-// --- EFFETTO SONORO COLPO MAGICO ---
-const dragonHitSound = new THREE.Audio(listener);
-
-audioLoader.load(
-  '/music/dragon_hit.wav', 
-  function(buffer) {
-    dragonHitSound.setBuffer(buffer);
-    dragonHitSound.setLoop(false); 
-    dragonHitSound.setVolume(0.8); 
-  },
-  undefined,
-  function(err) {
-    console.error('Errore nel caricamento del suono del drago. Assicurati che il file si chiami esattamente dragon_hit.wav');
-  }
-);
-
+// Enable shadows
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
-
 setupResize(camera, renderer);
 
 const clock = new THREE.Clock();
 const debugMode = new URLSearchParams(window.location.search).has('debug');
 
+// --- WORLD GENERATION ---
 const lights = createLights(scene);
 const island = createIsland(scene, materials);
 
@@ -127,6 +113,7 @@ function getRndInteger(min, max) {
   return Math.floor(Math.random() * (max - min) ) + min;
 }
 
+// Generate clouds
 const cloudsNumber = 18;
 const genericMin = -300;
 const genericMax = 300;
@@ -147,15 +134,17 @@ for (let i = 0; i < cloudsNumber; i++) {
 createRain(scene);
 const carpetTravel = createCarpetTravel(scene);
 
-// MODIFICA: Chiamo la creazione dei lampioni nella scena
+// Initialize lampposts in the scene
 createLampPosts(scene);
 
+// Hide magic carpet initially
 if (carpetTravel && carpetTravel.mesh) {
   carpetTravel.mesh.visible = false;
 } else if (carpetTravel && carpetTravel.group) {
   carpetTravel.group.visible = false;
 }
 
+// --- UI ELEMENTS ---
 const carpetPrompt = document.createElement('div');
 carpetPrompt.className = 'interaction-dialogue carpet-dialogue';
 carpetPrompt.textContent = 'Press F to travel on the magic carpet';
@@ -203,6 +192,7 @@ introOverlay.innerHTML = `
 `;
 document.body.appendChild(introOverlay);
 
+// --- GAME STATE VARIABLES ---
 let selectedDifficulty = 'medium';
 let isChoosingDifficulty = true;
 let isIntroActive = true;
@@ -210,15 +200,19 @@ let dragonPuzzle = null;
 let isDragonPuzzleActive = false;
 let dragonDirectHits = 0;
 let finalPuzzleStarted = false;
+
+// Model Loading Promises
 let gameplayModelsPromise = null;
 let worldTwoModelsPromise = null;
 let finaleModelsPromise = null;
 let gameplayModelsLoaded = false;
 let worldTwoModelsLoaded = false;
 let finaleModelsLoaded = false;
+
 const DIRECT_HITS_BEFORE_FINAL_PUZZLE = 3;
 const DRAGON_HIT_DAMAGE = 25;
 
+// --- MODEL LOADING MANAGERS ---
 function ensureGameplayModelsLoaded() {
   if (!gameplayModelsPromise) {
     gameplayModelsPromise = loadGameplayModels(scene).then((models) => {
@@ -226,7 +220,6 @@ function ensureGameplayModelsLoaded() {
       return models;
     });
   }
-
   return gameplayModelsPromise;
 }
 
@@ -241,7 +234,6 @@ function ensureWorldTwoModelsLoaded() {
       return models;
     });
   }
-
   return worldTwoModelsPromise;
 }
 
@@ -255,10 +247,10 @@ function ensureFinaleModelsLoaded() {
       return models;
     });
   }
-
   return finaleModelsPromise;
 }
 
+// --- DRAGON COMBAT LOGIC ---
 function showDragonVictory() {
   dragonPrompt.classList.remove('is-visible');
   isInsideCastle = false;
@@ -307,30 +299,29 @@ function attackDragon() {
     if (dragonDirectHits === DIRECT_HITS_BEFORE_FINAL_PUZZLE) {
       dragonPrompt.textContent = 'Press R to give the last hit to the dragon!';
     }
-
     return;
   }
 
   startDragonPuzzle();
 }
 
+// --- EVENT LISTENERS ---
 difficultyOverlay.querySelectorAll('[data-difficulty]').forEach((button) => {
-  // 1. Aggiunto "async" qui!
   button.addEventListener('click', async () => { 
     selectedDifficulty = button.dataset.difficulty;
     setFinaleDifficulty(selectedDifficulty);
     isChoosingDifficulty = false;
     difficultyOverlay.classList.remove('is-visible');
 
-    // 2. Aggiunto questo per avvisare che il giocatore ha cliccato
+    // Mark that the user has interacted to allow audio
     hasUserInteracted = true; 
 
-    // 3. Aggiunto "await" per aspettare davvero il via libera del browser
+    // Await audio context resume to satisfy browser autoplay policies
     if (listener.context.state === 'suspended') {
       await listener.context.resume();
     }
     
-    // Se la musica è stata caricata e non sta già suonando, avviala
+    // Play background music if it's loaded and not already playing
     if (backgroundMusic.buffer && !backgroundMusic.isPlaying) {
       backgroundMusic.play();
     }
@@ -345,6 +336,7 @@ introOverlay.querySelector('.intro-start-button').addEventListener('click', () =
   ensureGameplayModelsLoaded();
 });
 
+// Camera View Logic
 let isFirstPerson = false;
 let manualFirstPerson = false; 
 const thirdPersonFov = 65;
@@ -363,6 +355,7 @@ function setFirstPersonMode(enable) {
     camera.updateProjectionMatrix();
   }
 
+  // Toggle player mesh visibility based on view mode
   if (playerData && playerData.group) {
     playerData.group.traverse((child) => {
       if (child.isMesh) {
@@ -372,31 +365,32 @@ function setFirstPersonMode(enable) {
   }
 }
 
+// Input Handling
 let isInsideCastle = false;
 window.addEventListener('keydown', (event) => {
-  if (isIntroActive) {
+  if (isIntroActive || isChoosingDifficulty || isDragonPuzzleActive || isFinaleInputLocked()) {
     return;
   }
 
-  if (isChoosingDifficulty || isDragonPuzzleActive || isFinaleInputLocked()) {
-    return;
-  }
+  const key = event.key.toLowerCase();
 
-  if (event.key.toLowerCase() === 'f') {
-    if (!isGemDelivered()) {
-      return; 
-    }
+  // Handle Carpet Travel
+  if (key === 'f') {
+    if (!isGemDelivered()) return; 
+    
     ensureWorldTwoModelsLoaded();
     tryStartCarpetTravel(carpetTravel);
   }
 
-  if (event.key.toLowerCase() === 'v') {
+  // Handle Camera View Toggle
+  if (key === 'v') {
     manualFirstPerson = !manualFirstPerson;
     setFirstPersonMode(manualFirstPerson);
     console.log('Manual view changed. First person:', manualFirstPerson);
   }
 
-  if (event.key.toLowerCase() === 'r') {
+  // Handle Dragon Attack
+  if (key === 'r') {
     if (isInsideCastle && isBookDelivered() && !isDragonDefeated()) {
       attackDragon();
     }
@@ -407,6 +401,7 @@ window.addEventListener('keyup', () => {
   window.currentInteractionKey = null;
 });
 
+// --- PLAYER INITIALIZATION ---
 const playerData = createPlayer(scene);
 createPortalPositionLogger(playerData.group);
 
@@ -424,6 +419,7 @@ loadIntroModels(scene).then(() => {
   });
 });
 
+// Debug tools
 if (debugMode) {
   const axesHelper = new THREE.AxesHelper(100);
   axesHelper.position.set(0, 5, 0);
@@ -446,11 +442,13 @@ if (debugMode) {
 }
 
 const castleTriggerBox = new THREE.Box3(
-      new THREE.Vector3(-9, -5, -130),
-      new THREE.Vector3(15, 30, -10)
-    );
+  new THREE.Vector3(-9, -5, -130),
+  new THREE.Vector3(15, 30, -10)
+);
+
 let shifuThanksTriggered = false;
 
+// Dynamic Camera Logic
 function updateIntroCamera(time) {
   const phase = time * 0.12;
   const sweep = Math.sin(time * 0.22);
@@ -464,7 +462,8 @@ function updateIntroCamera(time) {
   camera.position.set(cameraX, height, cameraZ);
   camera.lookAt(targetX, 0, targetZ);
 }
-// MODIFICA: Variabile per simulare l'aumento dell'intensità della tempesta da passare ai lampioni
+
+// Weather and Environment State
 let globalStormProgress = 0;
 let finaleWeatherCleared = false;
 let rainUpdateAccumulator = 0;
@@ -480,7 +479,7 @@ setFinaleCallbacks({
 });
 
 // --------------------------------------------------
-// 18. ANIMATION LOOP
+// MAIN ANIMATION LOOP
 // --------------------------------------------------
 function animate() {
   requestAnimationFrame(animate);
@@ -488,6 +487,7 @@ function animate() {
   const deltaTime = clock.getDelta();
   const time = performance.now() * 0.001;
 
+  // Handle Intro Screen Camera Movement
   if (isIntroActive) {
     updateIntroCamera(time);
     if (gameplayModelsLoaded) {
@@ -497,22 +497,25 @@ function animate() {
     return;
   }
 
+  // Handle Movement and Controls
   updateCarpetTravel(deltaTime, playerData.group, carpetTravel);
   const isFalling = updateTowerFall(
     deltaTime,
     playerData.group,
     playerData.group.position.y > 20 && !carpetTravel.isTraveling
   );
+  
   const canControlPlayer =
     !carpetTravel.isTraveling &&
     !isFalling &&
     !isChoosingDifficulty &&
     !isDragonPuzzleActive &&
     !isFinaleInputLocked();
+    
   playerController.update(deltaTime, canControlPlayer);
 
+  // Carpet Interaction Prompt
   const carpetObject = carpetTravel.group || carpetTravel.mesh;
-  
   if (carpetObject && carpetObject.visible && !carpetTravel.isTraveling && !carpetTravel.hasArrived) {
     const distanceToCarpet = playerData.group.position.distanceTo(carpetObject.position);
     const carpetInteractionDistance = 4;
@@ -526,6 +529,7 @@ function animate() {
     carpetPrompt.classList.remove('is-visible');
   }
   
+  // Model Updates
   let isTalkingToMage = false;
   if (gameplayModelsLoaded) {
     isTalkingToMage = updateModels(deltaTime, playerData.group);
@@ -535,14 +539,13 @@ function animate() {
   const isTalkingToShifu = worldTwoModelsLoaded
     ? updateShifuTask(deltaTime, playerData.group)
     : false;
-  const isTalkingToFlynn = finaleModelsLoaded
+    
+  const isTalkingToFinale = finaleModelsLoaded
     ? updateFinale(deltaTime, playerData.group, camera)
     : false;
-  // 2. Force first person only while a character is actively talking.
-  const shouldBeInFirstPerson = 
-    isTalkingToMage || 
-    isTalkingToShifu ||
-    isTalkingToFlynn;
+    
+  // Force first-person view while a character is actively talking
+  const shouldBeInFirstPerson = isTalkingToMage || isTalkingToShifu || isTalkingToFinale;
 
   if (shouldBeInFirstPerson) {
     setFirstPersonMode(true);
@@ -550,11 +553,13 @@ function animate() {
     setFirstPersonMode(manualFirstPerson);
   }
 
-  const pos = playerData.group.position;
+  // Debug Coordinates
   if (debugMode) {
+    const pos = playerData.group.position;
     playerCoords.textContent = `X: ${pos.x.toFixed(2)}  Y: ${pos.y.toFixed(2)}  Z: ${pos.z.toFixed(2)}`;
   }
 
+  // World 2 Updates
   if (worldTwoModelsLoaded) {
     updateWoodTask(deltaTime, playerData.group);
     updateBridgeTask(deltaTime, playerData.group);
@@ -565,30 +570,30 @@ function animate() {
     });
   }
 
+  // Finale Updates
   if (finaleModelsLoaded) {
     updateDonkey(deltaTime, playerData.group);
   }
+
+  // Weather Logic
   if (shifuThanksTriggered && !finaleWeatherCleared) {
     rainUpdateAccumulator += deltaTime;
     if (rainUpdateAccumulator >= rainUpdateInterval) {
       updateRain(rainUpdateAccumulator, playerData.group);
       rainUpdateAccumulator = 0;
     }
-  }
-
-  if (shifuThanksTriggered && !finaleWeatherCleared) {
     updateStorm(deltaTime, scene);
-  }
-
-  // MODIFICA: Aggiornamento lampioni basato sullo stato della tempesta
-  if (shifuThanksTriggered && !finaleWeatherCleared) {
-    // La tempesta sale progressivamente fino a 1 nel giro di qualche secondo
+    
+    // The storm intensity gradually increases over a few seconds
     globalStormProgress = Math.min(1.0, globalStormProgress + deltaTime * 0.2); 
   }
+
+  // Update lampposts based on storm state
   if (globalStormProgress > 0 || (shifuThanksTriggered && !finaleWeatherCleared)) {
     updateLampPosts(globalStormProgress, playerData.group);
   }
   
+  // Environmental Lighting adjustments
   lights.sunLight.intensity = 1.0 * (1.0 - globalStormProgress);
   lights.sunLight.castShadow = globalStormProgress <= 0.5;
   lights.ambientLight.intensity = 0.4 * (1.0 - globalStormProgress * 0.95);
@@ -598,11 +603,13 @@ function animate() {
     scene.backgroundIntensity = 1.0 - globalStormProgress;
   }
 
+  // Event Triggers
   if (isGemDelivered()) {
     if (carpetTravel && carpetTravel.mesh) carpetTravel.mesh.visible = true;
     if (carpetTravel && carpetTravel.group) carpetTravel.group.visible = true;
   }
 
+  // Castle Region detection for Dragon fight
   if (isBookDelivered() && !isDragonDefeated() && !isDragonPuzzleActive && !isChoosingDifficulty) {
     if (castleTriggerBox.containsPoint(playerData.group.position)) {
       isInsideCastle = true;
@@ -620,10 +627,13 @@ function animate() {
 
   renderer.render(scene, camera);
 
+  // Trigger storm after bridge is built
   if (isBridgeBuilt() && !shifuThanksTriggered && !finaleWeatherCleared ){
     shifuThanksTriggered = true;
     startShifuBridgeThanks();
     startStorm(scene);
   }
 }
+
+// Start game loop
 animate();

@@ -1,18 +1,9 @@
 import './puzzle.css';
 
 const DOOR_DIFFICULTIES = {
-  easy: {
-    label: 'Easy',
-    sequenceLength: 4
-  },
-  medium: {
-    label: 'Medium',
-    sequenceLength: 6
-  },
-  hard: {
-    label: 'Hard',
-    sequenceLength: 8
-  }
+  easy: { label: 'Easy', sequenceLength: 4 },
+  medium: { label: 'Medium', sequenceLength: 6 },
+  hard: { label: 'Hard', sequenceLength: 8 }
 };
 
 const ACCEPTED_KEYS = 'abcdefghijklmnopqrstuvwxyz'.split('');
@@ -28,9 +19,7 @@ function createRandomSequence(length) {
   });
 }
 
-export function getDoorDifficulties() {
-  return DOOR_DIFFICULTIES;
-}
+export function getDoorDifficulties() { return DOOR_DIFFICULTIES; }
 
 export function createDoorMinigame({
   difficulty = 'medium',
@@ -46,6 +35,7 @@ export function createDoorMinigame({
   let isOpen = false;
   let isSolved = false;
 
+  // DOM UI elements creation
   const overlay = document.createElement('div');
   overlay.className = 'door-minigame-overlay';
   overlay.setAttribute('aria-hidden', 'true');
@@ -85,22 +75,13 @@ export function createDoorMinigame({
 
   function updateSequenceUI() {
     sequenceContainer.innerHTML = '';
-
     doorSequence.forEach((key, index) => {
       const keyElement = document.createElement('span');
       keyElement.className = 'door-key';
       keyElement.textContent = key.toUpperCase();
-
-      if (index < currentIndex) {
-        keyElement.classList.add('completed');
-      }
-
-      if (index === currentIndex) {
-        keyElement.classList.add('current');
-      }
-
+      if (index < currentIndex) keyElement.classList.add('completed');
+      if (index === currentIndex) keyElement.classList.add('current');
       sequenceContainer.append(keyElement);
-
       if (index < doorSequence.length - 1) {
         const arrow = document.createElement('span');
         arrow.className = 'door-arrow';
@@ -120,7 +101,6 @@ export function createDoorMinigame({
 
   function close() {
     if (!isOpen) return;
-
     isOpen = false;
     overlay.classList.remove('is-visible');
     overlay.setAttribute('aria-hidden', 'true');
@@ -130,37 +110,25 @@ export function createDoorMinigame({
   function complete() {
     isSolved = true;
     feedbackText.textContent = 'The magic lock opens!';
-
     setTimeout(() => {
       close();
-      onSolved({
-        difficulty,
-        sequenceLength: doorSequence.length
-      });
+      onSolved({ difficulty, sequenceLength: doorSequence.length });
     }, 700);
   }
 
   function handleKeyPress(event) {
     if (!isOpen || isSolved) return;
-
     const pressedKey = event.key.toLowerCase();
-
     if (!ACCEPTED_KEYS.includes(pressedKey)) return;
 
     event.preventDefault();
     event.stopPropagation();
 
-    const expectedKey = doorSequence[currentIndex];
-
-    if (pressedKey === expectedKey) {
+    if (pressedKey === doorSequence[currentIndex]) {
       currentIndex += 1;
       feedbackText.textContent = 'Correct!';
       updateSequenceUI();
-
-      if (currentIndex === doorSequence.length) {
-        complete();
-      }
-
+      if (currentIndex === doorSequence.length) complete();
       return;
     }
 
@@ -171,7 +139,6 @@ export function createDoorMinigame({
 
   function open(nextDifficulty = difficulty) {
     if (isOpen) return;
-
     updateDifficulty(nextDifficulty);
     reset();
     isOpen = true;
@@ -181,18 +148,11 @@ export function createDoorMinigame({
 
   closeButton.addEventListener('click', close);
   overlay.addEventListener('click', (event) => {
-    if (allowClose && event.target === overlay) {
-      close();
-    }
+    if (allowClose && event.target === overlay) close();
   });
   window.addEventListener('keydown', handleKeyPress, true);
 
   document.body.append(overlay);
 
-  return {
-    open,
-    close,
-    isOpen: () => isOpen,
-    setDifficulty: updateDifficulty
-  };
+  return { open, close, isOpen: () => isOpen, setDifficulty: updateDifficulty };
 }

@@ -28,8 +28,8 @@ function saveInitialRotations(parts) {
 
 export function createPlayer(scene) {
   const player = new THREE.Group();
-   player.position.set(0, 0.15, 26);  // initial plaza
-  //player.position.set(236, 28.75, -253);  // tower 2 initial position
+  player.position.set(0, 0.15, 26);  // initial plaza
+  // player.position.set(236, 28.75, -253);  // tower 2 initial position
   player.rotation.y = 0;
   scene.add(player);
 
@@ -68,19 +68,19 @@ export function createPlayer(scene) {
             if (child.material) {
               const oldMaterials = Array.isArray(child.material) ? child.material : [child.material];
               
-              // RICOSTRUZIONE FORZATA DEI MATERIALI
+              // --- FORCED MATERIAL RECONSTRUCTION ---
               const newMaterials = oldMaterials.map(oldMat => {
-                // Creiamo un materiale completamente nuovo, prendendo solo il colore o la texture dal vecchio
+                // Create a completely new material, taking only the color or texture from the old one
                 return new THREE.MeshStandardMaterial({
                   color: oldMat.color ? oldMat.color : new THREE.Color(0xffffff),
                   map: oldMat.map ? oldMat.map : null,
-                  roughness: 0.8, // Rende i vestiti opachi e realistici
+                  roughness: 0.8, // Makes clothes opaque and realistic
                   metalness: 0.0,
-                  emissive: new THREE.Color(0x000000) // ZERO luce propria
+                  emissive: new THREE.Color(0x000000) // ZERO emissive light
                 });
               });
 
-              // Sostituiamo i vecchi materiali corrotti con quelli nuovi e puliti
+              // Replace the old corrupted materials with the new and clean ones
               child.material = Array.isArray(child.material) ? newMaterials : newMaterials[0];
             }
           }
@@ -208,5 +208,4 @@ export function animatePlayer(playerObject, isMoving, elapsedTime) {
   if (parts.rightFoot) {
     parts.rightFoot.rotation.x += Math.max(0, swing) * 0.2;
   }
-
 }

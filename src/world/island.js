@@ -63,6 +63,8 @@ export function createIsland(scene, materials) {
     const outerShape = createPondShape(radiusX + 2.4, radiusZ + 2.2, 56, 0.1);
     const innerShape = createPondShape(radiusX, radiusZ, 56, 0.12);
     const innerHole = new THREE.Path(innerShape.getPoints().reverse());
+    
+    // Load textures
     const bankTexture = textureLoader.load('/ganges_river_pebbles_diff_4k.jpg');
     const waterTexture = textureLoader.load('/Ice002_2K-JPG_Color.jpg');
     const waterNormal = textureLoader.load('/Ice002_2K-JPG_NormalGL.jpg');
@@ -73,15 +75,18 @@ export function createIsland(scene, materials) {
     bankTexture.wrapT = THREE.RepeatWrapping;
     bankTexture.repeat.set(2.4, 1.7);
     bankTexture.anisotropy = 8;
+    
     waterTexture.colorSpace = THREE.SRGBColorSpace;
     waterTexture.wrapS = THREE.RepeatWrapping;
     waterTexture.wrapT = THREE.RepeatWrapping;
     waterTexture.repeat.set(1.15, 1);
     waterTexture.anisotropy = 8;
+    
     waterNormal.wrapS = THREE.RepeatWrapping;
     waterNormal.wrapT = THREE.RepeatWrapping;
     waterNormal.repeat.copy(waterTexture.repeat);
     waterNormal.anisotropy = 8;
+    
     waterRoughness.wrapS = THREE.RepeatWrapping;
     waterRoughness.wrapT = THREE.RepeatWrapping;
     waterRoughness.repeat.copy(waterTexture.repeat);
@@ -128,6 +133,7 @@ export function createIsland(scene, materials) {
     bank.receiveShadow = true;
     water.receiveShadow = true;
     water.name = 'pondWater';
+    
     pondGroup.name = 'worldOnePond';
     pondGroup.position.set(x, 0, z);
     pondGroup.add(bank, water);
@@ -138,11 +144,11 @@ export function createIsland(scene, materials) {
 
   const pond = createPond(-42.93, 17.92, 19, 12);
 
-  // Creo un gruppo per contenere tutti i pezzi del sentiero
+  // Create a group to hold all path segments
   const pathGroup = new THREE.Group();
   scene.add(pathGroup);
 
-  // Funzione interna: crea un pezzo di sentiero che parte da (x, z) e si allunga in avanti
+  // Internal function: creates a path segment starting from (x, z) and extending forward
   function createPathSegment(x, z, rotationY, length, width = 8) {
     const segmentGroup = new THREE.Group();
 
@@ -172,7 +178,7 @@ export function createIsland(scene, materials) {
     return segmentGroup;
   }
 
-  // Funzione interna: crea una giunzione rotonda tra i pezzi con bordo
+  // Internal function: creates a round junction between segments with a border
   function createPathJoint(x, z, radius = 5) {
     const jointGroup = new THREE.Group();
 
@@ -245,20 +251,20 @@ export function createIsland(scene, materials) {
     return rampGroup;
   }
 
-  // initial plaza
+  // Initial plaza
   const initialPlaza = createPathJoint(0, 26, 5.2);
 
   const rightPlaza = createPathJoint(50, 30, 10);
   const stoneBuildingPlaza = createPathJoint(-42, 68, 1);
   const castelPlaza = createPathJoint(-30, -70, 1);
 
-  // central plaza
+  // Central plaza
   const centralPlaza = new THREE.Mesh(
     new THREE.CylinderGeometry(12, 12, 0.1, 24),
     createTiledPlazaStoneMaterial(24, 24)
   );
 
-  // flying carpet plaza
+  // Flying carpet plaza
   const carpetPlaza = createPathJoint(44, -22, 4.9);
 
   centralPlaza.position.set(10, 0.09, -30);
@@ -272,7 +278,7 @@ export function createIsland(scene, materials) {
   createPathBetweenJoints(centralPlaza, castelPlaza, 8);
   createPathBetweenJoints(centralPlaza, carpetPlaza, 8, 2);
 
-  // ramp for the castle entrance
+  // Ramp for the castle entrance
   createRamp(-15, -54, 4, 18, 8, 4);
 
   return {

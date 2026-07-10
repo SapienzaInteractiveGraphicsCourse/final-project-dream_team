@@ -1,21 +1,29 @@
+import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import * as THREE from 'three';
 import { registerBook, registerBookDeliveryTarget } from './book.js';
 import { registerMage, addMageMaterial, updateMage } from './mage.js';
 import { registerGem, updateGem } from './gem.js';
 import { registerDemonDragon, updateDemonDragon, setDragonOrbitCenter } from './dragon.js';
 
+// --- GLOBAL EXPORTS & CONFIGURATION ---
 export const modelColliders = [];
 export const modelBounds = [];
+
 const gltfLoader = new GLTFLoader();
 gltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
 const demonTintColor = new THREE.Color(0xffc2a0);
 const demonEmissiveColor = new THREE.Color(0x3a160c);
-let mage = null;
 const generalPath = "/models_optimized/";
 
+let mage = null;
+
+// --- MATERIAL UTILITIES ---
+
+/**
+ * Adjusts the demon/dragon materials to be brighter and have specific emissive properties.
+ */
 function brightenDemonMaterial(material) {
   if (!material) return;
 
@@ -45,6 +53,9 @@ function brightenDemonMaterial(material) {
   material.needsUpdate = true;
 }
 
+/**
+ * Creates a standard material for stone buildings to ensure proper lighting.
+ */
 function createLitStoneBuildingMaterial(material) {
   const map = material?.map ?? null;
 
@@ -65,131 +76,138 @@ function createLitStoneBuildingMaterial(material) {
   });
 }
 
+// --- CORE LOADING LOGIC ---
+
+/**
+ * Loads a single GLTF/GLB model, applies transformations, and registers it to the appropriate game logic.
+ */
 function loadModel(scene, path, options = {}) {
   return new Promise((resolve) => {
     gltfLoader.load(
       path,
       (gltf) => {
-      const model = gltf.scene;
-      const isMage = path.includes('skeleton-mage') || path.includes('cute-skeleton-mage');
-      const isStoneBuilding = path.includes('stone_building');
+        const model = gltf.scene;
+        const isMage = path.includes('skeleton-mage') || path.includes('cute-skeleton-mage');
+        const isStoneBuilding = path.includes('stone_building');
 
-      // 1. Applichiamo prima le trasformazioni di base (posizione, scala, rotazione)
-      const x = options.x ?? 0;
-      const y = options.y ?? 0;
-      const z = options.z ?? 0;
-      const scale = options.scale ?? 1;
-      const rotationY = options.rotationY ?? 0;
+        // 1. First apply basic transformations (position, scale, rotation)
+        const x = options.x ?? 0;
+        const y = options.y ?? 0;
+        const z = options.z ?? 0;
+        const scale = options.scale ?? 1;
+        const rotationY = options.rotationY ?? 0;
 
-      model.position.set(x, y, z);
-      model.scale.set(scale, scale, scale);
-      model.rotation.y = rotationY;
+        model.position.set(x, y, z);
+        model.scale.set(scale, scale, scale);
+        model.rotation.y = rotationY;
 
-      // 2. Ground logic: compute the correct height from the model base.
-      if (!options.floating) {
-        const groundY = options.groundY ?? 0.49;
-        const box = new THREE.Box3().setFromObject(model);
-        const modelBottomY = box.min.y;
+        // 2. Ground logic: compute the correct height from the model base
+        if (!options.floating) {
+          const groundY = options.groundY ?? 0.49;
+          const box = new THREE.Box3().setFromObject(model);
+          const modelBottomY = box.min.y;
 
-        model.position.y += groundY - modelBottomY;
-      }
-
-      // Applichiamo l'eventuale offset manuale (se presente nelle opzioni)
-      model.position.y += options.offsetY ?? 0;
-
-      // 3. Registration: now that the model is on the ground, pass it to mage.js.
-      // In questo modo 'mageStartY' salverà la coordinata Y corretta del terreno!
-      if (isMage) {
-        mage=model;
-        registerMage(model);
-        registerBookDeliveryTarget(model);
-      }
-
-      if (path.includes('EvilBook')) {
-        registerBook(model, scene);
-      }
-
-      if (path.includes('demon')) {
-        registerDemonDragon(model);
-      }
-
-      if (path.includes('Gem')) {
-        registerGem(model,scene );
-      }
-
-      if (path.includes('castle_03')) {
-        const castleBox = new THREE.Box3().setFromObject(model);
-        const castleHeight = castleBox.max.y - castleBox.min.y;
-        
-        // Calcoliamo il centro matematico esatto di TUTTI i muri del castello nel mondo
-        const realCastleCenter = new THREE.Vector3();
-        castleBox.getCenter(realCastleCenter);
-        
-        const dragonFlightHeight = 18; 
-        
-        // Spostiamo l'orbita del drago sul centro reale calcolato
-        setDragonOrbitCenter(realCastleCenter.x, dragonFlightHeight, realCastleCenter.z, 45);
-      }
-      // 4. Gestione dei materiali e delle ombre
-      const canCastShadow = options.castShadow ?? (
-        isMage ||
-        path.includes('demon') ||
-        path.includes('EvilBook') ||
-        path.includes('Gem') ||
-        path.includes('statue')
-      );
-
-      model.traverse((child) => {
-        if (child.isMesh) {
-          child.castShadow = canCastShadow;
-          child.receiveShadow = true;
-
-          if (isStoneBuilding) {
-            child.material = Array.isArray(child.material)
-              ? child.material.map(createLitStoneBuildingMaterial)
-              : createLitStoneBuildingMaterial(child.material);
-          }
-
-          if (isMage) {
-            child.material = Array.isArray(child.material)
-              ? child.material.map((material) => material.clone())
-              : child.material.clone();
-
-            const materials = Array.isArray(child.material)
-              ? child.material
-              : [child.material];
-
-            materials.forEach(addMageMaterial);
-          }
-
-          if (path.includes('demon') || path.includes('dragon_flying')) {
-            child.material = Array.isArray(child.material)
-              ? child.material.map((material) => material.clone())
-              : child.material.clone();
-
-            const materials = Array.isArray(child.material)
-              ? child.material
-              : [child.material];
-
-            materials.forEach(brightenDemonMaterial);
-          }
+          model.position.y += groundY - modelBottomY;
         }
-      });
 
-      scene.add(model);
+        // Apply any manual offset (if present in the options)
+        model.position.y += options.offsetY ?? 0;
 
-      const box = new THREE.Box3().setFromObject(model);
-      modelBounds.push(box);
+        // 3. Registration: Now that the model is on the ground, pass it to specific managers.
+        // This way 'mageStartY' will save the correct ground Y coordinate!
+        if (isMage) {
+          mage = model;
+          registerMage(model);
+          registerBookDeliveryTarget(model);
+        }
 
-      if (options.collider) {
-        modelColliders.push(box);
-      }
+        if (path.includes('EvilBook')) {
+          registerBook(model, scene);
+        }
 
-      console.log(`Loaded model: ${path}`);
-      resolve(model);
+        if (path.includes('demon')) {
+          registerDemonDragon(model);
+        }
+
+        if (path.includes('Gem')) {
+          registerGem(model, scene);
+        }
+
+        if (path.includes('castle_03')) {
+          const castleBox = new THREE.Box3().setFromObject(model);
+          
+          // Calculate the exact mathematical center of ALL castle walls in the world
+          const realCastleCenter = new THREE.Vector3();
+          castleBox.getCenter(realCastleCenter);
+          
+          const dragonFlightHeight = 18; 
+          
+          // Move the dragon's orbit to the calculated real center
+          setDragonOrbitCenter(realCastleCenter.x, dragonFlightHeight, realCastleCenter.z, 45);
+        }
+
+        // 4. Material and shadow management
+        const canCastShadow = options.castShadow ?? (
+          isMage ||
+          path.includes('demon') ||
+          path.includes('EvilBook') ||
+          path.includes('Gem') ||
+          path.includes('statue')
+        );
+
+        model.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = canCastShadow;
+            child.receiveShadow = true;
+
+            if (isStoneBuilding) {
+              child.material = Array.isArray(child.material)
+                ? child.material.map(createLitStoneBuildingMaterial)
+                : createLitStoneBuildingMaterial(child.material);
+            }
+
+            if (isMage) {
+              child.material = Array.isArray(child.material)
+                ? child.material.map((material) => material.clone())
+                : child.material.clone();
+
+              const materials = Array.isArray(child.material)
+                ? child.material
+                : [child.material];
+
+              materials.forEach(addMageMaterial);
+            }
+
+            if (path.includes('demon') || path.includes('dragon_flying')) {
+              child.material = Array.isArray(child.material)
+                ? child.material.map((material) => material.clone())
+                : child.material.clone();
+
+              const materials = Array.isArray(child.material)
+                ? child.material
+                : [child.material];
+
+              materials.forEach(brightenDemonMaterial);
+            }
+          }
+        });
+
+        scene.add(model);
+
+        // Store bounding boxes and colliders for physics/interactions
+        const box = new THREE.Box3().setFromObject(model);
+        modelBounds.push(box);
+
+        if (options.collider) {
+          modelColliders.push(box);
+        }
+
+        console.log(`Loaded model: ${path}`);
+        resolve(model);
       },
       (xhr) => {
-        console.log(`${path}: ${(xhr.loaded / xhr.total) * 100}% loaded`);
+        // Uncomment if you want detailed load progress logs
+        // console.log(`${path}: ${(xhr.loaded / xhr.total) * 100}% loaded`);
       },
       (error) => {
         console.error(`Error loading model: ${path}`, error);
@@ -198,6 +216,8 @@ function loadModel(scene, path, options = {}) {
     );
   });
 }
+
+// --- MODEL CONFIGURATIONS ---
 
 export const gameplayModelsToLoad = [
   {
@@ -291,7 +311,7 @@ export const introModelsToLoad = [
     y: -0.1,
     z: 68,
     scale: 40,
-    rotationY: 3*Math.PI/4,
+    rotationY: 3 * Math.PI / 4,
     floating: true,
     collider: false
   },
@@ -301,7 +321,7 @@ export const introModelsToLoad = [
     y: -0.1,
     z: 90,
     scale: 1,
-    rotationY: 3*Math.PI/4,
+    rotationY: 3 * Math.PI / 4,
     floating: true,
     collider: false
   },
@@ -396,6 +416,8 @@ export const modelsToLoad = [
   ...gameplayModelsToLoad
 ];
 
+// --- BATCH LOADING FUNCTIONS ---
+
 export function loadIntroModels(scene) {
   return Promise.all(introModelsToLoad.map((item) => {
     return loadModel(scene, item.path, item);
@@ -414,10 +436,14 @@ export function loadModels(scene) {
   }));
 }
 
-// L'update globale adesso delega la logica del mago a mage.js
-// Sostituisci la funzione in fondo a models.js
+// --- GLOBAL UPDATE LOOP ---
+
+/**
+ * Updates dynamic models. The mage logic is delegated to mage.js.
+ */
 export function updateModels(deltaTime, player) {
   updateDemonDragon(deltaTime, player);
+  
   const isTalkingToMage = updateMage(deltaTime, player);
   
   if (mage) {
