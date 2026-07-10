@@ -1,4 +1,4 @@
-# 🏰 Fantasy Island Adventure
+# 🏰 Lost Magic Isles
 
 A 3D fantasy adventure game developed with **Three.js** and **Vite** for the Interactive Graphics course at **Sapienza University of Rome**.
 
@@ -8,7 +8,7 @@ The player explores a magical world made of floating islands, fantasy characters
 
 ## 📌 Overview
 
-**Fantasy Island Adventure** is an interactive 3D game set in a magical kingdom suspended in the sky.
+**Lost Magic Isles** is an interactive 3D game set in a magical kingdom suspended in the sky.
 
 The story follows a main character who is asked by a mage to recover a lost magical book.  
 After completing this first quest, the player must enter the castle, fight a dragon, obtain a precious gem, and return it to the mage.
