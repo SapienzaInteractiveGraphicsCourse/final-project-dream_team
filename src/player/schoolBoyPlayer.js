@@ -43,7 +43,7 @@ export function createPlayer(scene) {
   };
 
   loader.load(
-      '/models_optimized/schoolboy.glb',
+      'models_optimized/schoolboy.glb',
 
       (gltf) => {
         const model = gltf.scene;

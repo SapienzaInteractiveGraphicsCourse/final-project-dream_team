@@ -31,7 +31,7 @@ export function createCarpetTravel(scene) {
 
     const objLoader = new OBJLoader();
     objLoader.setMaterials(materials);
-    objLoader.setPath('/models_optimized/');
+    objLoader.setPath('models_optimized/');
 
     objLoader.load('model.obj', (object) => {
       object.scale.setScalar(1);   // Modified scale of the carpet

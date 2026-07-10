@@ -38,7 +38,7 @@ const crystalData = [];
 
 function startRainAudio() {
   if (!rainAudio) {
-    rainAudio = new Audio('/music/rain.mp3');
+    rainAudio = new Audio('music/rain.mp3');
     rainAudio.loop = true;
     rainAudio.volume = 0.35;
   }

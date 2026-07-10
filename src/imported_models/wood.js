@@ -146,7 +146,7 @@ export function loadWoodTask(scene) {
     // Load the Medieval Axe
     new Promise((resolve) => {
       gltfLoader.load(
-        '/models_optimized/medieval_axe.glb',
+        'models_optimized/medieval_axe.glb',
         (gltf) => {
           axe = gltf.scene;
 
@@ -182,7 +182,7 @@ export function loadWoodTask(scene) {
     // Load the Firewood Stack
     new Promise((resolve) => {
       const mtlLoader = new MTLLoader();
-      mtlLoader.setPath('/models_optimized/');
+      mtlLoader.setPath('models_optimized/');
       mtlLoader.setResourcePath('/');
 
       mtlLoader.load(
@@ -192,7 +192,7 @@ export function loadWoodTask(scene) {
 
           const objLoader = new OBJLoader();
           objLoader.setMaterials(materials);
-          objLoader.setPath('/models_optimized/');
+          objLoader.setPath('models_optimized/');
 
           objLoader.load(
             '12303_Firewood_Stack_v1_l3.obj',

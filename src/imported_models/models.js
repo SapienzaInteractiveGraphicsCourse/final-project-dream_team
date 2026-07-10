@@ -201,7 +201,6 @@ function loadModel(scene, path, options = {}) {
           const center = box.getCenter(new THREE.Vector3());
           const size = box.getSize(new THREE.Vector3());
           
-          // Scala la hitbox sui rispettivi assi per una precisione maggiore
           size.x *= options.colliderScale.x || 1;
           size.y *= options.colliderScale.y || 1;
           size.z *= options.colliderScale.z || 1;
