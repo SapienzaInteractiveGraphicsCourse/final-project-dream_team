@@ -183,7 +183,7 @@ export function loadWoodTask(scene) {
     new Promise((resolve) => {
       const mtlLoader = new MTLLoader();
       mtlLoader.setPath('models_optimized/');
-      mtlLoader.setResourcePath('/final-project-dream_team/models_optimized/');
+      mtlLoader.setResourcePath('models_optimized/');
       
       mtlLoader.load(
         '12303_Firewood_Stack_v1_l3.mtl',
