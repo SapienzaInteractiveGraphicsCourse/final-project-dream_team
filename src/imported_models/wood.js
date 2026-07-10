@@ -182,8 +182,8 @@ export function loadWoodTask(scene) {
     // Load the Firewood Stack
     new Promise((resolve) => {
       const mtlLoader = new MTLLoader();
-      mtlLoader.setPath('./models_optimized/');
-      mtlLoader.setResourcePath('./models_optimized/'); 
+      mtlLoader.setPath('models_optimized/');
+      mtlLoader.setResourcePath('/final-project-dream_team/models_optimized/');
       
       mtlLoader.load(
         '12303_Firewood_Stack_v1_l3.mtl',
@@ -192,7 +192,7 @@ export function loadWoodTask(scene) {
 
           const objLoader = new OBJLoader();
           objLoader.setMaterials(materials);
-          objLoader.setPath('./models_optimized/');
+          objLoader.setPath('models_optimized/');
 
           objLoader.load(
             '12303_Firewood_Stack_v1_l3.obj',
