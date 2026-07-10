@@ -249,7 +249,7 @@ export function loadBridgeTask(scene) {
     // Load broken tower
     new Promise((resolve) => {
       loader.load(
-        'models_optimized/tower1.glb',
+        './models_optimized/tower1.glb',
         (gltf) => {
           brokenTower = gltf.scene;
           prepareTower(brokenTower, true, brokenTowerWorldOffset);
@@ -266,7 +266,7 @@ export function loadBridgeTask(scene) {
     // Load fixed tower
     new Promise((resolve) => {
       loader.load(
-        '/models_optimized/tower3.glb',
+        './models_optimized/tower3.glb',
         (gltf) => {
           fixedTower = gltf.scene;
           prepareTower(fixedTower, false, fixedTowerWorldOffset);

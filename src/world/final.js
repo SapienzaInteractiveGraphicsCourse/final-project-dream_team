@@ -9,7 +9,7 @@ const loader = new GLTFLoader();
 loader.setMeshoptDecoder(MeshoptDecoder);
 
 // --- CONSTANTS & CONFIGURATION ---
-const finaleCharacterPath = 'models_optimized/shrek.glb';
+const finaleCharacterPath = './models_optimized/shrek.glb';
 const finaleCharacterName = 'Shrek';
 const finaleCharacterPosition = new THREE.Vector3(-8.65, 0.40, 34.79);
 const finaleHouseTarget = new THREE.Vector3(-36.04, 0.15, 62.42);

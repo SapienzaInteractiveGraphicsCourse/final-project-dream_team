@@ -15,7 +15,7 @@ gltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
 const demonTintColor = new THREE.Color(0xffc2a0);
 const demonEmissiveColor = new THREE.Color(0x3a160c);
-const generalPath = "models_optimized/";
+const generalPath = "./models_optimized/";
 
 let mage = null;
 

@@ -261,7 +261,7 @@ function addLampsAlongPath(scene, source, path) {
 
 export function createLampPosts(scene) {
   lampLoader.load(
-    'models_optimized/props_cart_02.glb',
+    './models_optimized/props_cart_02.glb',
     (gltf) => {
       const lampSource = gltf.scene.getObjectByName('props_lamppost_01');
 

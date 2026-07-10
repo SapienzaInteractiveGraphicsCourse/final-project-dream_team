@@ -139,7 +139,7 @@ export function loadShifuTask(scene) {
 
   shifuLoadPromise = new Promise((resolve) => {
     loader.load(
-      'models_optimized/shifu.glb',
+      './models_optimized/shifu.glb',
       (gltf) => {
         shifu = new THREE.Group();
         shifuMaterials = [];

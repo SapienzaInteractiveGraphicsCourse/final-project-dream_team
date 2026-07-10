@@ -6,7 +6,7 @@ const loader = new GLTFLoader();
 loader.setMeshoptDecoder(MeshoptDecoder);
 
 // --- CONFIGURATION ---
-const donkeyPath = 'models_optimized/donkey_pocket_shrek_and_animations.glb';
+const donkeyPath = './models_optimized/donkey_pocket_shrek_and_animations.glb';
 const donkeyPosition = new THREE.Vector3(-7.46, 0, 44.67);
 const donkeyHeight = 4;
 const donkeyRotationOffsetY = Math.PI;
