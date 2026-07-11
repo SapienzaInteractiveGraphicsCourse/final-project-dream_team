@@ -4,6 +4,10 @@ A 3D fantasy adventure game developed with Three.js and Vite for the Interactive
 
 The player explores a magical world made of floating islands, fantasy characters, interactive quests, dynamic weather effects, procedural animations, and story-driven challenges.
 
+## 🎮 Live Demo
+
+[Click here to play Lost Magic Isles]([https://tuo-link-demo.com](https://sapienzainteractivegraphicscourse.github.io/final-project-dream_team/))
+
 ---
 
 ## 📖 Overview
