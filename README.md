@@ -6,7 +6,7 @@ The player explores a magical world made of floating islands, fantasy characters
 
 ## 🎮 Live Demo
 
-[Click here to play Lost Magic Isles]([https://tuo-link-demo.com](https://sapienzainteractivegraphicscourse.github.io/final-project-dream_team/))
+[Click here to play Lost Magic Isles](https://sapienzainteractivegraphicscourse.github.io/final-project-dream_team/)
 
 ---
 
