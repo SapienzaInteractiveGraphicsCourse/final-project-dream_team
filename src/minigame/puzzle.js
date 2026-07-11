@@ -117,7 +117,6 @@ export function createPuzzleMinigame({
     checkSolved();
   }
 
-  // Event handlers
   function handleDragStart(event) { selectedTile = event.currentTarget; }
   function handleDragOver(event) { event.preventDefault(); }
   function handleDrop(event) {

@@ -3,7 +3,6 @@ import { isBookDelivered } from './book.js';
 import { showObjectiveMessage } from '../ui/objectiveMessage.js';
 import { isDragonDefeated } from './dragon.js';
 
-// --- STATE VARIABLES ---
 let gemModel = null;
 let currentScene = null;
 let hasGem = false;
@@ -14,30 +13,21 @@ let gemStartY = 0.8;
 let gemHiddenAfterPortal = false;
 let gemObjectiveShown = false;
 
-// --- POSITIONING VECTORS ---
-const gemOffset = new THREE.Vector3(-1.2, 1.8, -1.2);        // Offset when carried by player
-const gemDeliveredOffset = new THREE.Vector3(-0.9, 1.15, 0); // Offset when orbiting the mage
+const gemOffset = new THREE.Vector3(-1.2, 1.8, -1.2);
+const gemDeliveredOffset = new THREE.Vector3(-0.9, 1.15, 0);
 const gemTargetPos = new THREE.Vector3();
 
-// --- PARTICLE EFFECT VARIABLES ---
 let gemParticles = null;
 let particleData = []; 
 const PARTICLE_COUNT = 15;
 
-// --- UI ELEMENTS ---
 const gemPrompt = document.createElement('div');
 gemPrompt.className = 'interaction-dialogue gem-dialogue';
 gemPrompt.textContent = 'Press F to collect the Light Gem';
 document.body.appendChild(gemPrompt);
 
-// --- EXPORTED STATE FUNCTIONS ---
-
 export function isCarryingGem() { return hasGem; }
 export function isGemDelivered() { return gemDelivered; }
-
-/**
- * Hides the gem and its UI prompts when transitioning through the portal.
- */
 export function hideGemAfterPortal() {
   gemHiddenAfterPortal = true;
   hasGem = false;
@@ -49,10 +39,6 @@ export function hideGemAfterPortal() {
   if (gemModel) gemModel.visible = false;
   if (gemParticles) gemParticles.visible = false;
 }
-
-/**
- * Triggers the delivery sequence, shrinking the gem and placing it in its final state.
- */
 export function deliverGemToMage() {
   gemDelivered = true;
   hasGem = false;
@@ -62,15 +48,10 @@ export function deliverGemToMage() {
     gemModel.scale.set(0.55, 0.55, 0.55); 
   }
 }
-
-/**
- * Registers the gem model into the game world and initializes its particles.
- */
 export function registerGem(model, scene) {
   gemModel = model;
   currentScene = scene;
-  
-  // Reset state
+
   gemModel.visible = false; 
   hasGem = false;
   gemDelivered = false;
@@ -81,12 +62,6 @@ export function registerGem(model, scene) {
 
   createGemParticles(scene);
 }
-
-// --- PARTICLE SYSTEM UTILITIES ---
-
-/**
- * Generates a glowing purple/cyan circular texture for the gem's aura.
- */
 function createCircleTexture() {
   const canvas = document.createElement('canvas');
   canvas.width = 16;
@@ -102,10 +77,6 @@ function createCircleTexture() {
   ctx.fillRect(0, 0, 16, 16);
   return new THREE.CanvasTexture(canvas);
 }
-
-/**
- * Initializes the magical floating particles that orbit the gem.
- */
 function createGemParticles(scene) {
   const geometry = new THREE.BufferGeometry();
   const positions = new Float32Array(PARTICLE_COUNT * 3);
@@ -120,7 +91,6 @@ function createGemParticles(scene) {
     positions[i * 3 + 1] = y;
     positions[i * 3 + 2] = Math.sin(angle) * radius;
 
-    // Save individual particle behavior data
     particleData.push({
       angle: angle,
       radius: radius,
@@ -133,7 +103,7 @@ function createGemParticles(scene) {
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
   const material = new THREE.PointsMaterial({
-    color: 0x00ffff, // Cyan glow
+    color: 0x00ffff,
     size: 0.25, 
     map: createCircleTexture(),
     transparent: true,
@@ -146,10 +116,6 @@ function createGemParticles(scene) {
   gemParticles.visible = false;
   scene.add(gemParticles);
 }
-
-/**
- * Updates particle positions frame-by-frame to create a swirling vortex effect.
- */
 function animateParticles(deltaTime) {
   if (!gemParticles || !gemModel) return;
   
@@ -160,18 +126,14 @@ function animateParticles(deltaTime) {
     const data = particleData[i];
     if (!data) continue;
 
-    // Animate orbit and pulsation
     data.angle += data.rotSpeed * deltaTime;
     data.radius = data.originalRadius + Math.sin(time * 2 + i) * 0.05; 
-    
-    // Float upwards
+
     positions[i * 3 + 1] += data.speedY * deltaTime; 
 
-    // Apply circular coordinates
     positions[i * 3] = Math.cos(data.angle) * data.radius;
     positions[i * 3 + 2] = Math.sin(data.angle) * data.radius;
 
-    // Reset particle to the bottom when it floats too high
     if (positions[i * 3 + 1] > 0.6) {
       positions[i * 3 + 1] = -0.4;
       data.angle = Math.random() * Math.PI * 2;
@@ -179,8 +141,6 @@ function animateParticles(deltaTime) {
   }
   gemParticles.geometry.attributes.position.needsUpdate = true;
 }
-
-// --- MAIN UPDATE LOOP ---
 
 export function updateGem(deltaTime, player, mageModel) {
   if (!gemModel) return;
@@ -192,7 +152,6 @@ export function updateGem(deltaTime, player, mageModel) {
     return;
   }
 
-  // Make gem visible only after the dragon is defeated and the book is delivered
   if (!gemModel.visible && !hasGem && !gemDelivered) {
     if (isBookDelivered() && isDragonDefeated()) {
       gemModel.visible = true;
@@ -204,12 +163,10 @@ export function updateGem(deltaTime, player, mageModel) {
 
   const time = performance.now() * 0.001;
 
-  // Sync particle container position with the gem
   if (gemParticles && gemParticles.visible) {
     gemParticles.position.copy(gemModel.position);
   }
 
-  // State 1: Gem delivered to the mage
   if (gemDelivered && mageModel) {
     gemTargetPos.copy(mageModel.position).add(gemDeliveredOffset);
     
@@ -221,14 +178,12 @@ export function updateGem(deltaTime, player, mageModel) {
     return;
   }
 
-  // State 2: Gem is currently carried by the player
   if (hasGem) {
     if (!gemObjectiveShown) {
       gemObjectiveShown = true;
       showObjectiveMessage('Return to the mage with the enchanted gem.');
     }
 
-    // Follow player smoothly
     gemTargetPos.copy(gemOffset).applyMatrix4(player.matrixWorld);
     gemModel.position.lerp(gemTargetPos, deltaTime * 4);
     gemModel.rotation.y += deltaTime * 1.5;
@@ -236,7 +191,6 @@ export function updateGem(deltaTime, player, mageModel) {
 
     if (gemParticles) animateParticles(deltaTime);
 
-    // Check distance to mage for delivery prompt
     if (mageModel) {
       const distanceToMageSq = player.position.distanceToSquared(mageModel.position);
       if (distanceToMageSq < 16) {
@@ -250,18 +204,15 @@ export function updateGem(deltaTime, player, mageModel) {
     return;
   }
 
-  // State 3: Gem is idle in the world waiting to be collected
   if (!hasGem && !gemDelivered) {
     const distanceToPlayerSq = gemModel.position.distanceToSquared(player.position);
     canTakeGem = distanceToPlayerSq < 9;
 
-    // Idle floating animation
     gemModel.rotation.y += deltaTime * 1.5;
     gemModel.position.y = gemStartY + Math.sin(time * 4) * 0.08;
 
     if (gemParticles) animateParticles(deltaTime);
 
-    // Handle interaction UI
     if (canTakeGem) {
       gemPrompt.textContent = 'Press F to collect the gem';
       gemPrompt.classList.add('is-visible');
@@ -271,29 +222,19 @@ export function updateGem(deltaTime, player, mageModel) {
   }
 }
 
-// --- EVENT LISTENERS ---
-
 window.addEventListener('keydown', (event) => {
   if (event.key.toLowerCase() !== 'f' || !gemModel || !gemModel.visible) return;
 
-  // Handle delivering the gem
   if (hasGem && canTakeGem && isBookDelivered()) {
     deliverGemToMage(); 
     gemPrompt.classList.remove('is-visible');
     return;
   }
 
-  // Handle picking up the gem
   if (canTakeGem && !hasGem && !gemDelivered) {
     hasGem = true;
     gemObjectiveShown = false;
     gemModel.scale.set(0.4, 0.4, 0.4); 
-
-    // Update models data so the gem is no longer considered floating by the physics/ground logic
-    import('./models.js').then(({ modelsToLoad }) => {
-      const gemData = modelsToLoad.find(m => m.path.includes('gem') || m.path.includes('Gem'));
-      if (gemData) gemData.floating = false; 
-    });
     
     gemPrompt.classList.remove('is-visible');
   }

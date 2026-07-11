@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 
-// --- CONFIGURATION ---
 const carpetStartPosition = new THREE.Vector3(44, 0.5, -22);
 const otherWorldPosition = new THREE.Vector3(237.79, 28.75, -255.19);
 const playerOnCarpetOffset = new THREE.Vector3(0, 0.35, 0);
@@ -34,7 +33,7 @@ export function createCarpetTravel(scene) {
     objLoader.setPath('./models_optimized/');
 
     objLoader.load('model.obj', (object) => {
-      object.scale.setScalar(1);   // Modified scale of the carpet
+      object.scale.setScalar(1);
       object.rotation.y = Math.PI / 2;
 
       object.traverse((child) => {

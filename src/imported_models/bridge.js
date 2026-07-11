@@ -1,13 +1,9 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { createGltfLoader } from '../base/loaders.js';
 import { consumeCarriedWood, isCarryingWood } from './wood.js';
 
-// --- INITIALIZATION ---
-const loader = new GLTFLoader();
-loader.setMeshoptDecoder(MeshoptDecoder);
+const loader = createGltfLoader();
 
-// --- CONSTANTS & CONFIGURATION ---
 const towerPosition = new THREE.Vector3(85, 12, -120);
 const brokenTowerWorldOffset = new THREE.Vector3(0, 1, 0);
 const fixedTowerWorldOffset = new THREE.Vector3(125, 1.1, -123.52);
@@ -20,43 +16,34 @@ const towerRotationY = Math.PI / 4;
 const buildDistance = 5;
 const buildDuration = 3;
 
-// --- PARTICLE EFFECT CONFIGURATION ---
 const particleCount = 1500;
 const screenSparkleCount = 980;
 const sparkleColors = [
-  0xffffff, // White
-  0xfff8d6, // Light Yellow
-  0xffe9a8, // Yellow
-  0xd8fffb, // Light Cyan
-  0xbdd8ff, // Light Blue
-  0xf7d7ff, // Light Pink
-  0xdcffd2  // Light Green
+  0xffffff,
+  0xfff8d6,
+  0xffe9a8,
+  0xd8fffb,
+  0xbdd8ff,
+  0xf7d7ff,
+  0xdcffd2
 ];
 
-// --- STATE VARIABLES ---
 let brokenTower = null;
 let fixedTower = null;
 let bridgeTaskLoadPromise = null;
-let bridgeState = 'waiting'; // States: 'waiting', 'building', 'built'
+let bridgeState = 'waiting';
 let buildTimer = 0;
 let canBuildBridge = false;
 let particles = [];
 
-// Caching objects to avoid garbage collection during the render loop
+
 const buildEffectBox = new THREE.Box3();
 const buildEffectCenter = new THREE.Vector3();
 const towerBounds = new THREE.Box3();
 
-// --- UI ELEMENTS ---
 const bridgePrompt = document.createElement('div');
 bridgePrompt.className = 'interaction-dialogue';
 document.body.appendChild(bridgePrompt);
-
-// --- UTILITY FUNCTIONS ---
-
-/**
- * Prepares a tower model by applying common transformations.
- */
 function prepareTower(model, visible, worldOffset = null) {
   model.position.copy(towerPosition);
 
@@ -75,10 +62,6 @@ function prepareTower(model, visible, worldOffset = null) {
     }
   });
 }
-
-/**
- * Hides a placeholder cube that might be left over from export.
- */
 function hideExportPlaceholderCube(model) {
   model.traverse((child) => {
     if (child.isMesh && child.name === 'Cube') {
@@ -86,30 +69,19 @@ function hideExportPlaceholderCube(model) {
     }
   });
 }
-
-/**
- * Calculates the dynamic center position for the building particle effect.
- */
 function getBuildEffectPosition() {
   if (!brokenTower) return buildEffectPosition;
 
   brokenTower.updateMatrixWorld(true);
   buildEffectBox.setFromObject(brokenTower);
   buildEffectBox.getCenter(buildEffectCenter);
-  
-  // Interpolate position towards Shifu and apply offsets
+
   buildEffectCenter.lerp(shifuPosition, 0.55);
   buildEffectCenter.y = shifuPosition.y;
   buildEffectCenter.add(bridgeEffectWorldOffset);
 
   return buildEffectCenter;
 }
-
-// --- PARTICLE SYSTEM LOGIC ---
-
-/**
- * Initializes the particle system used during the bridge building animation.
- */
 function createBuildParticles(scene) {
   const geometry = new THREE.SphereGeometry(0.18, 10, 10);
 
@@ -125,8 +97,7 @@ function createBuildParticles(scene) {
     const particle = new THREE.Mesh(geometry, material);
     particle.visible = false;
     particle.renderOrder = 100;
-    
-    // Custom properties for animation
+
     particle.userData.angle = (i / particleCount) * Math.PI * 2;
     particle.userData.radius = 2 + Math.random() * 30;
     particle.userData.speed = 4 + Math.random() * 13;
@@ -152,41 +123,30 @@ function createBuildParticles(scene) {
     scene.add(particle);
   }
 }
-
-/**
- * Toggles the visibility and base opacity of all particles.
- */
 function setParticlesVisible(visible) {
   particles.forEach((particle) => {
     particle.visible = visible;
     particle.material.opacity = visible ? 0.55 : 0;
   });
 }
-
-/**
- * Updates the positions and visual state of the building particles.
- */
 function updateBuildParticles(deltaTime, player) {
   const progress = 1 - buildTimer / buildDuration;
   const effectPosition = getBuildEffectPosition();
-  
-  // Calculate effect origin near the player
+
   const playerEffectPosition = player
     ? player.position.clone().add(new THREE.Vector3(0, 2.5, 0))
     : effectPosition;
 
   particles.forEach((particle, index) => {
-    // Update animation variables
+
     particle.userData.angle += deltaTime * particle.userData.speed;
     particle.userData.twinkle += deltaTime * particle.userData.pulseSpeed;
-    
-    // Twinkle scale effect
+
     particle.scale.setScalar(
       particle.userData.baseScale *
         (0.75 + Math.sin(particle.userData.twinkle) * 0.35)
     );
 
-    // Two types of particles: Screen sparkles (bursting) and standard (orbiting)
     if (particle.userData.isScreenSparkle) {
       const burstDistance =
         particle.userData.distance + progress * particle.userData.explosionSpeed;
@@ -198,14 +158,12 @@ function updateBuildParticles(deltaTime, player) {
         playerEffectPosition.z + particle.userData.direction.z * burstDistance - 7
       );
 
-      // Fade out based on progress and twinkle
       particle.material.opacity =
         Math.max(0, Math.sin(progress * Math.PI)) *
         (0.42 + Math.sin(particle.userData.twinkle) * 0.22);
       return;
     }
 
-    // Standard orbiting particles
     const radius = particle.userData.radius * (1 + progress * 0.65);
     const angle = particle.userData.angle;
     const lift = progress * 3.2 + Math.sin(progress * Math.PI + index) * 2.1;
@@ -222,13 +180,10 @@ function updateBuildParticles(deltaTime, player) {
   });
 }
 
-// --- INPUT HANDLING ---
-
 window.addEventListener('keydown', (event) => {
   if (event.key.toLowerCase() !== 'f') return;
   if (!canBuildBridge || bridgeState !== 'waiting') return;
 
-  // Start the building process
   consumeCarriedWood();
   bridgeState = 'building';
   buildTimer = buildDuration;
@@ -236,17 +191,11 @@ window.addEventListener('keydown', (event) => {
   bridgePrompt.classList.remove('is-visible');
   setParticlesVisible(true);
 });
-
-// --- EXPORTED FUNCTIONS ---
-
-/**
- * Loads the models required for the bridge quest.
- */
 export function loadBridgeTask(scene) {
   if (bridgeTaskLoadPromise) return bridgeTaskLoadPromise;
 
   bridgeTaskLoadPromise = Promise.all([
-    // Load broken tower
+
     new Promise((resolve) => {
       loader.load(
         './models_optimized/tower1.glb',
@@ -263,7 +212,7 @@ export function loadBridgeTask(scene) {
         }
       );
     }),
-    // Load fixed tower
+
     new Promise((resolve) => {
       loader.load(
         './models_optimized/tower3.glb',
@@ -282,26 +231,20 @@ export function loadBridgeTask(scene) {
       );
     })
   ]).then((models) => {
-    // Initialize particles once models are loaded
+
     createBuildParticles(scene);
     return models;
   });
 
   return bridgeTaskLoadPromise;
 }
-
-/**
- * Main update loop for the bridge quest logic.
- */
 export function updateBridgeTask(deltaTime, player) {
   if (!brokenTower || !fixedTower) return;
 
-  // Handle building animation state
   if (bridgeState === 'building') {
     buildTimer -= deltaTime;
     updateBuildParticles(deltaTime, player);
 
-    // Finish building
     if (buildTimer <= 0) {
       brokenTower.visible = false;
       fixedTower.visible = true;
@@ -317,11 +260,9 @@ export function updateBridgeTask(deltaTime, player) {
     return;
   }
 
-  // Check conditions to start building
   canBuildBridge =
     isCarryingWood() && player.position.distanceTo(shifuPosition) < buildDistance;
 
-  // Update UI prompt
   if (canBuildBridge) {
     bridgePrompt.textContent = 'Press F to rebuild the bridge';
     bridgePrompt.classList.add('is-visible');
@@ -332,17 +273,6 @@ export function updateBridgeTask(deltaTime, player) {
 
 export function isBridgeBuilt() {
   return bridgeState === 'built';
-}
-
-export function getActiveTowerBounds() {
-  const activeTower = bridgeState === 'built' ? fixedTower : brokenTower;
-
-  if (!activeTower) return null;
-
-  activeTower.updateMatrixWorld(true);
-  towerBounds.setFromObject(activeTower);
-
-  return towerBounds;
 }
 
 export function getActiveTower() {

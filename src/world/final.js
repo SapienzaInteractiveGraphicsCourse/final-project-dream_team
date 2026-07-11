@@ -1,14 +1,11 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { createGltfLoader } from '../base/loaders.js';
 import { showObjectiveMessage } from '../ui/objectiveMessage.js';
 import { createDoorMinigame } from '../minigame/door.js';
-import { modelColliders } from '../imported_models/models.js'; // Importiamo le collisioni
+import { modelColliders } from './collisionRegistry.js';
 
-const loader = new GLTFLoader();
-loader.setMeshoptDecoder(MeshoptDecoder);
+const loader = createGltfLoader();
 
-// --- CONSTANTS & CONFIGURATION ---
 const finaleCharacterPath = './models_optimized/shrek.glb';
 const finaleCharacterName = 'Shrek';
 const finaleCharacterPosition = new THREE.Vector3(-8.65, 0.40, 34.79);
@@ -28,10 +25,9 @@ const finaleGreetingCameraDistance = 7.2;
 const finaleIdleAnimationDistance = 80;
 const finaleIdleAnimationDistanceSq = finaleIdleAnimationDistance * finaleIdleAnimationDistance;
 
-// --- STATE VARIABLES ---
 let finaleStarted = false;
 let shrek = null;
-let shrekCollider = null; // Collider di Shrek
+let shrekCollider = null;
 let shrekStartY = 0;
 let canTalkToShrek = false;
 let shrekIsTalking = false;
@@ -70,13 +66,11 @@ const shrekInteractionDistance = 4;
 const shrekWalkSpeed = 3.0;
 const shrekArmRestOffset = 0.48;
 
-// --- DIALOGUES ---
 const shrekDialogueText = 'Shrek: It is raining. Come with me to my house for the night.';
 const shrekProblemDialogueText = 'Shrek: The door is stuck, and I need your help to open it.';
 const shrekDoorThanksText = "Shrek: Thank you for helping me. Now let's go inside and get some rest.";
 const shrekGoodbyeText = 'Shrek: Thank you for helping me. Have a good adventure, brave traveler.';
 
-// --- UI ELEMENTS ---
 const shrekDialogue = document.createElement('div');
 shrekDialogue.className = 'interaction-dialogue';
 shrekDialogue.textContent = 'Press E to talk to Shrek';
@@ -107,8 +101,6 @@ document.body.appendChild(endingOverlay);
 endingOverlay.querySelector('.ending-restart-button').addEventListener('click', () => {
   window.location.reload();
 });
-
-// --- INPUT HANDLING ---
 
 window.addEventListener('keydown', (event) => {
   if (!finaleStarted) return;
@@ -159,8 +151,6 @@ window.addEventListener('keydown', (event) => {
 
   shrekIsTalking = true;
 });
-
-// --- MINIGAME & CINEMATIC SEQUENCES ---
 
 function getDoorMinigame() {
   if (!doorMinigame) {
@@ -215,8 +205,6 @@ function startRestSequence() {
     }, 1800);
   }, 10000);
 }
-
-// --- ANIMATION UTILITIES ---
 
 function findShrekBone(namePart) {
   if (!shrekBones.length) return null;
@@ -423,8 +411,6 @@ function updateFinaleGreetingCamera(camera) {
   camera.lookAt(faceTarget);
 }
 
-// --- MATERIALS & LOADING ---
-
 async function prepareShrekMaterial(material, parser) {
   if (!material) return;
 
@@ -462,10 +448,6 @@ async function prepareShrekMaterial(material, parser) {
 export function startFinale() {
   finaleStarted = true;
   if (shrek) shrek.visible = true;
-}
-
-export function isFinaleStarted() {
-  return finaleStarted;
 }
 
 export function setFinaleDifficulty(difficulty) {

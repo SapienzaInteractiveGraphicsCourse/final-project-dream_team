@@ -13,12 +13,12 @@ canvas {
 
 .controls-legend {
   position: absolute;
-  bottom: 20px; /* Avvicinato un po' di più al bordo */
+  bottom: 20px;
   left: 20px;
   display: flex;
-  gap: 30px; /* Spazio ridotto tra i due blocchi */
+  gap: 30px;
   background: rgba(0, 0, 0, 0.6);
-  padding: 10px 18px; /* Padding ridotto */
+  padding: 10px 18px;
   border-radius: 10px;
   color: white;
   font-family: sans-serif;
@@ -38,38 +38,38 @@ canvas {
 .legend-group {
   display: flex;
   align-items: center;
-  gap: 12px; /* Spazio ridotto tra i tasti e la scritta */
+  gap: 12px;
 }
 .keys-cluster {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px; /* Spazio ridotto tra le righe di tasti */
+  gap: 3px;
 }
 .key-row {
   display: flex;
-  gap: 3px; /* Spazio ridotto tra tasto e tasto */
+  gap: 3px;
 }
 
 kbd {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;  /* Tasti più piccoli (prima erano 32px) */
+  width: 24px;
   height: 24px; 
   background-color: #f0f0f0; 
   color: #333;               
   border: 1.5px solid #ccc;
-  border-bottom: 3px solid #999; /* Effetto 3D proporzionato */
+  border-bottom: 3px solid #999;
   border-radius: 4px;
-  font-size: 12px; /* Lettera più piccola */
+  font-size: 12px;
   font-family: monospace;
   font-weight: bold;
   box-shadow: 0 1px 0 rgba(0,0,0,0.2);
 }
 
 .legend-label {
-  font-size: 14px; /* Testo più piccolo (prima era 18px) */
+  font-size: 14px;
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 1.5px;
@@ -349,26 +349,26 @@ body:has(.story-dialogue.is-visible) .interaction-dialogue.is-visible:not(.story
   transform: translateY(-1px);
 }
 
-/* Stile per il Banner di Vittoria del Drago */
+
 .victory-banner {
   position: fixed;
-  top: 40%;                  /* Posizionato a metà altezza schermo */
+  top: 40%;
   left: 50%;
-  transform: translate(-50%, -50%) scale(0.5); /* Parte rimpicciolito */
+  transform: translate(-50%, -50%) scale(0.5);
   font-family: 'Impact', 'Arial Black', sans-serif;
-  font-size: 4rem;           /* Scritta gigantesca */
-  color: #ffcc00;            /* Colore oro */
-  text-shadow: 0 0 10px #ff3300, 0 0 30px #ffaa00, 0 0 50px #000; /* Effetto infuocato */
+  font-size: 4rem;
+  color: #ffcc00;
+  text-shadow: 0 0 10px #ff3300, 0 0 30px #ffaa00, 0 0 50px #000;
   font-weight: bold;
-  pointer-events: none;      /* Non blocca i click del mouse sul gioco */
-  opacity: 0;                /* Invisibile di default */
-  transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Animazione fluida ad impatto */
-  z-index: 9999;             /* Sta sopra a tutto il gioco */
+  pointer-events: none;
+  opacity: 0;
+  transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 9999;
   text-align: center;
   white-space: nowrap;
 }
 
-/* Quando si attiva la classe, la scritta compare con un effetto zoom-in */
+
 .victory-banner.is-visible {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);

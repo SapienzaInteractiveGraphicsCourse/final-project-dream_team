@@ -1,26 +1,21 @@
 import * as THREE from 'three';
 
-// --- STATE VARIABLES ---
 let demonDragon = null;
 let demonDragonStartY = 0;
 let dragonHiddenAfterPortal = false;
 
-// --- COMBAT AND FLIGHT VARIABLES ---
 let dragonHealth = 100;
 let dragonDefeated = false;
 
-// Dynamic variables for flight adjustments based on castle dimensions
 let castleCenter = new THREE.Vector3(25, 22, -50); 
 let flightRadius = 22; 
 const flightSpeed = 0.6;  
 
-// --- DEATH PARTICLE VARIABLES ---
 let deathParticles = null;
 let particlesGeometry = null;
 let particleVelocity = [];
 const DEATH_PARTICLE_COUNT = 60;
 
-// --- WING ANIMATION DATA ---
 const wingBones = {};
 const initialWingQuaternions = new Map();
 const poseQuaternion = new THREE.Quaternion();
@@ -71,8 +66,6 @@ const wingPoses = {
   }
 };
 
-// --- UTILITY FUNCTIONS ---
-
 function saveWingBone(key, bone) {
   wingBones[key] = bone;
   initialWingQuaternions.set(bone, bone.quaternion.clone());
@@ -92,17 +85,11 @@ function applyWingPose(key, amount) {
 
   bone.quaternion.copy(initialQuaternion).multiply(poseQuaternion);
 }
-
-/**
- * Dynamically configure the orbit from models.js based on castle bounds
- */
 export function setDragonOrbitCenter(x, y, z, calculatedRadius) {
   castleCenter.set(x, y, z);
   flightRadius = Math.max(calculatedRadius, 15); 
   console.log(`The dragon now orbits at X:${x}, Y:${y}, Z:${z} with radius ${flightRadius}`);
 }
-
-// --- COMBAT LOGIC ---
 
 export function damageDragon(amount) {
   if (dragonDefeated || !demonDragon) return;
@@ -112,25 +99,21 @@ export function damageDragon(amount) {
 
   const scene = demonDragon.parent;
 
-  // --- 1. SUPER STROBE DAMAGE FLASH ---
   demonDragon.traverse((child) => {
     if (child.isMesh && child.material && child.material.color) {
       if (!child.material._isCloned) {
         child.material = child.material.clone();
         child.material._isCloned = true;
       }
-      
-      // First flash: Immediate pure red
+
       child.material.color.setHex(0xff0000); 
-      
-      // Second intermediate flash: Neon orange after 120ms
+
       setTimeout(() => {
         if (child.material && child.material.color) child.material.color.setHex(0xff6600);
       }, 120);
 
-      // Return to original color after 260ms total
       setTimeout(() => {
-        // Restore the original tint calculated in models.js
+
         if (child.material && child.material.color) {
           child.material.color.setHex(0xffc2a0).multiplyScalar(1.28); 
         }
@@ -138,7 +121,6 @@ export function damageDragon(amount) {
     }
   });
 
-  // --- 2. MAXI SPARKS AND SHOCKWAVE (IF STILL ALIVE) ---
   if (scene && dragonHealth > 0) {
     const hitParticleCount = 50;
     const hitGeometry = new THREE.BufferGeometry();
@@ -150,7 +132,6 @@ export function damageDragon(amount) {
       hitPositions[i * 3 + 1] = demonDragon.position.y;
       hitPositions[i * 3 + 2] = demonDragon.position.z;
 
-      // Wide and violent radial explosion
       hitVelocities.push({
         x: (Math.random() - 0.5) * 35,
         y: (Math.random() - 0.5) * 35,
@@ -161,8 +142,8 @@ export function damageDragon(amount) {
     hitGeometry.setAttribute('position', new THREE.BufferAttribute(hitPositions, 3));
 
     const hitMaterial = new THREE.PointsMaterial({
-      color: 0xff3300, // Saturated fire red
-      size: 1.2,       // Doubled size
+      color: 0xff3300,
+      size: 1.2,
       transparent: true,
       opacity: 1,
       blending: THREE.AdditiveBlending,
@@ -172,7 +153,6 @@ export function damageDragon(amount) {
     const hitParticles = new THREE.Points(hitGeometry, hitMaterial);
     scene.add(hitParticles);
 
-    // --- ADDED EXPANDING SHOCKWAVE RING ---
     const ringGeometry = new THREE.RingGeometry(0.1, 1, 32);
     const ringMaterial = new THREE.MeshBasicMaterial({
       color: 0xffaa00,
@@ -184,17 +164,15 @@ export function damageDragon(amount) {
     });
     const shockwave = new THREE.Mesh(ringGeometry, ringMaterial);
     shockwave.position.copy(demonDragon.position);
-    
-    // Orient the ring flat on the horizontal plane
+
     shockwave.rotation.x = Math.PI / 2;
     scene.add(shockwave);
 
-    // Combined animation (Sparks + Shockwave)
     const startTime = performance.now();
     const animateHitEffects = () => {
       const elapsed = (performance.now() - startTime) * 0.001;
       
-      if (elapsed > 0.5) { // Lasts half a second in total
+      if (elapsed > 0.5) {
         scene.remove(hitParticles);
         scene.remove(shockwave);
         hitGeometry.dispose();
@@ -202,7 +180,7 @@ export function damageDragon(amount) {
         ringGeometry.dispose();
         ringMaterial.dispose();
       } else {
-        // Move the macro-sparks
+
         const positions = hitParticles.geometry.attributes.position.array;
         for (let i = 0; i < hitParticleCount; i++) {
           positions[i * 3] += hitVelocities[i].x * 0.016;
@@ -212,10 +190,9 @@ export function damageDragon(amount) {
         hitParticles.geometry.attributes.position.needsUpdate = true;
         hitMaterial.opacity = 1 - (elapsed / 0.5);
 
-        // Expand the shockwave ring around the dragon
-        const growScale = 1 + elapsed * 45; // Expands very quickly up to 20+ units radius
+        const growScale = 1 + elapsed * 45;
         shockwave.scale.set(growScale, growScale, 1);
-        ringMaterial.opacity = 0.8 * (1 - (elapsed / 0.5)); // Fades out together with particles
+        ringMaterial.opacity = 0.8 * (1 - (elapsed / 0.5));
 
         requestAnimationFrame(animateHitEffects);
       }
@@ -223,7 +200,6 @@ export function damageDragon(amount) {
     animateHitEffects();
   }
 
-  // --- 3. FINAL CHECK (LETHAL IMPACT) ---
   if (dragonHealth <= 0) {
     dragonDefeated = true;
     console.log('The dragon is dead! Triggering epic detonation.');
@@ -262,8 +238,6 @@ export function damageDragon(amount) {
   }
 }
 
-// --- INITIALIZATION ---
-
 export function registerDemonDragon(model) {
   demonDragon = model;
   demonDragonStartY = model.position.y;
@@ -271,13 +245,11 @@ export function registerDemonDragon(model) {
   dragonDefeated = false;
   dragonHiddenAfterPortal = false;
 
-  // Clear wing data
   Object.keys(wingBones).forEach((key) => {
     delete wingBones[key];
   });
   initialWingQuaternions.clear();
 
-  // Map skeleton bones
   model.traverse((child) => {
     if (!child.isBone) return;
 
@@ -294,8 +266,6 @@ export function registerDemonDragon(model) {
   });
 }
 
-// --- ANIMATION LOOP ---
-
 export function updateDemonDragon(deltaTime) {
   if (!demonDragon) return;
   
@@ -310,7 +280,7 @@ export function updateDemonDragon(deltaTime) {
   const time = performance.now() * 0.001;
 
   if (dragonDefeated) {
-    // 1. Make the dragon fall
+
     if (demonDragon.position.y > -5) {
       demonDragon.position.y -= deltaTime * 15;
       demonDragon.rotation.z += deltaTime * 4;
@@ -318,7 +288,6 @@ export function updateDemonDragon(deltaTime) {
       demonDragon.visible = false;
     }
 
-    // 2. Animate the glitter explosion
     if (deathParticles) {
       const positions = deathParticles.geometry.attributes.position.array;
       
@@ -328,7 +297,7 @@ export function updateDemonDragon(deltaTime) {
         positions[i * 3 + 1] += vel.y * deltaTime;
         positions[i * 3 + 2] += vel.z * deltaTime;
 
-        vel.y -= deltaTime * 5; // Gravity effect on particles
+        vel.y -= deltaTime * 5;
       }
       deathParticles.geometry.attributes.position.needsUpdate = true;
 
@@ -343,13 +312,11 @@ export function updateDemonDragon(deltaTime) {
     return;
   }
 
-  // Regular wing animation
   const wingAmount = (Math.sin(time * 3.4) + 1) * 0.5;
   Object.keys(wingPoses).forEach((key) => {
     applyWingPose(key, wingAmount);
   });
 
-  // Circular movement around the castle
   const flightTime = time * flightSpeed;
   const targetX = castleCenter.x + Math.cos(flightTime) * flightRadius;
   const targetZ = castleCenter.z + Math.sin(flightTime) * flightRadius;
@@ -357,7 +324,6 @@ export function updateDemonDragon(deltaTime) {
 
   demonDragon.position.set(targetX, targetY, targetZ);
 
-  // Calculate smooth rotation without flipping
   const nextTime = (time + 0.01) * flightSpeed;
   const nextX = castleCenter.x + Math.cos(nextTime) * flightRadius;
   const nextZ = castleCenter.z + Math.sin(nextTime) * flightRadius;

@@ -28,7 +28,6 @@ export function createCloud(scene, x, y, z, scale = 1) {
     cloudMaterial
   );
 
-  // Position spheres to form a fluffy cloud shape
   sphere1.position.set(-0.9, 0, 0);
   sphere2.position.set(0, 0.25, 0);
   sphere3.position.set(0.9, 0, 0);

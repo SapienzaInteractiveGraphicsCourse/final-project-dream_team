@@ -1,11 +1,8 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { createGltfLoader } from '../base/loaders.js';
 
-const loader = new GLTFLoader();
-loader.setMeshoptDecoder(MeshoptDecoder);
+const loader = createGltfLoader();
 
-// --- CONFIGURATION ---
 const donkeyPath = './models_optimized/donkey_pocket_shrek_and_animations.glb';
 const donkeyPosition = new THREE.Vector3(-7.46, 0, 44.67);
 const donkeyHeight = 4;
@@ -13,7 +10,6 @@ const donkeyRotationOffsetY = Math.PI;
 const donkeyAnimationDistance = 80;
 const donkeyAnimationDistanceSq = donkeyAnimationDistance * donkeyAnimationDistance;
 
-// --- STATE VARIABLES ---
 let donkey = null;
 let donkeySkinnedMesh = null;
 let donkeyBones = [];
@@ -21,8 +17,6 @@ let donkeyParts = {};
 let donkeyInitialRotations = {};
 let donkeyStartY = donkeyPosition.y;
 let donkeyLoadPromise = null;
-
-// --- UTILITY FUNCTIONS ---
 
 function findBone(namePart) {
   return donkeyBones.find((bone) => bone.name.includes(namePart)) || null;
@@ -92,8 +86,6 @@ function buildDonkeyParts() {
   };
 }
 
-// --- MAIN EXPORTS ---
-
 export function loadDonkey(scene) {
   if (donkeyLoadPromise) return donkeyLoadPromise;
 
@@ -133,7 +125,6 @@ export function loadDonkey(scene) {
           donkeyBones = donkeySkinnedMesh.skeleton.bones;
         }
 
-        // Adjust scale and position based on bounding box
         const box = new THREE.Box3().setFromObject(donkey);
         const size = box.getSize(new THREE.Vector3());
         const scale = size.y > 0 ? donkeyHeight / size.y : 1;
@@ -166,7 +157,6 @@ export function loadDonkey(scene) {
 export function updateDonkey(deltaTime, player) {
   if (!donkey || !donkey.visible) return;
 
-  // Skip animation if the player is too far away
   if (player && donkey.position.distanceToSquared(player.position) > donkeyAnimationDistanceSq) {
     return;
   }
@@ -180,10 +170,8 @@ export function updateDonkey(deltaTime, player) {
 
   resetDonkeyPose();
 
-  // Idle floating/breathing animation
   donkey.position.y = donkeyStartY + Math.sin(time * 1.6) * 0.012;
 
-  // Make donkey look at player
   if (player) {
     const directionX = player.position.x - donkey.position.x;
     const directionZ = player.position.z - donkey.position.z;
@@ -196,7 +184,6 @@ export function updateDonkey(deltaTime, player) {
     );
   }
 
-  // Animate specific bone parts
   rotateBone(donkeyParts.spine, 'z', Math.sin(time * 1.7) * 0.02);
   rotateBone(donkeyParts.head, 'y', Math.sin(time * 1.3) * 0.12);
   rotateBone(donkeyParts.head, 'x', Math.sin(time * 1.8) * 0.05);

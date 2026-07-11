@@ -16,8 +16,13 @@ export function createPlayerController(playerObject, camera, colliders = []) {
   let firstPersonPitch = 0;
   let thirdPersonCameraInitialized = false;
   const smoothedCameraTarget = new THREE.Vector3();
+  const forward = new THREE.Vector3();
+  const right = new THREE.Vector3();
+  const moveDirection = new THREE.Vector3();
+  const cameraOffset = new THREE.Vector3();
+  const desiredCameraPosition = new THREE.Vector3();
+  const desiredCameraTarget = new THREE.Vector3();
 
-  // Camera settings
   const cameraMinDistance = 2.5;
   const cameraMaxDistance = 30;
   const cameraHeight = 4.2;
@@ -68,7 +73,6 @@ export function createPlayerController(playerObject, camera, colliders = []) {
     const cameraRotationSpeed = 2.2;
     const cameraZoomSpeed = 5;
 
-    // Camera controls
     if (keys.arrowleft) cameraAngle += cameraRotationSpeed * deltaTime;
     if (keys.arrowright) cameraAngle -= cameraRotationSpeed * deltaTime;
 
@@ -82,12 +86,11 @@ export function createPlayerController(playerObject, camera, colliders = []) {
       cameraDistance = THREE.MathUtils.clamp(cameraDistance, cameraMinDistance, cameraMaxDistance);
     }
 
-    const forward = new THREE.Vector3(Math.sin(cameraAngle), 0, Math.cos(cameraAngle));
-    const right = new THREE.Vector3(Math.cos(cameraAngle), 0, -Math.sin(cameraAngle));
-    const moveDirection = new THREE.Vector3();
+    forward.set(Math.sin(cameraAngle), 0, Math.cos(cameraAngle));
+    right.set(Math.cos(cameraAngle), 0, -Math.sin(cameraAngle));
+    moveDirection.set(0, 0, 0);
     let isMoving = false;
 
-    // Movement logic
     if (canMove) {
       if (keys.w) moveDirection.sub(forward);
       if (keys.s) moveDirection.add(forward);
@@ -110,7 +113,6 @@ export function createPlayerController(playerObject, camera, colliders = []) {
 
     animatePlayer(playerObject, isMoving, performance.now() * 0.001);
 
-    // World boundary constraint
     const maxDistance = 420;
     const distanceFromCenter = Math.sqrt(
       player.position.x * player.position.x +
@@ -122,7 +124,6 @@ export function createPlayerController(playerObject, camera, colliders = []) {
       player.position.z *= maxDistance / distanceFromCenter;
     }
 
-    // Camera update loop
     const safeDeltaTime = Math.min(deltaTime, 1 / 30);
     if (isFirstPerson) {
       thirdPersonCameraInitialized = false;
@@ -130,14 +131,14 @@ export function createPlayerController(playerObject, camera, colliders = []) {
       camera.position.y += firstPersonEyeHeight;
       camera.rotation.set(firstPersonPitch, cameraAngle, 0, 'YXZ');
     } else {
-      const cameraOffset = new THREE.Vector3(
+      cameraOffset.set(
         Math.sin(cameraAngle) * cameraDistance,
         cameraHeight,
         Math.cos(cameraAngle) * cameraDistance
       );
 
-      const desiredCameraPosition = player.position.clone().add(cameraOffset);
-      const desiredCameraTarget = new THREE.Vector3(
+      desiredCameraPosition.copy(player.position).add(cameraOffset);
+      desiredCameraTarget.set(
         player.position.x,
         player.position.y + cameraLookHeight,
         player.position.z

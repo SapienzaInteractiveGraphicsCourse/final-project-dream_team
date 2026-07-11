@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 
-// --- STATE VARIABLES ---
 let rainGroup = null;
 let rainLines = null;
 let rainCrystals = null;
@@ -11,7 +10,6 @@ let stormStarted = false;
 let stormProgress = 0;
 let rainAudio = null;
 
-// --- CONFIGURATION ---
 const lineCount = 400;
 const crystalCount = 150;
 const rainArea = 120;
@@ -24,7 +22,6 @@ const minRainSpeed = 42;
 const maxRainSpeed = 78;
 const stormFadeDuration = 5;
 
-// Environment colors
 const daySkyColor = new THREE.Color(0x87ceeb);
 const nightSkyColor = new THREE.Color(0x050814);
 const stormLightColor = new THREE.Color(0x8faaff);
@@ -33,8 +30,6 @@ const tempSkyColor = new THREE.Color();
 const originalLights = [];
 const lineData = [];
 const crystalData = [];
-
-// --- UTILITY FUNCTIONS ---
 
 function startRainAudio() {
   if (!rainAudio) {
@@ -105,13 +100,10 @@ function writeCrystal(index) {
   crystalPositions[positionIndex + 2] = data.z;
 }
 
-// --- CORE EXPORTS ---
-
 export function createRain(scene) {
   rainGroup = new THREE.Group();
   rainGroup.visible = false;
 
-  // Initialize heavy rain lines
   const lineGeometry = new THREE.BufferGeometry();
   linePositions = new Float32Array(lineCount * 2 * 3);
 
@@ -133,7 +125,6 @@ export function createRain(scene) {
   rainLines = new THREE.LineSegments(lineGeometry, lineMaterial);
   rainGroup.add(rainLines);
 
-  // Initialize rain splash crystals
   const crystalGeometry = new THREE.BufferGeometry();
   crystalPositions = new Float32Array(crystalCount * 3);
 
@@ -189,7 +180,6 @@ export function startStorm(scene) {
 export function updateRain(deltaTime, player) {
   if (!rainGroup || !isRaining || !player) return;
 
-  // Center the rain system around the player continuously
   rainGroup.position.x = player.position.x;
   rainGroup.position.y = 0;
   rainGroup.position.z = player.position.z;
@@ -228,10 +218,6 @@ export function updateStorm(deltaTime, scene) {
     light.intensity = THREE.MathUtils.lerp(intensity, intensity * 0.25, stormProgress);
     light.color.copy(color).lerp(stormLightColor, stormProgress);
   });
-}
-
-export function getStormProgress() {
-  return stormProgress;
 }
 
 export function stopStormAndRain(scene) {

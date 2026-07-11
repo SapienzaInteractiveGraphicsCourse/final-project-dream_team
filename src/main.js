@@ -11,15 +11,14 @@ import { createLights } from './base/lights.js';
 import { materials } from './world/materials.js';
 import { createIsland } from './world/island.js';
 import { createIslandVegetation } from './world/vegetation.js';
-import { createPlayer, animatePlayer } from './player/schoolBoyPlayer.js';
+import { createPlayer } from './player/schoolBoyPlayer.js';
 import { createPlayerController } from './controls/playerControls.js';
 import {
   loadGameplayModels,
   loadIntroModels,
-  updateModels,
-  modelColliders,
-  modelBounds
+  updateModels
 } from './imported_models/models.js';
+import { modelBounds, modelColliders } from './world/collisionRegistry.js';
 import { updateBook, isBookDelivered } from './imported_models/book.js';
 import { isGemDelivered } from './imported_models/gem.js';
 import { createCloud } from './world/cloud.js';
@@ -55,21 +54,16 @@ import {
 import { loadDonkey, updateDonkey } from './world/donkey.js';
 import { createLampPosts, updateLampPosts } from './world/lampPosts.js';
 
-// --- SCENE SETUP ---
 const canvas = document.querySelector('#bg');
 const scene = createScene();
 const camera = createCamera();
 const renderer = createRenderer(canvas);
 
-// --- AUDIO SETUP ---
-// 1. Create the AudioListener and attach it to the camera
 const listener = new THREE.AudioListener();
 camera.add(listener);
 
-// 2. Create a global Audio object for background music
 const backgroundMusic = new THREE.Audio(listener);
 
-// Track if the player has interacted with the UI to allow audio playback
 let hasUserInteracted = false; 
 const audioLoader = new THREE.AudioLoader();
 console.log("Starting to load the music file...");
@@ -81,14 +75,13 @@ audioLoader.load(
     backgroundMusic.setBuffer(buffer);
     backgroundMusic.setLoop(true); 
     backgroundMusic.setVolume(0.4); 
-    
-    // Play immediately if the user has already interacted
+
     if (hasUserInteracted && listener.context.state !== 'suspended') {
       backgroundMusic.play();
     }
   },
   function(xhr) {
-    // Log the downloading progress
+
     console.log(`Audio downloading: ${Math.round((xhr.loaded / xhr.total) * 100)}%`);
   },
   function(err) {
@@ -97,7 +90,6 @@ audioLoader.load(
   }
 );
 
-// Enable shadows
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 setupResize(camera, renderer);
@@ -105,7 +97,6 @@ setupResize(camera, renderer);
 const clock = new THREE.Clock();
 const debugMode = new URLSearchParams(window.location.search).has('debug');
 
-// --- WORLD GENERATION ---
 const lights = createLights(scene);
 const island = createIsland(scene, materials);
 
@@ -113,7 +104,6 @@ function getRndInteger(min, max) {
   return Math.floor(Math.random() * (max - min) ) + min;
 }
 
-// Generate clouds
 const cloudsNumber = 18;
 const genericMin = -300;
 const genericMax = 300;
@@ -134,17 +124,14 @@ for (let i = 0; i < cloudsNumber; i++) {
 createRain(scene);
 const carpetTravel = createCarpetTravel(scene);
 
-// Initialize lampposts in the scene
 createLampPosts(scene);
 
-// Hide magic carpet initially
 if (carpetTravel && carpetTravel.mesh) {
   carpetTravel.mesh.visible = false;
 } else if (carpetTravel && carpetTravel.group) {
   carpetTravel.group.visible = false;
 }
 
-// --- UI ELEMENTS ---
 const carpetPrompt = document.createElement('div');
 carpetPrompt.className = 'interaction-dialogue carpet-dialogue';
 carpetPrompt.textContent = 'Press F to travel on the magic carpet';
@@ -213,7 +200,6 @@ introOverlay.innerHTML = `
 `;
 document.body.appendChild(introOverlay);
 
-// --- GAME STATE VARIABLES ---
 let selectedDifficulty = 'medium';
 let isChoosingDifficulty = true;
 let isIntroActive = true;
@@ -222,7 +208,6 @@ let isDragonPuzzleActive = false;
 let dragonDirectHits = 0;
 let finalPuzzleStarted = false;
 
-// Model Loading Promises
 let gameplayModelsPromise = null;
 let worldTwoModelsPromise = null;
 let finaleModelsPromise = null;
@@ -233,7 +218,6 @@ let finaleModelsLoaded = false;
 const DIRECT_HITS_BEFORE_FINAL_PUZZLE = 3;
 const DRAGON_HIT_DAMAGE = 25;
 
-// --- MODEL LOADING MANAGERS ---
 function ensureGameplayModelsLoaded() {
   if (!gameplayModelsPromise) {
     gameplayModelsPromise = loadGameplayModels(scene).then((models) => {
@@ -271,7 +255,6 @@ function ensureFinaleModelsLoaded() {
   return finaleModelsPromise;
 }
 
-// --- DRAGON COMBAT LOGIC ---
 function showDragonVictory() {
   dragonPrompt.classList.remove('is-visible');
   isInsideCastle = false;
@@ -326,7 +309,6 @@ function attackDragon() {
   startDragonPuzzle();
 }
 
-// --- EVENT LISTENERS ---
 introOverlay.querySelector('.intro-start-button').addEventListener('click', () => {
   isIntroActive = false;
   introOverlay.classList.remove('is-visible');
@@ -358,7 +340,6 @@ difficultyOverlay.querySelectorAll('[data-difficulty]').forEach((button) => {
   });
 });
 
-// Camera View Logic
 let isFirstPerson = false;
 let manualFirstPerson = false; 
 const thirdPersonFov = 65;
@@ -377,7 +358,6 @@ function setFirstPersonMode(enable) {
     camera.updateProjectionMatrix();
   }
 
-  // Toggle player mesh visibility based on view mode
   if (playerData && playerData.group) {
     playerData.group.traverse((child) => {
       if (child.isMesh) {
@@ -387,7 +367,6 @@ function setFirstPersonMode(enable) {
   }
 }
 
-// Input Handling
 let isInsideCastle = false;
 window.addEventListener('keydown', (event) => {
   if (isIntroActive || isChoosingDifficulty || isDragonPuzzleActive || isFinaleInputLocked()) {
@@ -396,7 +375,6 @@ window.addEventListener('keydown', (event) => {
 
   const key = event.key.toLowerCase();
 
-  // Handle Carpet Travel
   if (key === 'f') {
     if (!isGemDelivered()) return; 
     
@@ -404,14 +382,12 @@ window.addEventListener('keydown', (event) => {
     tryStartCarpetTravel(carpetTravel);
   }
 
-  // Handle Camera View Toggle
   if (key === 'v') {
     manualFirstPerson = !manualFirstPerson;
     setFirstPersonMode(manualFirstPerson);
     console.log('Manual view changed. First person:', manualFirstPerson);
   }
 
-  // Handle Dragon Attack
   if (key === 'r') {
     if (isInsideCastle && isBookDelivered() && !isDragonDefeated()) {
       attackDragon();
@@ -423,7 +399,6 @@ window.addEventListener('keyup', () => {
   window.currentInteractionKey = null;
 });
 
-// --- PLAYER INITIALIZATION ---
 const playerData = createPlayer(scene);
 createPortalPositionLogger(playerData.group);
 
@@ -441,7 +416,6 @@ loadIntroModels(scene).then(() => {
   });
 });
 
-// Debug tools
 if (debugMode) {
   const axesHelper = new THREE.AxesHelper(100);
   axesHelper.position.set(0, 5, 0);
@@ -470,7 +444,6 @@ const castleTriggerBox = new THREE.Box3(
 
 let shifuThanksTriggered = false;
 
-// Dynamic Camera Logic
 function updateIntroCamera(time) {
   const phase = time * 0.12;
   const sweep = Math.sin(time * 0.22);
@@ -485,7 +458,6 @@ function updateIntroCamera(time) {
   camera.lookAt(targetX, 0, targetZ);
 }
 
-// Weather and Environment State
 let globalStormProgress = 0;
 let finaleWeatherCleared = false;
 let rainUpdateAccumulator = 0;
@@ -500,16 +472,12 @@ setFinaleCallbacks({
   }
 });
 
-// --------------------------------------------------
-// MAIN ANIMATION LOOP
-// --------------------------------------------------
 function animate() {
   requestAnimationFrame(animate);
 
   const deltaTime = clock.getDelta();
   const time = performance.now() * 0.001;
 
-  // Handle Intro Screen Camera Movement
   if (isIntroActive) {
     updateIntroCamera(time);
     if (gameplayModelsLoaded) {
@@ -519,12 +487,12 @@ function animate() {
     return;
   }
 
-  // Handle Movement and Controls
   updateCarpetTravel(deltaTime, playerData.group, carpetTravel);
   const isFalling = updateTowerFall(
     deltaTime,
     playerData.group,
-    playerData.group.position.y > 20 && !carpetTravel.isTraveling
+    playerData.group.position.y > 20 && !carpetTravel.isTraveling,
+    carpetTravel.isTraveling ? null : island.islandTop
   );
   
   const canControlPlayer =
@@ -536,7 +504,6 @@ function animate() {
     
   playerController.update(deltaTime, canControlPlayer);
 
-  // Carpet Interaction Prompt
   const carpetObject = carpetTravel.group || carpetTravel.mesh;
   if (carpetObject && carpetObject.visible && !carpetTravel.isTraveling && !carpetTravel.hasArrived) {
     const distanceToCarpet = playerData.group.position.distanceTo(carpetObject.position);
@@ -550,8 +517,7 @@ function animate() {
   } else {
     carpetPrompt.classList.remove('is-visible');
   }
-  
-  // Model Updates
+
   let isTalkingToMage = false;
   if (gameplayModelsLoaded) {
     isTalkingToMage = updateModels(deltaTime, playerData.group);
@@ -565,8 +531,7 @@ function animate() {
   const isTalkingToFinale = finaleModelsLoaded
     ? updateFinale(deltaTime, playerData.group, camera)
     : false;
-    
-  // Force first-person view while a character is actively talking
+
   const shouldBeInFirstPerson = isTalkingToMage || isTalkingToShifu || isTalkingToFinale;
 
   if (shouldBeInFirstPerson) {
@@ -575,13 +540,11 @@ function animate() {
     setFirstPersonMode(manualFirstPerson);
   }
 
-  // Debug Coordinates
   if (debugMode) {
     const pos = playerData.group.position;
     playerCoords.textContent = `X: ${pos.x.toFixed(2)}  Y: ${pos.y.toFixed(2)}  Z: ${pos.z.toFixed(2)}`;
   }
 
-  // World 2 Updates
   if (worldTwoModelsLoaded) {
     updateWoodTask(deltaTime, playerData.group);
     updateBridgeTask(deltaTime, playerData.group);
@@ -592,12 +555,10 @@ function animate() {
     });
   }
 
-  // Finale Updates
   if (finaleModelsLoaded) {
     updateDonkey(deltaTime, playerData.group);
   }
 
-  // Weather Logic
   if (shifuThanksTriggered && !finaleWeatherCleared) {
     rainUpdateAccumulator += deltaTime;
     if (rainUpdateAccumulator >= rainUpdateInterval) {
@@ -605,17 +566,14 @@ function animate() {
       rainUpdateAccumulator = 0;
     }
     updateStorm(deltaTime, scene);
-    
-    // The storm intensity gradually increases over a few seconds
+
     globalStormProgress = Math.min(1.0, globalStormProgress + deltaTime * 0.2); 
   }
 
-  // Update lampposts based on storm state
   if (globalStormProgress > 0 || (shifuThanksTriggered && !finaleWeatherCleared)) {
     updateLampPosts(globalStormProgress, playerData.group);
   }
-  
-  // Environmental Lighting adjustments
+
   lights.sunLight.intensity = 1.0 * (1.0 - globalStormProgress);
   lights.sunLight.castShadow = globalStormProgress <= 0.5;
   lights.ambientLight.intensity = 0.4 * (1.0 - globalStormProgress * 0.95);
@@ -625,13 +583,11 @@ function animate() {
     scene.backgroundIntensity = 1.0 - globalStormProgress;
   }
 
-  // Event Triggers
   if (isGemDelivered()) {
     if (carpetTravel && carpetTravel.mesh) carpetTravel.mesh.visible = true;
     if (carpetTravel && carpetTravel.group) carpetTravel.group.visible = true;
   }
 
-  // Castle Region detection for Dragon fight
   if (isBookDelivered() && !isDragonDefeated() && !isDragonPuzzleActive && !isChoosingDifficulty) {
     if (castleTriggerBox.containsPoint(playerData.group.position)) {
       isInsideCastle = true;
@@ -649,7 +605,6 @@ function animate() {
 
   renderer.render(scene, camera);
 
-  // Trigger storm after bridge is built
   if (isBridgeBuilt() && !shifuThanksTriggered && !finaleWeatherCleared ){
     shifuThanksTriggered = true;
     startShifuBridgeThanks();
@@ -657,5 +612,4 @@ function animate() {
   }
 }
 
-// Start game loop
 animate();

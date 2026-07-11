@@ -1,10 +1,8 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { createGltfLoader } from '../base/loaders.js';
 
 const VEGETATION_MODEL_PATH = './models_optimized/procedural_tree_generator.glb';
 
-// --- DEFAULT SETTINGS ---
 const DEFAULT_OPTIONS = {
   islandMargin: 12,
   pathClearance: 4,
@@ -28,7 +26,6 @@ const DEFAULT_OPTIONS = {
   }
 };
 
-// --- RANDOM SEED GENERATOR ---
 function createRandom(seed) {
   return function random() {
     seed |= 0;
@@ -39,7 +36,6 @@ function createRandom(seed) {
   };
 }
 
-// --- VEGETATION PROTOTYPING ---
 function createNormalizedPrototype(source, options) {
   const model = source.clone(true);
 
@@ -96,7 +92,7 @@ function createClusterPrototype(source, children, options) {
     const childCenter = new THREE.Vector3();
     childBox.getCenter(childCenter);
     
-    // Group children nearby to the main tree structure
+
     const isNearTreeLine = Math.abs(childCenter.x - sourceCenter.x) < 4.6
       && childCenter.z > sourceBox.min.z - 1.5
       && childCenter.z < sourceBox.max.z + 1.5;
@@ -127,7 +123,6 @@ function mergeOptions(options = {}) {
   };
 }
 
-// --- UTILITIES FOR SCATTERING ---
 function getIslandMetrics(island) {
   const islandTop = island?.islandTop;
   if (!islandTop) return null;
@@ -243,15 +238,13 @@ function scatterVegetation({
   }
 }
 
-// --- INITIALIZATION ---
 export function createIslandVegetation(scene, config = {}) {
   const normalizedConfig = Array.isArray(config) ? { colliderTargets: config } : config;
   const { island, obstacleBounds = [], colliderTargets = [], options = {} } = normalizedConfig;
   const mergedOptions = mergeOptions(options);
   const islandMetrics = getIslandMetrics(island);
   
-  const loader = new GLTFLoader();
-  loader.setMeshoptDecoder(MeshoptDecoder);
+  const loader = createGltfLoader();
   
   const group = new THREE.Group();
   group.name = 'island-vegetation';

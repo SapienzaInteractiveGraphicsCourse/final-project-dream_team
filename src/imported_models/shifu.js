@@ -1,13 +1,9 @@
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import * as THREE from 'three';
-import { modelColliders } from '../imported_models/models.js'; // Importiamo le collisioni
+import { createGltfLoader } from '../base/loaders.js';
+import { modelColliders } from '../world/collisionRegistry.js';
 
-// --- INITIALIZATION ---
-const loader = new GLTFLoader();
-loader.setMeshoptDecoder(MeshoptDecoder);
+const loader = createGltfLoader();
 
-// --- STATE VARIABLES ---
 let shifu = null;
 let shifuCollider = null; 
 let shifuStartY = 0;
@@ -20,19 +16,16 @@ let shifuMaterials = [];
 let shifuBaseRotationY = Math.PI;
 let shifuLoadPromise = null;
 
-// --- SKELETAL ANIMATION VARIABLES ---
 let shifuArmParts = {};
 let shifuArmInitialRotations = {};
 const upperArmDown = 1.2;
 const foreArmRelax = 0.24;
 
-// --- CONFIGURATION ---
 const shifuPosition = new THREE.Vector3(231, 28.4, -258);
 const shifuScale = 2;
 const interactionDistance = 4;
 const shifuGlowColor = new THREE.Color(0x6fffd8);
 
-// --- DIALOGUE LINES ---
 const shifuDialogueLines = [
   'Master: At last, you have arrived. I was beginning to fear that no one would answer my call.',
   'Master: The bridge to my tower has collapsed, and without it, I cannot leave this place.',
@@ -50,13 +43,10 @@ let activeDialogueLines = shifuDialogueLines;
 let bridgeThanksStarted = false;
 let bridgeThanksDone = false;
 
-// --- UI ELEMENTS ---
 const shifuDialogue = document.createElement('div');
 shifuDialogue.className = 'interaction-dialogue';
 shifuDialogue.textContent = 'Press E to talk to Master Shifu';
 document.body.appendChild(shifuDialogue);
-
-// --- UTILITY FUNCTIONS ---
 
 function setShifuGlow(strength) {
   shifuMaterials.forEach((material) => {
@@ -105,8 +95,6 @@ function getYawToPlayer(player) {
   return Math.atan2(directionX, directionZ);
 }
 
-// --- INPUT HANDLING ---
-
 window.addEventListener('keydown', (event) => {
   if (event.key.toLowerCase() === 'e' && canTalkToShifu && !shifuIsTalking) {
     activeDialogueLines = shifuDialogueLines;
@@ -131,8 +119,6 @@ window.addEventListener('keydown', (event) => {
     }
   }
 });
-
-// --- CORE EXPORTS ---
 
 export function loadShifuTask(scene) {
   if (shifuLoadPromise) return shifuLoadPromise;

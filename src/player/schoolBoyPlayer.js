@@ -1,10 +1,9 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { enableShadows } from '../base/helpers.js';
+import { createGltfLoader } from '../base/loaders.js';
 
-const loader = new GLTFLoader();
-loader.setMeshoptDecoder(MeshoptDecoder);
+const loader = createGltfLoader();
+const playerSpawnPosition = new THREE.Vector3(0, 0.15, 26);
 
 function findBone(skinnedMesh, namePart) {
   if (!skinnedMesh) return null;
@@ -28,8 +27,8 @@ function saveInitialRotations(parts) {
 
 export function createPlayer(scene) {
   const player = new THREE.Group();
-  player.position.set(0, 0.15, 26);  // initial plaza
-  // player.position.set(236, 28.75, -253);  // tower 2 initial position
+  player.position.copy(playerSpawnPosition);
+
   player.rotation.y = 0;
   scene.add(player);
 
@@ -68,19 +67,17 @@ export function createPlayer(scene) {
             if (child.material) {
               const oldMaterials = Array.isArray(child.material) ? child.material : [child.material];
               
-              // --- FORCED MATERIAL RECONSTRUCTION ---
               const newMaterials = oldMaterials.map(oldMat => {
-                // Create a completely new material, taking only the color or texture from the old one
+
                 return new THREE.MeshStandardMaterial({
                   color: oldMat.color ? oldMat.color : new THREE.Color(0xffffff),
                   map: oldMat.map ? oldMat.map : null,
-                  roughness: 0.8, // Makes clothes opaque and realistic
+                  roughness: 0.8,
                   metalness: 0.0,
-                  emissive: new THREE.Color(0x000000) // ZERO emissive light
+                  emissive: new THREE.Color(0x000000)
                 });
               });
 
-              // Replace the old corrupted materials with the new and clean ones
               child.material = Array.isArray(child.material) ? newMaterials : newMaterials[0];
             }
           }
@@ -141,7 +138,6 @@ export function animatePlayer(playerObject, isMoving, elapsedTime) {
   const parts = playerObject.parts;
   const initial = playerObject.initialRotations;
 
-  // Reset rotations to the initial pose.
   for (const key in parts) {
     if (parts[key] && initial[key]) {
       parts[key].rotation.copy(initial[key]);
@@ -160,20 +156,16 @@ export function animatePlayer(playerObject, isMoving, elapsedTime) {
 
   if (!isMoving) return;
 
-  // Walking swing movement.
   const swing = Math.sin(elapsedTime * 8);
 
-  // Small torso movement.
   if (parts.spine) {
     parts.spine.rotation.z += Math.sin(elapsedTime * 3) * 0.04;
   }
 
-  // Head movement.
   if (parts.head) {
     parts.head.rotation.y += Math.sin(elapsedTime * 2) * 0.12;
   }
 
-  // Alternating arms: shoulders drive the whole arm chain.
   if (parts.leftShoulder) {
     parts.leftShoulder.rotation.x += swing * 0.45;
   }
@@ -182,7 +174,6 @@ export function animatePlayer(playerObject, isMoving, elapsedTime) {
     parts.rightShoulder.rotation.x -= swing * 0.45;
   }
 
-  // Slight forearm bend as secondary motion.
   if (parts.leftForeArm) {
     parts.leftForeArm.rotation.x += Math.max(0, swing) * 0.25;
   }
@@ -191,7 +182,6 @@ export function animatePlayer(playerObject, isMoving, elapsedTime) {
     parts.rightForeArm.rotation.x += Math.max(0, -swing) * 0.25;
   }
 
-  // Alternating legs.
   if (parts.leftUpLeg) {
     parts.leftUpLeg.rotation.x += -swing * 0.45;
   }
@@ -200,7 +190,6 @@ export function animatePlayer(playerObject, isMoving, elapsedTime) {
     parts.rightUpLeg.rotation.x += swing * 0.45;
   }
 
-  // Slight foot animation.
   if (parts.leftFoot) {
     parts.leftFoot.rotation.x += Math.max(0, -swing) * 0.2;
   }

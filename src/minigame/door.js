@@ -19,8 +19,6 @@ function createRandomSequence(length) {
   });
 }
 
-export function getDoorDifficulties() { return DOOR_DIFFICULTIES; }
-
 export function createDoorMinigame({
   difficulty = 'medium',
   title = 'Magic Door Lock',
@@ -35,7 +33,6 @@ export function createDoorMinigame({
   let isOpen = false;
   let isSolved = false;
 
-  // DOM UI elements creation
   const overlay = document.createElement('div');
   overlay.className = 'door-minigame-overlay';
   overlay.setAttribute('aria-hidden', 'true');

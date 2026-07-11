@@ -2,7 +2,6 @@ import * as THREE from 'three';
 
 const textureLoader = new THREE.TextureLoader();
 
-// Load Textures
 const plazaTexture = textureLoader.load('textures/pav3.jpg');
 const grassTexture = textureLoader.load('textures/ground.jpg');
 
@@ -33,7 +32,6 @@ export function createTiledPlazaStoneMaterial(width, length) {
   });
 }
 
-// Pre-defined reusable materials
 export const materials = {
   grass: new THREE.MeshStandardMaterial({
     map: grassTexture,

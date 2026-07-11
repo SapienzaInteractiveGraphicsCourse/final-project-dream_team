@@ -1,10 +1,8 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import { modelBounds, modelColliders } from '../imported_models/models.js';
+import { createGltfLoader } from '../base/loaders.js';
+import { modelBounds, modelColliders } from './collisionRegistry.js';
 
-const lampLoader = new GLTFLoader();
-lampLoader.setMeshoptDecoder(MeshoptDecoder);
+const lampLoader = createGltfLoader();
 const lampPosts = [];
 
 const glowGeometry = new THREE.SphereGeometry(0.4, 16, 16); 
@@ -15,7 +13,6 @@ const lampLightDecay = 2;
 const lampShadowMapSize = 512;
 const maxShadowCastingLamps = 2;
 
-// Lampposts on the main street
 const mainWorldLampPaths = [
   { 
     start: [0, 26], end: [10, -30], 
@@ -37,14 +34,13 @@ const mainWorldLampPaths = [
 
 const mainWorldExtraLamps = [
   { x: 36, z: -18, rotationY: Math.PI },
-  { x: 26, z: -32, rotationY: 0 },
-  { x: -10, z: 44, rotationY: Math.PI}
+  { x: 26, z: -32, rotationY: 0 }
 ];
 
 const worldTwoLamps = [
-  // Left lamp
+
   { x: 232.5, z: -260.0, rotationY: -Math.PI/4, groundY: 28.75 },
-  // Right lamp
+
   { x: 241.5, z: -250.5, rotationY: Math.PI , groundY: 28.75 }
 ];
 
@@ -207,7 +203,6 @@ function addLamp(scene, source, x, z, rotationY, sideOffset, groundY = 0.04) {
   
   modelBounds.push(colliderBox);
   modelColliders.push(colliderBox);
-  // ---------------------------------
   
   const pointLight = new THREE.PointLight(lightColor, 0, lampLightDistance, lampLightDecay);
   configureLampShadow(pointLight);
@@ -278,7 +273,6 @@ export function createLampPosts(scene) {
         addLamp(scene, lampSource, lamp.x, lamp.z, lamp.rotationY, 0);
       });
 
-      // MODIFICATION: Load them with manual coordinates for World 2
       worldTwoLamps.forEach((lamp) => {
         addLamp(scene, lampSource, lamp.x, lamp.z, lamp.rotationY, 0, lamp.groundY);
       });
