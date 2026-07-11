@@ -1,139 +1,223 @@
-# 🏰 Lost Magic Isles
+# 🏝️ Lost Magic Isles
 
-A 3D fantasy adventure game developed with **Three.js** and **Vite** for the Interactive Graphics course at **Sapienza University of Rome**.
+A 3D fantasy adventure game developed with Three.js and Vite for the Interactive Graphics course at Sapienza University of Rome.
 
-The player explores a magical world made of floating islands, fantasy characters, quests, interactive objects, weather effects, and story-driven challenges.
+The player explores a magical world made of floating islands, fantasy characters, interactive quests, dynamic weather effects, procedural animations, and story-driven challenges.
 
 ---
 
-## 📌 Overview
+## 📖 Overview
 
-**Lost Magic Isles** is an interactive 3D game set in a magical kingdom suspended in the sky.
+**Lost Magic Isles** is an interactive 3D adventure set in a magical kingdom suspended in the sky.
 
-The story follows a main character who is asked by a mage to recover a lost magical book.  
-After completing this first quest, the player must enter the castle, fight a dragon, obtain a precious gem, and return it to the mage.
+The player must help the inhabitants of the floating islands restore the magic that has disappeared from their world. During the adventure, the protagonist explores different areas, retrieves magical artifacts, fights a dragon, travels on a flying carpet, repairs a broken bridge, and completes interactive challenges.
 
-As a reward, the mage gives the protagonist a flying carpet, which allows the player to travel to Shifu's island.  
-There, Shifu asks for help collecting wood and repairing a broken bridge.
-
-Once the bridge is repaired, the world changes: night falls and rain begins.  
-The protagonist then returns to the main island through a portal and meets a villager who offers shelter for the night.  
-Before entering the house, the player must complete a small minigame to open the door.
-
-After entering the house, the protagonist rests and wakes up the next morning, ready to begin a new adventure.
-
-The project focuses on real-time 3D graphics, modular scene organization, imported GLB models, user interaction, collision detection, procedural animation, and dynamic visual effects.
+The project focuses on real-time 3D graphics, hierarchical models, procedural animation, user interaction, collision detection, particle systems, dynamic lighting, and modular game-state management.
 
 ---
 
 ## 🛠️ Technologies Used
 
-- **JavaScript**
-- **Three.js**
-- **Vite**
-- **HTML**
-- **CSS**
-- **GLTF / GLB 3D Models**
+- JavaScript
+- Three.js
+- Vite
+- HTML
+- CSS
+- WebGL
+- GLTF / GLB 3D models
+- Meshopt compression and decoding
 
 ---
 
-## 🎮 Main Features
+## 🌍 Main Features
 
-### 🌍 3D Fantasy World
+### 🏰 3D Fantasy World
 
-The game world includes:
+The game world contains several interconnected fantasy environments, including:
 
 - Floating islands
 - A magical castle
+- Fantasy houses and towers
+- Forests and vegetation
 - A broken bridge
 - Clouds and rain
-- Vegetation and decorative objects
-- Fantasy houses and props
+- Decorative lamps and props
 - Interactive characters
 - A flying carpet
-- A portal between islands
-- A final village scene
+- A portal connecting different areas
+- A final village environment
 
-The environment is designed to create a magical atmosphere and guide the player through different stages of the story.
+The environments change as the story progresses, helping guide the player through the different stages of the adventure.
 
 ---
 
-### 🧍 Player Character
+### 🦴 Hierarchical Models and Procedural Animation
 
-The player controls a 3D character imported from a GLB model.
+The project uses rigged GLB models containing hierarchical skeleton structures.
 
-The character includes a skeleton structure, allowing procedural animation of different body parts such as:
+No imported animation clips are used. Character animations are generated procedurally in JavaScript by modifying the transformations of individual bones at runtime.
 
-- Arms
-- Legs
-- Shoulders
-- Feet
-- Spine
+The player character contains several connected body parts, including:
+
+- Hips and spine
 - Head
+- Shoulders
+- Upper arms and forearms
+- Upper legs and lower legs
+- Feet
 
-The walking animation is generated procedurally by rotating the bones during movement.
+During movement, the arms and legs swing in alternating directions, while smaller movements are applied to the torso and head.
+
+The same hierarchical approach is also used for other animated characters, including the dragon and Master Shifu.
+
+---
+
+### 🧙 Interactive Characters
+
+The player can interact with several characters throughout the story, including:
+
+- The Mage
+- Master Shifu
+- The Dragon
+- Village characters
+- Other fantasy creatures
+
+Characters react to the player's position and current quest progress.
+
+Dialogue sequences are activated through keyboard interaction and are used to introduce missions, explain objectives, and unlock new stages of the game.
 
 ---
 
 ### 🎥 Camera System
 
-The game includes a third-person camera that follows the player during exploration.
+The game supports two camera modes:
 
-A first-person mode is also available and can be activated during specific moments or interactions.
+- **Third-person view:** the camera smoothly follows the player during exploration.
+- **First-person view:** the camera is positioned at the character's eye level.
+
+The player can switch between the two modes using the `V` key.
+
+In third-person mode, the arrow keys rotate the camera and control its distance from the player.
+
+In first-person mode, the vertical arrow keys control the viewing pitch.
 
 ---
 
-### 🧩 Quest System
+### 📜 Quest System
 
-The game is based on a sequence of story-driven quests:
+The game follows a sequence of connected story-driven quests:
 
 1. Talk to the mage.
 2. Find the ancient magical book.
 3. Return the book to the mage.
 4. Reach the castle.
 5. Fight the dragon.
-6. Obtain the gem hidden inside the castle.
-7. Return the gem to the mage.
-8. Receive the flying carpet as a reward.
-9. Travel to Shifu's island.
-10. Talk to Shifu.
-11. Collect the axe.
-12. Collect wood.
-13. Repair the broken bridge.
-14. Return to the main island through the portal.
-15. Meet the villager.
-16. Complete the door-opening minigame.
-17. Enter the house and rest for the night.
-18. Wake up the next morning, ready for a new adventure.
+6. Complete the dragon puzzle.
+7. Obtain the magical gem.
+8. Return the gem to the mage.
+9. Receive the flying carpet as a reward.
+10. Travel to Master Shifu's island.
+11. Talk to Master Shifu.
+12. Collect the axe.
+13. Gather wood.
+14. Repair the broken bridge.
+15. Observe the transition to night and stormy weather.
+16. Return through the portal.
+17. Continue the final part of the adventure.
 
-Each task unlocks the next step of the adventure.
+Each completed task updates the game state and unlocks the next stage of the story.
+
+---
+
+### 📕 Magical Book Quest
+
+The first quest requires the player to find an ancient magical book.
+
+The book is surrounded by a procedural particle effect and floats in the environment. When collected, it follows the player until it is delivered to the mage.
+
+The object changes its position and state according to the player's progress.
+
+---
+
+### 💎 Magical Gem Quest
+
+After defeating the dragon, the player can retrieve a magical gem.
+
+The gem includes:
+
+- Floating movement
+- A glowing particle aura
+- Collection interaction
+- Player-following behaviour
+- Delivery interaction
+- A final orbit around the mage
+
+Delivering the gem completes the first major section of the adventure and unlocks the flying carpet.
 
 ---
 
 ### 🐉 Dragon Fight
 
-Inside the castle, the player faces a dragon.
+Inside the castle area, the player faces a flying dragon.
 
-The fight is part of the main story and allows the protagonist to obtain the gem requested by the mage.
+The dragon follows a procedural orbit around the castle. Its flight position is calculated according to the dimensions and centre of the castle environment.
+
+Its wing animation is generated at runtime by interpolating the rotations of multiple bones without using imported animation clips.
+
+The player attacks the dragon using the `R` key. Successful attacks trigger:
+
+- Health reduction
+- Damage flashes
+- Particle explosions
+- An expanding shockwave
+- Puzzle-based combat phases
+- A final defeat animation
+
+After the dragon is defeated, the magical gem becomes available and the next quest is unlocked.
 
 ---
 
-### 🧩 Minigame
+### 🧩 Puzzle Minigame
 
-The project includes a minigame connected to the final part of the story.
+The dragon fight includes an interactive image puzzle.
 
-After returning to the main island at night, the protagonist meets a villager who offers hospitality.  
-Before entering the house, the player must complete a minigame to open the door.
+At the beginning of the game, the player selects one of three difficulty levels:
 
-The specific mechanics of the minigame can be expanded or modified during development.
+- **Easy:** 2 × 2 puzzle
+- **Medium:** 3 × 3 puzzle
+- **Hard:** 4 × 4 puzzle
+
+Puzzle pieces can be rearranged through drag-and-drop or mouse clicks.
+
+The game counts the number of turns used to solve the puzzle. Completing the puzzle damages the dragon and allows the battle to continue.
 
 ---
 
-### 🧞 Flying Carpet
+### 🧹 Flying Carpet
 
-After returning the gem to the mage, the player receives a flying carpet.
+After returning the magical gem to the mage, the player receives a flying carpet.
 
-The flying carpet allows the protagonist to travel from the main island to Shifu's island, unlocking a new area of the game.
+The carpet transports the protagonist from the main island to Master Shifu's island, unlocking a new environment and a new series of quests.
+
+The travel sequence includes animated movement and camera coordination.
+
+---
+
+### 🪓 Wood Collection and Bridge Repair
+
+On the second island, Master Shifu asks the player to repair a broken bridge.
+
+The player must:
+
+1. Talk to Master Shifu.
+2. Collect the axe.
+3. Gather the required wood.
+4. Reach the broken bridge.
+5. Use the collected resources to repair it.
+
+The bridge construction sequence contains animated particles and a transition between the broken and repaired models.
+
+Completing the bridge quest triggers the next environmental transformation.
 
 ---
 
@@ -141,15 +225,67 @@ The flying carpet allows the protagonist to travel from the main island to Shifu
 
 The game contains dynamic atmospheric effects such as:
 
-- Clouds
-- Rain
+- Procedural clouds
+- Rain particles
 - Night transition
-- Storm-like atmosphere
+- Storm effects
 - Lighting changes
 - Decorative lamps
+- Environmental colour changes
 
-These effects help represent the evolution of the story.  
-In particular, after repairing Shifu's bridge, the world becomes dark and rainy.
+After the bridge is repaired, the scene gradually becomes darker, rain begins, and the lamps help illuminate the environment.
+
+These effects visually represent the progression of the story.
+
+---
+
+### ✨ Particle Systems
+
+Several objects and events use custom particle systems, including:
+
+- Magical book particles
+- Gem aura particles
+- Dragon damage particles
+- Dragon defeat effects
+- Bridge construction particles
+- Rain
+- Magical sparkles
+- Shockwave effects
+
+Particle positions, opacity, scale, speed, and lifetime are updated procedurally during the animation loop.
+
+---
+
+### 💡 Lighting and Shadows
+
+The scene uses multiple types of lighting:
+
+- Ambient light for general scene illumination
+- Directional light representing sunlight
+- Decorative local lights
+- Dynamic lighting changes during the night sequence
+
+The directional light casts real-time shadows.
+
+Shadow-map size, camera bounds, bias, and normal bias are configured to balance graphical quality and performance.
+
+---
+
+### 🎨 Materials and Textures
+
+The project uses textured and physically based materials for imported models and procedural objects.
+
+The materials include:
+
+- Colour maps
+- Standard roughness values
+- Metalness parameters
+- Emissive effects
+- Transparent materials
+- Additive blending
+- Texture-based particle sprites
+
+Some imported materials are reconstructed or adjusted at runtime to improve their appearance under the scene lighting.
 
 ---
 
@@ -157,34 +293,53 @@ In particular, after repairing Shifu's bridge, the world becomes dark and rainy.
 
 Several GLB models are used in the project, including:
 
+- Player character
 - Fantasy houses
 - Castle
 - Mage
-- Book
-- Gem
+- Ancient book
+- Magical gem
 - Dragon
 - Master Shifu
 - Axe
 - Wood
 - Bridge
 - Flying carpet
+- Towers
 - Portal
 - Village characters
 - Decorative objects
+
+The models are loaded using `GLTFLoader`.
+
+Optimized models use Meshopt compression and are decoded at runtime through `MeshoptDecoder`.
 
 ---
 
 ### 🚧 Collision Detection
 
-The project implements collision detection using bounding boxes.
+The project implements collision detection using bounding boxes and a circular approximation of the player's horizontal area.
 
-This prevents the player from walking through objects such as:
+Collision checks prevent the player from walking through objects such as:
 
 - Buildings
 - Trees
 - Props
+- Towers
 - Quest objects
-- Obstacles
+- Environmental obstacles
+
+Movement is checked independently along the X and Z axes, allowing the player to slide naturally along obstacles instead of stopping completely.
+
+---
+
+### 🔊 Audio System
+
+The game includes looping background music implemented through the Three.js audio system.
+
+An `AudioListener` is attached to the camera, while the music is loaded asynchronously using `AudioLoader`.
+
+Playback starts after the first user interaction, following browser audio restrictions.
 
 ---
 
@@ -196,12 +351,14 @@ This prevents the player from walking through objects such as:
 | `A` | Move left |
 | `S` | Move backward |
 | `D` | Move right |
-| `Arrow Left` | Rotate camera left |
-| `Arrow Right` | Rotate camera right |
-| `Arrow Up` | Zoom in / look up |
-| `Arrow Down` | Zoom out / look down |
-| `V` | Switch camera view |
-| `F` | Interact with the flying carpet |
+| `Arrow Left` | Rotate the camera left |
+| `Arrow Right` | Rotate the camera right |
+| `Arrow Up` | Zoom in or look upward in first-person mode |
+| `Arrow Down` | Zoom out or look downward in first-person mode |
+| `V` | Switch between first-person and third-person view |
+| `E` | Talk to characters |
+| `Enter` | Continue or close dialogues |
+| `F` | Pick up, deliver, build, or use interactive objects |
 | `R` | Attack the dragon |
 
 ---
@@ -212,26 +369,39 @@ This prevents the player from walking through objects such as:
 final-project-dream_team/
 │
 ├── public/
-│   ├── models_optimized/    # Imported GLB / GLTF models and optimized with gltfpack
-│   ├── textures/            # Textures used in the scene
-│   ├── music/               # Audio files
+│   ├── models_optimized/     # Optimized GLB / GLTF models
+│   ├── textures/             # Environment and material textures
+│   ├── music/                # Background music
 │   └── ...
 │
 ├── src/
-│   ├── base/                # Scene, camera, renderer, lights
-│   ├── controls/            # Player movement and camera controls
-│   ├── imported_models/     # Imported objects and quest models
-│   ├── minigame/            # Minigame logic
-│   ├── player/              # Player model and animation
-│   ├── world/               # Islands, bridge, rain, clouds, portal, finale
-│   ├── main.js              # Main entry point
-│   └── style.css            # Interface and styling
+│   ├── base/                 # Scene, camera, renderer, lights and helpers
+│   ├── controls/             # Player movement, collisions and camera controls
+│   ├── imported_models/      # Characters, quest objects and model loading
+│   ├── minigame/             # Puzzle logic, images and styling
+│   ├── player/               # Player model and procedural animation
+│   ├── ui/                   # Dialogues and objective messages
+│   ├── world/                # Islands, weather, bridge, portal and finale
+│   ├── main.js               # Main application and game-state coordination
+│   └── style.css             # Main interface styling
 │
 ├── index.html
 ├── package.json
 ├── package-lock.json
+├── vite.config.js
 └── README.md
 ```
+
+---
+
+## 📋 Requirements
+
+To run the project locally, the following tools are required:
+
+- Node.js
+- npm
+- A modern browser with WebGL support
+- Hardware acceleration enabled
 
 ---
 
@@ -287,69 +457,69 @@ npm run preview
 
 ---
 
-## 📖 Gameplay Description
-
-At the beginning of the game, the protagonist meets a mage on the main island.  
-The mage explains that an important magical book has been lost and asks the player to recover it.
-
-The player explores the island, finds the book, and brings it back to the mage.  
-After this, the mage gives the protagonist a new mission: reach the castle, defeat the dragon, and recover the gem hidden inside.
-
-Once the dragon is defeated, the player obtains the gem and returns it to the mage.  
-As a reward, the mage gives the protagonist a flying carpet, which allows access to Shifu's island.
-
-On Shifu's island, the player meets Master Shifu, who asks for help collecting wood and repairing a broken bridge.  
-The protagonist collects the axe, gathers the wood, and repairs the bridge.
-
-After the bridge is repaired, the atmosphere of the world changes.  
-Night falls, the sky becomes darker, and it starts raining.
-
-The protagonist then returns to the main island through a portal.  
-There, the player meets a villager who offers shelter for the night.  
-However, before entering the house, the protagonist must complete a minigame to open the door.
-
-After successfully entering the house, the protagonist sleeps through the night and wakes up the next morning, ready to leave for another adventure.
-
-This is where the game ends.
-
----
-
 ## ✨ Graphics Techniques
 
 The project demonstrates several real-time computer graphics techniques:
 
-- 3D scene creation with Three.js
-- Perspective camera
+- Real-time 3D scene creation with Three.js
+- Perspective projection
+- Scene-graph organization through `THREE.Group`
+- Hierarchical skeleton-based models
+- Procedural bone animation implemented in JavaScript
 - Third-person character control
 - First-person camera mode
-- Directional and ambient lighting
-- Shadows
-- GLB / GLTF model loading
-- Skeleton-based animation
-- Procedural walking animation
-- Collision detection with bounding boxes
-- Interactive UI dialogues
-- Dynamic weather effects
-- Night transition
-- Modular code organization
+- Smooth camera following
+- Ambient and directional lighting
+- Dynamic lighting transitions
+- Real-time shadow mapping
+- Physically based materials
+- Texture mapping on imported models
+- Transparent and emissive materials
+- Additive particle systems
+- Procedural clouds and rain
+- Dynamic storm effects
+- Axis-aligned bounding-box collision detection
+- Distance-based interactions
+- GLTF / GLB model loading
+- Meshopt decoding
+- Modular quest and game-state management
+- Interactive HTML and CSS interfaces
+- Three.js audio playback
 
 ---
 
-## 📝 Notes
+## ⚙️ Performance Optimizations
+
+To improve loading time and runtime performance, the project includes:
+
+- GLB model optimization with `gltfpack`
+- Meshopt compression and decoding
+- Deferred loading of models belonging to later game areas
+- Limited renderer pixel ratio
+- Conditional antialiasing
+- Reduced shadow-map resolution
+- Selective shadow casting
+- Reuse of vectors and bounding boxes during update loops
+- Modular loading of different game stages
+- High-performance WebGL renderer preference
+
+---
+
+##  Notes
 
 This project was created for educational purposes.
 
 All 3D models, textures, music, and external assets are used as part of a university project.
-## 👥 Authors
 
-Project developed for the Interactive Graphics course at **Sapienza University of Rome** by:
+##  Authors
 
-- Arianna Linington
-- Gabriel Adam
-- Martina Ligorio
+Project developed for the Interactive Graphics course at Sapienza University of Rome by:
 
-## 📚 Course
+  * Arianna Linington
+  * Gabriel Adam
+  * Martina Ligorio
 
-**Interactive Graphics**  
+##  Course
+
+Interactive Graphics  
 Sapienza University of Rome
-
