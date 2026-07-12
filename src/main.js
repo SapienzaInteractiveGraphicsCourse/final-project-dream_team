@@ -159,10 +159,30 @@ dragonVictoryBanner.className = 'victory-banner';
 dragonVictoryBanner.textContent = '⚔️ YOU HAVE SLAIN THE DRAGON! ⚔️';
 document.body.appendChild(dragonVictoryBanner);
 
-const viewHint = document.createElement('div');
-viewHint.className = 'view-hint';
-viewHint.textContent = 'Press V to change view';
-document.body.appendChild(viewHint);
+function createControlsLegendMarkup() {
+  return `
+    <div class="legend-group">
+      <div class="keys-cluster">
+        <div class="key-row"><kbd>W</kbd></div>
+        <div class="key-row"><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div>
+      </div>
+      <span class="legend-label">Move</span>
+    </div>
+    <div class="legend-group">
+      <div class="keys-cluster">
+        <div class="key-row"><kbd>▲</kbd></div>
+        <div class="key-row"><kbd>◄</kbd><kbd>▼</kbd><kbd>►</kbd></div>
+      </div>
+      <span class="legend-label">Adjust view</span>
+    </div>
+    <div class="legend-actions">
+      <div><kbd>V</kbd><span>Change view</span></div>
+      <div><kbd>E</kbd><span>Talk</span></div>
+      <div><kbd>F</kbd><span>Interact</span></div>
+      <div><kbd>R</kbd><span>Attack</span></div>
+    </div>
+  `;
+}
 
 const settingsMenu = document.createElement('div');
 settingsMenu.className = 'settings-menu';
@@ -201,6 +221,10 @@ settingsMenu.innerHTML = `
         <span class="day-night-icon night-icon">☾</span>
       </span>
     </label>
+    <div class="settings-controls-legend" aria-label="Game controls">
+      <span class="settings-section-title">Controls</span>
+      ${createControlsLegendMarkup()}
+    </div>
   </div>
 `;
 document.body.appendChild(settingsMenu);
@@ -247,23 +271,7 @@ dayNightInput.addEventListener('change', () => {
 
 const controlsLegend = document.createElement('div');
 controlsLegend.className = 'controls-legend'; 
-controlsLegend.innerHTML = `
-  <div class="legend-group">
-    <div class="keys-cluster">
-      <div class="key-row"><kbd>W</kbd></div>
-      <div class="key-row"><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div>
-    </div>
-    <span class="legend-label">Move</span>
-  </div>
-  
-  <div class="legend-group">
-    <div class="keys-cluster">
-      <div class="key-row"><kbd>▲</kbd></div>
-      <div class="key-row"><kbd>◄</kbd><kbd>▼</kbd><kbd>►</kbd></div>
-    </div>
-    <span class="legend-label">View</span>
-  </div>
-`;
+controlsLegend.innerHTML = createControlsLegendMarkup();
 document.body.appendChild(controlsLegend);
 
 const difficultyOverlay = document.createElement('div');
