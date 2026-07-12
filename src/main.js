@@ -6,7 +6,13 @@ import {
   createRenderer,
   setupResize
 } from './base/sceneSetup.js';
-import { damageDragon, isDragonDefeated } from './imported_models/dragon.js';
+import {
+  damageDragon,
+  getDragonHealth,
+  getDragonObject,
+  isDragonDefeated,
+  resetDragon
+} from './imported_models/dragon.js';
 import { createLights } from './base/lights.js';
 import { materials } from './world/materials.js';
 import { createIsland } from './world/island.js';
@@ -55,6 +61,7 @@ import {
 } from './world/final.js';
 import { loadDonkey, updateDonkey } from './world/donkey.js';
 import { createLampPosts, updateLampPosts } from './world/lampPosts.js';
+import { createDragonCombat } from './combat/dragonCombat.js';
 
 const canvas = document.querySelector('#bg');
 const scene = createScene();
@@ -151,13 +158,65 @@ document.body.appendChild(carpetPrompt);
 
 const dragonPrompt = document.createElement('div');
 dragonPrompt.className = 'interaction-dialogue dragon-dialogue';
-dragonPrompt.textContent = 'Press R to fight the dragon!';
+dragonPrompt.textContent = 'Press R to cast a spell at the dragon!';
 document.body.appendChild(dragonPrompt);
 
 const dragonVictoryBanner = document.createElement('div');
 dragonVictoryBanner.className = 'victory-banner';
 dragonVictoryBanner.textContent = '⚔️ YOU HAVE SLAIN THE DRAGON! ⚔️';
 document.body.appendChild(dragonVictoryBanner);
+
+const playerHealthHud = document.createElement('div');
+playerHealthHud.className = 'health-hud player-health-hud';
+playerHealthHud.innerHTML = `
+  <div class="health-portrait player-portrait" aria-hidden="true">🧑</div>
+  <div class="health-details">
+    <div class="health-label"><span>PLAYER</span><output>100</output></div>
+    <div class="health-track"><div class="health-fill"></div></div>
+  </div>
+`;
+document.body.appendChild(playerHealthHud);
+
+const dragonHealthHud = document.createElement('div');
+dragonHealthHud.className = 'health-hud dragon-health-hud';
+dragonHealthHud.innerHTML = `
+  <div class="health-portrait dragon-portrait" aria-hidden="true">🐲</div>
+  <div class="health-details">
+    <div class="health-label"><span>DRAGON</span><output>100</output></div>
+    <div class="health-track"><div class="health-fill"></div></div>
+  </div>
+`;
+document.body.appendChild(dragonHealthHud);
+
+const deathOverlay = document.createElement('div');
+deathOverlay.className = 'death-overlay';
+deathOverlay.innerHTML = `
+  <section class="death-panel" role="dialog" aria-modal="true" aria-labelledby="death-title">
+    <p class="death-kicker">The dragon defeated you</p>
+    <h1 id="death-title">You died</h1>
+    <button class="respawn-button" type="button">Respawn</button>
+  </section>
+`;
+document.body.appendChild(deathOverlay);
+
+let playerHealth = 100;
+let isPlayerDead = false;
+
+function setHealthHudValue(hud, health) {
+  const value = Math.max(0, Math.min(100, health));
+  hud.querySelector('.health-fill').style.width = `${value}%`;
+  hud.querySelector('output').textContent = Math.ceil(value);
+}
+
+function updateCombatHud() {
+  playerHealthHud.classList.toggle('is-visible', !isIntroActive && !isChoosingDifficulty);
+  dragonHealthHud.classList.toggle(
+    'is-visible',
+    isInsideCastle && !isPlayerDead && isBookDelivered() && !isDragonDefeated() && !isDragonPuzzleActive
+  );
+  setHealthHudValue(playerHealthHud, playerHealth);
+  setHealthHudValue(dragonHealthHud, getDragonHealth());
+}
 
 function createControlsLegendMarkup() {
   return `
@@ -308,6 +367,9 @@ let dragonPuzzle = null;
 let isDragonPuzzleActive = false;
 let dragonDirectHits = 0;
 let finalPuzzleStarted = false;
+let dragonCombat = null;
+const combatRespawnPosition = new THREE.Vector3();
+let hasCombatRespawnPosition = false;
 
 let gameplayModelsPromise = null;
 let worldTwoModelsPromise = null;
@@ -397,18 +459,57 @@ function startDragonPuzzle() {
 
 function attackDragon() {
   if (dragonDirectHits < DIRECT_HITS_BEFORE_FINAL_PUZZLE) {
-    dragonDirectHits += 1;
-    damageDragon(DRAGON_HIT_DAMAGE);
-    console.log(`You hit the dragon with magic! Hit ${dragonDirectHits}/${DIRECT_HITS_BEFORE_FINAL_PUZZLE}`);
-
-    if (dragonDirectHits === DIRECT_HITS_BEFORE_FINAL_PUZZLE) {
-      dragonPrompt.textContent = 'Press R to give the last hit to the dragon!';
-    }
+    dragonCombat?.launchPlayerMagic(playerData.group);
     return;
   }
 
   startDragonPuzzle();
 }
+
+function handleMagicHit() {
+  if (isPlayerDead || dragonDirectHits >= DIRECT_HITS_BEFORE_FINAL_PUZZLE) return;
+
+  dragonDirectHits += 1;
+  damageDragon(DRAGON_HIT_DAMAGE);
+  console.log(`Your spell hit the dragon! Hit ${dragonDirectHits}/${DIRECT_HITS_BEFORE_FINAL_PUZZLE}`);
+
+  if (dragonDirectHits === DIRECT_HITS_BEFORE_FINAL_PUZZLE) {
+    dragonPrompt.textContent = 'Press R to give the last hit to the dragon!';
+  }
+}
+
+function handlePlayerHit() {
+  if (isPlayerDead) return;
+
+  playerHealth = Math.max(0, playerHealth - 25);
+  setHealthHudValue(playerHealthHud, playerHealth);
+
+  if (playerHealth === 0) {
+    isPlayerDead = true;
+    deathOverlay.classList.add('is-visible');
+    dragonPrompt.classList.remove('is-visible');
+  }
+}
+
+function respawnDragonFight() {
+  playerHealth = 100;
+  isPlayerDead = false;
+  dragonDirectHits = 0;
+  finalPuzzleStarted = false;
+  dragonPrompt.textContent = 'Press R to cast a spell at the dragon!';
+  resetDragon();
+  dragonCombat?.reset();
+
+  if (hasCombatRespawnPosition) {
+    playerData.group.position.copy(combatRespawnPosition);
+  }
+
+  setHealthHudValue(playerHealthHud, playerHealth);
+  setHealthHudValue(dragonHealthHud, getDragonHealth());
+  deathOverlay.classList.remove('is-visible');
+}
+
+deathOverlay.querySelector('.respawn-button').addEventListener('click', respawnDragonFight);
 
 introOverlay.querySelector('.intro-start-button').addEventListener('click', () => {
   isIntroActive = false;
@@ -470,7 +571,7 @@ function setFirstPersonMode(enable) {
 
 let isInsideCastle = false;
 window.addEventListener('keydown', (event) => {
-  if (isIntroActive || isChoosingDifficulty || isDragonPuzzleActive || isFinaleInputLocked()) {
+  if (isIntroActive || isChoosingDifficulty || isDragonPuzzleActive || isPlayerDead || isFinaleInputLocked()) {
     return;
   }
 
@@ -508,6 +609,12 @@ const playerController = createPlayerController(
   camera,
   modelColliders
 );
+
+dragonCombat = createDragonCombat(scene, {
+  getDragon: getDragonObject,
+  onMagicHit: handleMagicHit,
+  onPlayerHit: handlePlayerHit
+});
 
 loadIntroModels(scene).then(() => {
   createIslandVegetation(scene, {
@@ -632,6 +739,7 @@ function animate() {
     !isFalling &&
     !isChoosingDifficulty &&
     !isDragonPuzzleActive &&
+    !isPlayerDead &&
     !isFinaleInputLocked();
     
   playerController.update(deltaTime, canControlPlayer);
@@ -713,8 +821,12 @@ function animate() {
 
   if (isBookDelivered() && !isDragonDefeated() && !isDragonPuzzleActive && !isChoosingDifficulty) {
     if (castleTriggerBox.containsPoint(playerData.group.position)) {
+      if (!isInsideCastle) {
+        combatRespawnPosition.copy(playerData.group.position);
+        hasCombatRespawnPosition = true;
+      }
       isInsideCastle = true;
-      if (!dragonPrompt.classList.contains('is-visible')) {
+      if (!isPlayerDead && !dragonPrompt.classList.contains('is-visible')) {
         dragonPrompt.classList.add('is-visible');
       }
     } else {
@@ -725,6 +837,12 @@ function animate() {
     dragonPrompt.classList.remove('is-visible');
     isInsideCastle = false;
   }
+
+  const dragonFightActive = isInsideCastle && !isPlayerDead && !isDragonPuzzleActive && !isDragonDefeated();
+  dragonCombat.setActive(dragonFightActive);
+  dragonCombat.update(deltaTime, playerData.group);
+
+  updateCombatHud();
 
   renderer.render(scene, camera);
 

@@ -8,8 +8,13 @@ let dragonHealth = 100;
 let dragonDefeated = false;
 
 let castleCenter = new THREE.Vector3(25, 22, -50); 
-let flightRadius = 22; 
-const flightSpeed = 0.6;  
+let flightRadius = 22;
+const flightSpeed = 0.42;
+const flightPosition = new THREE.Vector3();
+const nextFlightPosition = new THREE.Vector3();
+const flightDirection = new THREE.Vector3();
+const smoothedFrontDirection = new THREE.Vector2(0, 1);
+const desiredFrontDirection = new THREE.Vector2();
 
 let deathParticles = null;
 let particlesGeometry = null;
@@ -18,8 +23,17 @@ const DEATH_PARTICLE_COUNT = 60;
 
 const wingBones = {};
 const initialWingQuaternions = new Map();
+const flightBones = {
+  spine: [],
+  neck: [],
+  tail: [],
+  legs: []
+};
+const initialFlightQuaternions = new Map();
 const poseQuaternion = new THREE.Quaternion();
 const neutralQuaternion = new THREE.Quaternion();
+const proceduralRotation = new THREE.Euler();
+const proceduralQuaternion = new THREE.Quaternion();
 
 const wingPoseStrength = 0.55;
 
@@ -84,6 +98,98 @@ function applyWingPose(key, amount) {
   poseQuaternion.slerp(neutralQuaternion, 1 - wingPoseStrength);
 
   bone.quaternion.copy(initialQuaternion).multiply(poseQuaternion);
+}
+
+function saveFlightBone(group, bone) {
+  flightBones[group].push(bone);
+  initialFlightQuaternions.set(bone, bone.quaternion.clone());
+}
+
+function applyFlightBoneRotation(bone, x, y, z) {
+  const initialQuaternion = initialFlightQuaternions.get(bone);
+  if (!initialQuaternion) return;
+
+  proceduralRotation.set(x, y, z);
+  proceduralQuaternion.setFromEuler(proceduralRotation);
+  bone.quaternion.copy(initialQuaternion).multiply(proceduralQuaternion);
+}
+
+function animateDragonBody(time) {
+  const wingBeat = Math.sin(time * 3.4);
+  const breathing = Math.sin(time * 1.7);
+
+  flightBones.spine.forEach((bone, index) => {
+    const progress = index / Math.max(flightBones.spine.length - 1, 1);
+    applyFlightBoneRotation(
+      bone,
+      breathing * 0.018,
+      Math.sin(time * 1.35 - progress * 1.6) * 0.025,
+      -wingBeat * 0.012 * progress
+    );
+  });
+
+  flightBones.neck.forEach((bone, index) => {
+    const progress = index / Math.max(flightBones.neck.length - 1, 1);
+    applyFlightBoneRotation(
+      bone,
+      -breathing * 0.012,
+      Math.sin(time * 1.25 - progress * 1.8) * 0.02,
+      wingBeat * 0.008
+    );
+  });
+
+  flightBones.tail.forEach((bone, index) => {
+    const progress = index / Math.max(flightBones.tail.length - 1, 1);
+    const wave = time * 1.8 - progress * 4.5;
+    applyFlightBoneRotation(
+      bone,
+      Math.cos(wave) * 0.018 * progress,
+      Math.sin(wave) * (0.018 + progress * 0.045),
+      Math.sin(wave * 0.7) * 0.012 * progress
+    );
+  });
+
+  flightBones.legs.forEach((bone) => {
+    const sideOffset = bone.name.startsWith('l_') ? 1 : -1;
+    const tuckedAngle = bone.name.includes('_knee')
+      ? 0.26
+      : bone.name.includes('_ankle')
+        ? -0.16
+        : 0.13;
+    applyFlightBoneRotation(
+      bone,
+      tuckedAngle + wingBeat * 0.018,
+      sideOffset * 0.02,
+      breathing * 0.01 * sideOffset
+    );
+  });
+}
+
+function getFlightPosition(phase, time, player, target, updateDirection = true) {
+  if (player && updateDirection) {
+    desiredFrontDirection.set(
+      player.position.x - castleCenter.x,
+      player.position.z - castleCenter.z
+    );
+
+    if (desiredFrontDirection.lengthSq() > 0.001) {
+      desiredFrontDirection.normalize();
+      smoothedFrontDirection.lerp(desiredFrontDirection, 0.025).normalize();
+    }
+  }
+
+  const lateralX = smoothedFrontDirection.y;
+  const lateralZ = -smoothedFrontDirection.x;
+  // Keep the whole route beyond the castle radius. The extra clearance matters
+  // because the dragon model is long even when its origin is outside the walls.
+  const lateralDistance = Math.sin(phase) * flightRadius * 0.7;
+  const frontDistance = flightRadius * (1.24 + Math.cos(phase) * 0.12);
+
+  target.set(
+    castleCenter.x + smoothedFrontDirection.x * frontDistance + lateralX * lateralDistance,
+    castleCenter.y + 3.2 + Math.sin(phase * 2) * 2.1 + Math.sin(time * 1.7) * 0.35,
+    castleCenter.z + smoothedFrontDirection.y * frontDistance + lateralZ * lateralDistance
+  );
 }
 export function setDragonOrbitCenter(x, y, z, calculatedRadius) {
   castleCenter.set(x, y, z);
@@ -249,6 +355,10 @@ export function registerDemonDragon(model) {
     delete wingBones[key];
   });
   initialWingQuaternions.clear();
+  Object.values(flightBones).forEach((bones) => {
+    bones.length = 0;
+  });
+  initialFlightQuaternions.clear();
 
   model.traverse((child) => {
     if (!child.isBone) return;
@@ -263,10 +373,15 @@ export function registerDemonDragon(model) {
     if (child.name.includes('r_forearm')) saveWingBone('rightForearm', child);
     if (child.name.includes('l_hand') && !child.name.includes('Mid')) saveWingBone('leftHand', child);
     if (child.name.includes('r_hand') && !child.name.includes('Mid')) saveWingBone('rightHand', child);
+
+    if (/^spine_\d+/.test(child.name)) saveFlightBone('spine', child);
+    if (/^neck_\d+/.test(child.name) || child.name.startsWith('head.')) saveFlightBone('neck', child);
+    if (/^tail_\d+/.test(child.name)) saveFlightBone('tail', child);
+    if (/^[lr]_(hip|knee|ankle)\./.test(child.name)) saveFlightBone('legs', child);
   });
 }
 
-export function updateDemonDragon(deltaTime) {
+export function updateDemonDragon(deltaTime, player) {
   if (!demonDragon) return;
   
   if (dragonHiddenAfterPortal) {
@@ -316,29 +431,55 @@ export function updateDemonDragon(deltaTime) {
   Object.keys(wingPoses).forEach((key) => {
     applyWingPose(key, wingAmount);
   });
+  animateDragonBody(time);
 
-  const flightTime = time * flightSpeed;
-  const targetX = castleCenter.x + Math.cos(flightTime) * flightRadius;
-  const targetZ = castleCenter.z + Math.sin(flightTime) * flightRadius;
-  const targetY = castleCenter.y + Math.sin(time * 1.4) * 0.22;
+  const flightPhase = time * flightSpeed;
+  getFlightPosition(flightPhase, time, player, flightPosition);
+  getFlightPosition(
+    flightPhase + 0.025,
+    time + 0.025 / flightSpeed,
+    player,
+    nextFlightPosition,
+    false
+  );
+  flightDirection.subVectors(nextFlightPosition, flightPosition);
 
-  demonDragon.position.set(targetX, targetY, targetZ);
+  demonDragon.position.copy(flightPosition);
 
-  const nextTime = (time + 0.01) * flightSpeed;
-  const nextX = castleCenter.x + Math.cos(nextTime) * flightRadius;
-  const nextZ = castleCenter.z + Math.sin(nextTime) * flightRadius;
+  const horizontalSpeed = Math.hypot(flightDirection.x, flightDirection.z);
+  const angleY = Math.atan2(flightDirection.x, flightDirection.z);
+  const pitch = -Math.atan2(flightDirection.y, Math.max(horizontalSpeed, 0.001));
 
-  const dirX = nextX - targetX;
-  const dirZ = nextZ - targetZ;
-  const angleY = Math.atan2(dirX, dirZ);
-
-  demonDragon.rotation.x = 0;
-  demonDragon.rotation.y = angleY; 
-  demonDragon.rotation.z = Math.sin(time * 1.6) * 0.015;
+  demonDragon.rotation.x = THREE.MathUtils.clamp(pitch, -0.16, 0.16);
+  demonDragon.rotation.y = angleY;
+  demonDragon.rotation.z = -Math.cos(flightPhase) * 0.16 + Math.sin(time * 1.7) * 0.012;
 }
 
 export function isDragonDefeated() {
   return dragonDefeated;
+}
+
+export function getDragonHealth() {
+  return THREE.MathUtils.clamp(dragonHealth, 0, 100);
+}
+
+export function getDragonObject() {
+  return demonDragon;
+}
+
+export function resetDragon() {
+  dragonHealth = 100;
+  dragonDefeated = false;
+  dragonHiddenAfterPortal = false;
+
+  if (demonDragon) demonDragon.visible = true;
+
+  if (deathParticles) {
+    deathParticles.geometry?.dispose();
+    deathParticles.material?.dispose();
+    deathParticles.removeFromParent();
+    deathParticles = null;
+  }
 }
 
 export function hideDragonAfterPortal() {
