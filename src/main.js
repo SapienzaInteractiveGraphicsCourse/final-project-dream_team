@@ -40,7 +40,7 @@ import {
   updateShifuTask
 } from './imported_models/shifu.js';
 import { loadWoodTask, updateWoodTask } from './imported_models/wood.js';
-import { isBridgeBuilt, loadBridgeTask, updateBridgeTask } from './imported_models/bridge.js';
+import { getActiveTower, isBridgeBuilt, loadBridgeTask, updateBridgeTask } from './imported_models/bridge.js';
 import {
   createRain,
   setRainAppearance,
@@ -52,6 +52,11 @@ import {
 } from './world/rain.js';
 import { updatePortalTeleport } from './world/portalTeleport.js';
 import { updateTowerFall } from './world/towerFall.js';
+import {
+  isTowerFallActive,
+  startTowerFall,
+  updatePhysicsWorld
+} from './world/physicsWorld.js';
 import { createPuzzleMinigame, getPuzzleDifficulties } from './minigame/puzzle.js';
 import {
   isFinaleInputLocked,
@@ -188,7 +193,10 @@ renderer.shadowMap.type = THREE.PCFShadowMap;
 setupResize(camera, renderer);
 
 const clock = new THREE.Clock();
-const debugMode = new URLSearchParams(window.location.search).has('debug');
+const urlParams = new URLSearchParams(window.location.search);
+const debugMode = urlParams.has('debug');
+const towerSpawnMode = urlParams.has('towerSpawn') || urlParams.has('tower');
+const towerSpawnPosition = new THREE.Vector3(237.79, 28.75, -255.19);
 
 const lights = createLights(scene);
 const island = createIsland(scene, materials);
@@ -693,6 +701,13 @@ window.addEventListener('keydown', (event) => {
       attackDragon();
     }
   }
+
+  if (key === 't') {
+    const tower = getActiveTower();
+    if (!isTowerFallActive() && startTowerFall(tower)) {
+      console.log('Tower physics fall started');
+    }
+  }
 });
 
 window.addEventListener('keyup', () => {
@@ -714,6 +729,12 @@ dragonCombat = createDragonCombat(scene, {
 });
 
 const introModelsPromise = loadIntroModels(scene).then(() => {
+if (towerSpawnMode) {
+  playerData.group.position.copy(towerSpawnPosition);
+  ensureWorldTwoModelsLoaded();
+}
+
+loadIntroModels(scene).then(() => {
   createIslandVegetation(scene, {
     island,
     obstacleBounds: modelBounds,
@@ -834,6 +855,8 @@ function animate() {
   }
 
   updateCarpetTravel(deltaTime, playerData.group, carpetTravel);
+  updatePhysicsWorld(deltaTime);
+
   const isFalling = updateTowerFall(
     deltaTime,
     playerData.group,

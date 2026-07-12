@@ -791,13 +791,32 @@ body:has(.story-dialogue.is-visible) .interaction-dialogue.is-visible:not(.story
   height: 120px;
   background:
     radial-gradient(circle at 12% 58%, rgba(255, 246, 185, 0.95) 0 2px, transparent 3px),
+    radial-gradient(circle at 16% 28%, rgba(255, 255, 255, 0.86) 0 1px, transparent 3px),
     radial-gradient(circle at 24% 34%, rgba(169, 232, 255, 0.9) 0 1px, transparent 3px),
+    radial-gradient(circle at 31% 72%, rgba(255, 226, 146, 0.92) 0 2px, transparent 4px),
     radial-gradient(circle at 39% 64%, rgba(255, 255, 255, 0.92) 0 2px, transparent 4px),
+    radial-gradient(circle at 46% 22%, rgba(198, 243, 255, 0.88) 0 1px, transparent 3px),
     radial-gradient(circle at 57% 28%, rgba(255, 246, 185, 0.95) 0 2px, transparent 4px),
+    radial-gradient(circle at 63% 70%, rgba(255, 255, 255, 0.9) 0 1px, transparent 3px),
     radial-gradient(circle at 72% 58%, rgba(169, 232, 255, 0.9) 0 1px, transparent 3px),
+    radial-gradient(circle at 79% 24%, rgba(255, 226, 146, 0.9) 0 2px, transparent 4px),
+    radial-gradient(circle at 84% 76%, rgba(198, 243, 255, 0.84) 0 1px, transparent 3px),
     radial-gradient(circle at 88% 38%, rgba(255, 255, 255, 0.95) 0 2px, transparent 4px);
   opacity: 0.85;
   pointer-events: none;
+  animation: introSparkle 2.6s ease-in-out infinite;
+}
+
+@keyframes introSparkle {
+  0%, 100% {
+    opacity: 0.72;
+    filter: drop-shadow(0 0 3px rgba(255, 238, 170, 0.2));
+  }
+
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 8px rgba(255, 238, 170, 0.46));
+  }
 }
 
 .intro-panel h1 {
