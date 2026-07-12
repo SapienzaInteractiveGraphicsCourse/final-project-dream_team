@@ -100,6 +100,7 @@ export function createPlayer(scene) {
 
           leftForeArm: findBone(skinnedMesh, 'LeftForeArm'),
           rightForeArm: findBone(skinnedMesh, 'RightForeArm'),
+          rightHand: findBone(skinnedMesh, 'RightHand'),
 
           leftUpLeg: findBone(skinnedMesh, 'LeftUpLeg'),
           rightUpLeg: findBone(skinnedMesh, 'RightUpLeg'),
@@ -118,6 +119,7 @@ export function createPlayer(scene) {
         playerObject.parts = parts;
         playerObject.initialRotations = saveInitialRotations(parts);
         playerObject.ready = true;
+        player.userData.playerParts = parts;
 
         console.log('Schoolboy player loaded', parts);
       },
@@ -152,6 +154,29 @@ export function animatePlayer(playerObject, isMoving, elapsedTime) {
 
   if (parts.rightArm) {
     parts.rightArm.rotation.x += armDown;
+  }
+
+  const axeSwing = playerObject.group.userData.axeSwing ?? 0;
+
+  if (axeSwing > 0) {
+    if (parts.spine) {
+      parts.spine.rotation.x += axeSwing * 0.18;
+      parts.spine.rotation.z -= axeSwing * 0.12;
+    }
+
+    if (parts.rightShoulder) {
+      parts.rightShoulder.rotation.x -= axeSwing * 1.75;
+      parts.rightShoulder.rotation.z -= axeSwing * 0.42;
+    }
+
+    if (parts.rightArm) {
+      parts.rightArm.rotation.x -= axeSwing * 1.55;
+      parts.rightArm.rotation.z -= axeSwing * 0.48;
+    }
+
+    if (parts.rightForeArm) {
+      parts.rightForeArm.rotation.x += axeSwing * 1.15;
+    }
   }
 
   if (!isMoving) return;
