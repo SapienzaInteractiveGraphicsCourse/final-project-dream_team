@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createGltfLoader } from '../base/loaders.js';
+import { enableShadows } from '../base/helpers.js';
 import { modelBounds, modelColliders } from '../world/collisionRegistry.js';
 import { registerBook, registerBookDeliveryTarget } from './book.js';
 import { registerMage, addMageMaterial, updateMage } from './mage.js';
@@ -118,13 +119,11 @@ function loadModel(scene, path, options = {}) {
           setDragonOrbitCenter(realCastleCenter.x, dragonFlightHeight, realCastleCenter.z, 45);
         }
 
-        const canCastShadow = options.castShadow ?? (
-          isMage ||
-          path.includes('demon') ||
-          path.includes('EvilBook') ||
-          path.includes('Gem') ||
-          path.includes('statue')
-        );
+        const canCastShadow = options.castShadow ?? true;
+
+        if (canCastShadow) {
+          enableShadows(model);
+        }
 
         model.traverse((child) => {
           if (child.isMesh) {

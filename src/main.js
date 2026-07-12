@@ -63,6 +63,15 @@ const listener = new THREE.AudioListener();
 camera.add(listener);
 
 const backgroundMusic = new THREE.Audio(listener);
+const daySkyColor = new THREE.Color(0x9ed7ff);
+const nightSkyColor = new THREE.Color(0x050814);
+const daySunColor = new THREE.Color(0xffffff);
+const nightSunColor = new THREE.Color(0x9db8ff);
+const worldSettings = {
+  musicVolume: 0.4,
+  ambientBrightness: 1,
+  isNight: false
+};
 
 let hasUserInteracted = false; 
 const audioLoader = new THREE.AudioLoader();
@@ -74,7 +83,7 @@ audioLoader.load(
     console.log("SUCCESS! The audio file has been loaded and decoded.");
     backgroundMusic.setBuffer(buffer);
     backgroundMusic.setLoop(true); 
-    backgroundMusic.setVolume(0.4); 
+    backgroundMusic.setVolume(worldSettings.musicVolume); 
 
     if (hasUserInteracted && listener.context.state !== 'suspended') {
       backgroundMusic.play();
@@ -151,6 +160,72 @@ const viewHint = document.createElement('div');
 viewHint.className = 'view-hint';
 viewHint.textContent = 'Press V to change view';
 document.body.appendChild(viewHint);
+
+const settingsMenu = document.createElement('div');
+settingsMenu.className = 'settings-menu';
+settingsMenu.innerHTML = `
+  <button class="settings-toggle" type="button" aria-expanded="false" aria-controls="settings-panel" title="Open settings">
+    <span class="settings-toggle-icon" aria-hidden="true">☰</span>
+    <span class="settings-toggle-label">Settings</span>
+  </button>
+  <div class="settings-panel" id="settings-panel">
+    <label class="settings-control">
+      <span>Music volume</span>
+      <div class="settings-range">
+        <input class="music-volume-input" type="range" min="0" max="1" step="0.01" value="${worldSettings.musicVolume}">
+        <output class="music-volume-value">${Math.round(worldSettings.musicVolume * 100)}%</output>
+      </div>
+    </label>
+    <label class="settings-control">
+      <span>Ambient brightness</span>
+      <div class="settings-range">
+        <input class="ambient-brightness-input" type="range" min="0.25" max="1.4" step="0.01" value="${worldSettings.ambientBrightness}">
+        <output class="ambient-brightness-value">${Math.round(worldSettings.ambientBrightness * 100)}%</output>
+      </div>
+    </label>
+    <label class="day-night-control">
+      <span>Day / Night</span>
+      <input class="day-night-input" type="checkbox">
+      <span class="day-night-switch" aria-hidden="true">
+        <span class="day-night-icon day-icon">☀</span>
+        <span class="day-night-icon night-icon">☾</span>
+      </span>
+    </label>
+  </div>
+`;
+document.body.appendChild(settingsMenu);
+
+const settingsToggle = settingsMenu.querySelector('.settings-toggle');
+const musicVolumeInput = settingsMenu.querySelector('.music-volume-input');
+const musicVolumeValue = settingsMenu.querySelector('.music-volume-value');
+const ambientBrightnessInput = settingsMenu.querySelector('.ambient-brightness-input');
+const ambientBrightnessValue = settingsMenu.querySelector('.ambient-brightness-value');
+const dayNightInput = settingsMenu.querySelector('.day-night-input');
+
+settingsToggle.addEventListener('click', () => {
+  const isOpen = settingsMenu.classList.toggle('is-open');
+  settingsToggle.setAttribute('aria-expanded', String(isOpen));
+  settingsToggle.title = isOpen ? 'Close settings' : 'Open settings';
+});
+
+settingsMenu.addEventListener('keydown', (event) => {
+  event.stopPropagation();
+});
+
+musicVolumeInput.addEventListener('input', () => {
+  worldSettings.musicVolume = Number(musicVolumeInput.value);
+  musicVolumeValue.textContent = `${Math.round(worldSettings.musicVolume * 100)}%`;
+  backgroundMusic.setVolume(worldSettings.musicVolume);
+});
+
+ambientBrightnessInput.addEventListener('input', () => {
+  worldSettings.ambientBrightness = Number(ambientBrightnessInput.value);
+  ambientBrightnessValue.textContent = `${Math.round(worldSettings.ambientBrightness * 100)}%`;
+});
+
+dayNightInput.addEventListener('change', () => {
+  worldSettings.isNight = dayNightInput.checked;
+});
 
 const controlsLegend = document.createElement('div');
 controlsLegend.className = 'controls-legend'; 
@@ -472,6 +547,32 @@ setFinaleCallbacks({
   }
 });
 
+function applyWorldSettings() {
+  const timeOfDayDarkness = worldSettings.isNight ? 1 : 0;
+  const skyDarkness = timeOfDayDarkness;
+  const brightness = worldSettings.ambientBrightness;
+  const stormLightProgress = worldSettings.isNight ? globalStormProgress : 0;
+  const nightLightFactor = worldSettings.isNight ? 0.22 : 1;
+  const nightAmbientFactor = worldSettings.isNight ? 0.5 : 1;
+  const weatherLightFactor = 1.0 - stormLightProgress;
+
+  lights.sunLight.intensity = 1.0 * weatherLightFactor * brightness * nightLightFactor;
+  lights.sunLight.color.copy(worldSettings.isNight ? nightSunColor : daySunColor);
+  lights.sunLight.castShadow = stormLightProgress <= 0.5 && !worldSettings.isNight;
+  lights.ambientLight.intensity = 0.4 * (1.0 - stormLightProgress * 0.95) * brightness * nightAmbientFactor;
+
+  scene.environmentIntensity = weatherLightFactor * brightness * (worldSettings.isNight ? 0.42 : 1);
+  scene.background = daySkyColor.clone().lerp(nightSkyColor, skyDarkness);
+
+  if (scene.backgroundBlurriness !== undefined) {
+    scene.backgroundIntensity = Math.max(0.12, weatherLightFactor * brightness * (worldSettings.isNight ? 0.32 : 1));
+  }
+}
+
+function getLampActivationProgress() {
+  return worldSettings.isNight ? Math.max(globalStormProgress, 1) : 0;
+}
+
 function animate() {
   requestAnimationFrame(animate);
 
@@ -483,6 +584,8 @@ function animate() {
     if (gameplayModelsLoaded) {
       updateModels(deltaTime, playerData.group);
     }
+    applyWorldSettings();
+    updateLampPosts(getLampActivationProgress(), playerData.group);
     renderer.render(scene, camera);
     return;
   }
@@ -570,18 +673,9 @@ function animate() {
     globalStormProgress = Math.min(1.0, globalStormProgress + deltaTime * 0.2); 
   }
 
-  if (globalStormProgress > 0 || (shifuThanksTriggered && !finaleWeatherCleared)) {
-    updateLampPosts(globalStormProgress, playerData.group);
-  }
+  updateLampPosts(getLampActivationProgress(), playerData.group);
 
-  lights.sunLight.intensity = 1.0 * (1.0 - globalStormProgress);
-  lights.sunLight.castShadow = globalStormProgress <= 0.5;
-  lights.ambientLight.intensity = 0.4 * (1.0 - globalStormProgress * 0.95);
-
-  scene.environmentIntensity = 1.0 - globalStormProgress; 
-  if (scene.backgroundBlurriness !== undefined) {
-    scene.backgroundIntensity = 1.0 - globalStormProgress;
-  }
+  applyWorldSettings();
 
   if (isGemDelivered()) {
     if (carpetTravel && carpetTravel.mesh) carpetTravel.mesh.visible = true;

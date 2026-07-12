@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { createGltfLoader } from '../base/loaders.js';
+import { enableShadows } from '../base/helpers.js';
 import { modelColliders } from '../world/collisionRegistry.js';
 import { isShifuTaskStarted } from './shifu.js';
 
@@ -121,6 +122,7 @@ export function loadWoodTask(scene) {
           axe.scale.set(0.04, 0.04, 0.04);
           axe.rotation.y = axeBaseRotationY;
           axeStartY = axe.position.y;
+          enableShadows(axe);
 
           axeLight = new THREE.PointLight(0xfff0b5, 4.2, 9, 1.6);
           axeLight.position.copy(axe.position);
@@ -174,6 +176,7 @@ export function loadWoodTask(scene) {
               wood.rotation.y = Math.PI;
 
               wood.updateMatrixWorld(true);
+              enableShadows(wood);
 
               woodCollider = new THREE.Box3().setFromObject(wood);
 

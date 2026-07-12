@@ -27,16 +27,13 @@ const interactionDistance = 4;
 const shifuGlowColor = new THREE.Color(0x6fffd8);
 
 const shifuDialogueLines = [
-  'Master: At last, you have arrived. I was beginning to fear that no one would answer my call.',
-  'Master: The bridge to my tower has collapsed, and without it, I cannot leave this place.',
-  'Shifu: Take this axe, cut some wood from the forest, and use it to rebuild the bridge. Return when you have enough timber.'
+  'Shifu: The bridge to my tower has collapsed, and I cannot leave this place.',
+  'Shifu: Take the axe, gather wood, and rebuild the bridge.'
 ];
 
 const shifuBridgeThanksLines = [
-  'Master: You did it! You managed to rebuild the bridge.',
-  'Master: Thank you. The path to the tower is open again.',
-  'Master: But look carefully... the sky is changing. Something is approaching.',
-  'Master: Hurry! You need to come back where you belong. Use the portal'
+  'Shifu: You rebuilt the bridge. Thank you, the path is open again.',
+  'Shifu: A storm is coming. Hurry back and use the portal.'
 ];
 
 let activeDialogueLines = shifuDialogueLines;
@@ -97,7 +94,9 @@ function getYawToPlayer(player) {
 
 window.addEventListener('keydown', (event) => {
   if (event.key.toLowerCase() === 'e' && canTalkToShifu && !shifuIsTalking) {
-    activeDialogueLines = shifuDialogueLines;
+    activeDialogueLines = bridgeThanksStarted && !bridgeThanksDone
+      ? shifuBridgeThanksLines
+      : shifuDialogueLines;
     shifuIsTalking = true;
     shifuDialogueIndex = 0;
   }
@@ -257,6 +256,10 @@ export function updateShifuTask(deltaTime, player) {
     shifuDialogue.classList.add('story-dialogue');
     shifuDialogue.textContent = activeDialogueLines[shifuDialogueIndex];
     shifuDialogue.classList.add('is-visible');
+  } else if (bridgeThanksStarted && !bridgeThanksDone && canTalkToShifu) {
+    shifuDialogue.classList.remove('story-dialogue');
+    shifuDialogue.textContent = 'Press E to talk to Shifu';
+    shifuDialogue.classList.add('is-visible');
   } else if (taskStarted) {
     shifuDialogue.classList.remove('story-dialogue');
     shifuDialogue.classList.remove('is-visible');
@@ -283,5 +286,5 @@ export function startShifuBridgeThanks() {
   shifuDialogueIndex = 0;
   bridgeThanksStarted = true;
   shifuMustLeaveBeforeTalkAgain = false;
-  shifuIsTalking = true;
+  shifuIsTalking = false;
 }
