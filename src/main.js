@@ -33,7 +33,12 @@ import {
   updateCarpetTravel,
   tryStartCarpetTravel
 } from './world/carpetTravel.js';
-import { loadShifuTask, startShifuBridgeThanks, updateShifuTask } from './imported_models/shifu.js';
+import {
+  loadShifuTask,
+  setShifuHeroName,
+  startShifuBridgeThanks,
+  updateShifuTask
+} from './imported_models/shifu.js';
 import { loadWoodTask, updateWoodTask } from './imported_models/wood.js';
 import { isBridgeBuilt, loadBridgeTask, updateBridgeTask } from './imported_models/bridge.js';
 import {
@@ -45,10 +50,7 @@ import {
   updateRain,
   updateStorm
 } from './world/rain.js';
-import {
-  createPortalPositionLogger,
-  updatePortalTeleport
-} from './world/portalTeleport.js';
+import { updatePortalTeleport } from './world/portalTeleport.js';
 import { updateTowerFall } from './world/towerFall.js';
 import { createPuzzleMinigame, getPuzzleDifficulties } from './minigame/puzzle.js';
 import {
@@ -62,11 +64,83 @@ import {
 import { loadDonkey, updateDonkey } from './world/donkey.js';
 import { createLampPosts, updateLampPosts } from './world/lampPosts.js';
 import { createDragonCombat } from './combat/dragonCombat.js';
+import { assetLoadingManager } from './base/loaders.js';
+import { setMageHeroName } from './imported_models/mage.js';
 
 const canvas = document.querySelector('#bg');
 const scene = createScene();
 const camera = createCamera();
 const renderer = createRenderer(canvas);
+
+const loadingMessages = [
+  'The hero is sailing toward the Lost Magic Isles...',
+  'Helping a roadside beggar find his missing boot...',
+  'Packing spellbooks that are definitely not cursed...',
+  'Asking the clouds for directions...',
+  'Convincing the ferryman that heroism counts as payment...',
+  'Polishing a sword that will probably not be used...'
+];
+const loadingOverlay = document.createElement('div');
+loadingOverlay.className = 'loading-overlay is-visible';
+loadingOverlay.innerHTML = `
+  <div class="loading-content" role="status" aria-live="polite">
+    <h1>Lost Magic Isles</h1>
+    <div class="loading-track" aria-label="Loading world">
+      <div class="loading-fill"></div>
+    </div>
+    <p class="loading-message">${loadingMessages[0]}</p>
+    <output class="loading-value">0%</output>
+  </div>
+`;
+document.body.appendChild(loadingOverlay);
+
+const loadingFill = loadingOverlay.querySelector('.loading-fill');
+const loadingMessage = loadingOverlay.querySelector('.loading-message');
+const loadingValue = loadingOverlay.querySelector('.loading-value');
+let lastLoadingMessageIndex = 0;
+let loadingCycleComplete = false;
+let worldGroupsReady = false;
+let displayedLoadingProgress = 0;
+
+function displayLoadingProgress(progress) {
+  displayedLoadingProgress = Math.max(displayedLoadingProgress, Math.min(progress, 1));
+  const percentage = Math.round(displayedLoadingProgress * 100);
+  loadingFill.style.transform = `scaleX(${displayedLoadingProgress})`;
+  loadingValue.textContent = `${percentage}%`;
+}
+
+function finishWorldLoading() {
+  if (!loadingCycleComplete || !worldGroupsReady) return;
+  displayLoadingProgress(1);
+  loadingMessage.textContent = 'The island is ready for its hero.';
+  window.setTimeout(() => loadingOverlay.classList.remove('is-visible'), 350);
+}
+
+assetLoadingManager.onStart = () => {
+  loadingCycleComplete = false;
+};
+
+assetLoadingManager.onProgress = (_url, loaded, total) => {
+  // New dependencies can increase `total` while loading. Capping intermediate
+  // progress keeps the bar honest and monotonic until every world group is ready.
+  const measuredProgress = total > 0 ? loaded / total : 0;
+  const progress = Math.min(measuredProgress, 0.95);
+  displayLoadingProgress(progress);
+
+  const messageIndex = Math.min(
+    loadingMessages.length - 1,
+    Math.floor(progress * loadingMessages.length)
+  );
+  if (messageIndex !== lastLoadingMessageIndex) {
+    lastLoadingMessageIndex = messageIndex;
+    loadingMessage.textContent = loadingMessages[messageIndex];
+  }
+};
+
+assetLoadingManager.onLoad = () => {
+  loadingCycleComplete = true;
+  finishWorldLoading();
+};
 
 const listener = new THREE.AudioListener();
 camera.add(listener);
@@ -84,7 +158,7 @@ const worldSettings = {
 };
 
 let hasUserInteracted = false; 
-const audioLoader = new THREE.AudioLoader();
+const audioLoader = new THREE.AudioLoader(assetLoadingManager);
 console.log("Starting to load the music file...");
 
 audioLoader.load(
@@ -360,6 +434,19 @@ introOverlay.innerHTML = `
 `;
 document.body.appendChild(introOverlay);
 
+const heroNameOverlay = document.createElement('div');
+heroNameOverlay.className = 'hero-name-overlay';
+heroNameOverlay.innerHTML = `
+  <form class="hero-name-panel" aria-labelledby="hero-name-title">
+    <p class="hero-name-kicker">Before the journey begins</p>
+    <h1 id="hero-name-title">What should the island call you?</h1>
+    <label for="hero-name-input">Hero name</label>
+    <input id="hero-name-input" name="heroName" type="text" maxlength="20" autocomplete="nickname" required>
+    <button type="submit">Continue</button>
+  </form>
+`;
+document.body.appendChild(heroNameOverlay);
+
 let selectedDifficulty = 'medium';
 let isChoosingDifficulty = true;
 let isIntroActive = true;
@@ -512,11 +599,22 @@ function respawnDragonFight() {
 deathOverlay.querySelector('.respawn-button').addEventListener('click', respawnDragonFight);
 
 introOverlay.querySelector('.intro-start-button').addEventListener('click', () => {
-  isIntroActive = false;
   introOverlay.classList.remove('is-visible');
+  heroNameOverlay.classList.add('is-visible');
+  window.setTimeout(() => heroNameOverlay.querySelector('input').focus(), 0);
+});
+
+heroNameOverlay.querySelector('form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  const input = heroNameOverlay.querySelector('input');
+  const heroName = input.value.trim() || 'Hero';
+
+  playerHealthHud.querySelector('.health-label span').textContent = heroName.toUpperCase();
+  setMageHeroName(heroName);
+  setShifuHeroName(heroName);
+  isIntroActive = false;
+  heroNameOverlay.classList.remove('is-visible');
   difficultyOverlay.classList.add('is-visible');
-  
-  ensureGameplayModelsLoaded();
 });
 
 difficultyOverlay.querySelectorAll('[data-difficulty]').forEach((button) => {
@@ -602,7 +700,6 @@ window.addEventListener('keyup', () => {
 });
 
 const playerData = createPlayer(scene);
-createPortalPositionLogger(playerData.group);
 
 const playerController = createPlayerController(
   playerData,
@@ -616,12 +713,22 @@ dragonCombat = createDragonCombat(scene, {
   onPlayerHit: handlePlayerHit
 });
 
-loadIntroModels(scene).then(() => {
+const introModelsPromise = loadIntroModels(scene).then(() => {
   createIslandVegetation(scene, {
     island,
     obstacleBounds: modelBounds,
     colliderTargets: modelColliders
   });
+});
+
+Promise.all([
+  introModelsPromise,
+  ensureGameplayModelsLoaded(),
+  ensureWorldTwoModelsLoaded(),
+  ensureFinaleModelsLoaded()
+]).then(() => {
+  worldGroupsReady = true;
+  finishWorldLoading();
 });
 
 if (debugMode) {
