@@ -32,6 +32,8 @@ import { loadWoodTask, updateWoodTask } from './imported_models/wood.js';
 import { isBridgeBuilt, loadBridgeTask, updateBridgeTask } from './imported_models/bridge.js';
 import {
   createRain,
+  setRainAppearance,
+  setRainVolume,
   startStorm,
   stopStormAndRain,
   updateRain,
@@ -69,6 +71,7 @@ const daySunColor = new THREE.Color(0xffffff);
 const nightSunColor = new THREE.Color(0x9db8ff);
 const worldSettings = {
   musicVolume: 0.4,
+  sfxVolume: 0.35,
   ambientBrightness: 1,
   isNight: false
 };
@@ -177,6 +180,13 @@ settingsMenu.innerHTML = `
       </div>
     </label>
     <label class="settings-control">
+      <span>SFX volume</span>
+      <div class="settings-range">
+        <input class="sfx-volume-input" type="range" min="0" max="1" step="0.01" value="${worldSettings.sfxVolume}">
+        <output class="sfx-volume-value">${Math.round(worldSettings.sfxVolume * 100)}%</output>
+      </div>
+    </label>
+    <label class="settings-control">
       <span>Ambient brightness</span>
       <div class="settings-range">
         <input class="ambient-brightness-input" type="range" min="0.25" max="1.4" step="0.01" value="${worldSettings.ambientBrightness}">
@@ -198,6 +208,8 @@ document.body.appendChild(settingsMenu);
 const settingsToggle = settingsMenu.querySelector('.settings-toggle');
 const musicVolumeInput = settingsMenu.querySelector('.music-volume-input');
 const musicVolumeValue = settingsMenu.querySelector('.music-volume-value');
+const sfxVolumeInput = settingsMenu.querySelector('.sfx-volume-input');
+const sfxVolumeValue = settingsMenu.querySelector('.sfx-volume-value');
 const ambientBrightnessInput = settingsMenu.querySelector('.ambient-brightness-input');
 const ambientBrightnessValue = settingsMenu.querySelector('.ambient-brightness-value');
 const dayNightInput = settingsMenu.querySelector('.day-night-input');
@@ -216,6 +228,12 @@ musicVolumeInput.addEventListener('input', () => {
   worldSettings.musicVolume = Number(musicVolumeInput.value);
   musicVolumeValue.textContent = `${Math.round(worldSettings.musicVolume * 100)}%`;
   backgroundMusic.setVolume(worldSettings.musicVolume);
+});
+
+sfxVolumeInput.addEventListener('input', () => {
+  worldSettings.sfxVolume = Number(sfxVolumeInput.value);
+  sfxVolumeValue.textContent = `${Math.round(worldSettings.sfxVolume * 100)}%`;
+  setRainVolume(worldSettings.sfxVolume);
 });
 
 ambientBrightnessInput.addEventListener('input', () => {
@@ -243,7 +261,7 @@ controlsLegend.innerHTML = `
       <div class="key-row"><kbd>▲</kbd></div>
       <div class="key-row"><kbd>◄</kbd><kbd>▼</kbd><kbd>►</kbd></div>
     </div>
-    <span class="legend-label">Orient</span>
+    <span class="legend-label">View</span>
   </div>
 `;
 document.body.appendChild(controlsLegend);
@@ -551,7 +569,9 @@ function applyWorldSettings() {
   const timeOfDayDarkness = worldSettings.isNight ? 1 : 0;
   const skyDarkness = timeOfDayDarkness;
   const brightness = worldSettings.ambientBrightness;
-  const stormLightProgress = worldSettings.isNight ? globalStormProgress : 0;
+  // Night always uses the same fully-dark lighting that was previously reached
+  // only after rebuilding the bridge. Weather no longer changes time of day.
+  const stormLightProgress = worldSettings.isNight ? 1 : 0;
   const nightLightFactor = worldSettings.isNight ? 0.22 : 1;
   const nightAmbientFactor = worldSettings.isNight ? 0.5 : 1;
   const weatherLightFactor = 1.0 - stormLightProgress;
@@ -563,6 +583,7 @@ function applyWorldSettings() {
 
   scene.environmentIntensity = weatherLightFactor * brightness * (worldSettings.isNight ? 0.42 : 1);
   scene.background = daySkyColor.clone().lerp(nightSkyColor, skyDarkness);
+  setRainAppearance(worldSettings.isNight);
 
   if (scene.backgroundBlurriness !== undefined) {
     scene.backgroundIntensity = Math.max(0.12, weatherLightFactor * brightness * (worldSettings.isNight ? 0.32 : 1));

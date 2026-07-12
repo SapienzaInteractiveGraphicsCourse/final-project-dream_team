@@ -9,6 +9,7 @@ let isRaining = false;
 let stormStarted = false;
 let stormProgress = 0;
 let rainAudio = null;
+let rainVolume = 0.35;
 
 const lineCount = 400;
 const crystalCount = 150;
@@ -35,7 +36,7 @@ function startRainAudio() {
   if (!rainAudio) {
     rainAudio = new Audio('music/rain.mp3');
     rainAudio.loop = true;
-    rainAudio.volume = 0.35;
+    rainAudio.volume = rainVolume;
   }
 
   rainAudio.play().catch((error) => {
@@ -156,6 +157,26 @@ export function startRain() {
 
   if (rainGroup) {
     rainGroup.visible = true;
+  }
+}
+
+export function setRainVolume(volume) {
+  rainVolume = THREE.MathUtils.clamp(volume, 0, 1);
+
+  if (rainAudio) {
+    rainAudio.volume = rainVolume;
+  }
+}
+
+export function setRainAppearance(isNight) {
+  if (rainLines) {
+    rainLines.material.color.setHex(isNight ? 0xb9ddff : 0x258cff);
+    rainLines.material.opacity = isNight ? 0.62 : 0.9;
+  }
+
+  if (rainCrystals) {
+    rainCrystals.material.color.setHex(isNight ? 0xd8f3ff : 0x156fd1);
+    rainCrystals.material.opacity = isNight ? 0.58 : 0.82;
   }
 }
 
