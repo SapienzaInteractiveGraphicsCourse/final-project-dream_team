@@ -180,8 +180,6 @@ function getFlightPosition(phase, time, player, target, updateDirection = true) 
 
   const lateralX = smoothedFrontDirection.y;
   const lateralZ = -smoothedFrontDirection.x;
-  // Keep the whole route beyond the castle radius. The extra clearance matters
-  // because the dragon model is long even when its origin is outside the walls.
   const lateralDistance = Math.sin(phase) * flightRadius * 0.7;
   const frontDistance = flightRadius * (1.24 + Math.cos(phase) * 0.12);
 

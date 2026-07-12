@@ -728,13 +728,12 @@ dragonCombat = createDragonCombat(scene, {
   onPlayerHit: handlePlayerHit
 });
 
-const introModelsPromise = loadIntroModels(scene).then(() => {
 if (towerSpawnMode) {
   playerData.group.position.copy(towerSpawnPosition);
   ensureWorldTwoModelsLoaded();
 }
 
-loadIntroModels(scene).then(() => {
+const introModelsPromise = loadIntroModels(scene).then(() => {
   createIslandVegetation(scene, {
     island,
     obstacleBounds: modelBounds,
