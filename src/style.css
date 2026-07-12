@@ -11,6 +11,151 @@ canvas {
   display: block;
 }
 
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: #f7fbff;
+  background: #111820;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 300ms ease, visibility 300ms ease;
+}
+
+.loading-overlay.is-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.loading-content {
+  display: grid;
+  width: min(480px, calc(100vw - 48px));
+  gap: 14px;
+  text-align: center;
+}
+
+.loading-content h1 {
+  margin: 0 0 8px;
+  color: #fff1ad;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 32px;
+  line-height: 1.1;
+}
+
+.loading-track {
+  height: 8px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 241, 173, 0.46);
+  border-radius: 4px;
+}
+
+.loading-fill {
+  width: 100%;
+  height: 100%;
+  background: #e7bd55;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 120ms ease;
+}
+
+.loading-message {
+  min-height: 24px;
+  margin: 0;
+  color: #dbe7ef;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.loading-value {
+  color: #fff1ad;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.hero-name-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10002;
+  display: none;
+  place-items: center;
+  padding: 24px;
+  color: #f7fbff;
+  background: rgba(8, 14, 22, 0.82);
+  backdrop-filter: blur(4px);
+}
+
+.hero-name-overlay.is-visible {
+  display: grid;
+}
+
+.hero-name-panel {
+  display: grid;
+  width: min(420px, calc(100vw - 48px));
+  gap: 12px;
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.hero-name-kicker {
+  margin: 0;
+  color: #ffcf6c;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.hero-name-panel h1 {
+  margin: 0 0 10px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 30px;
+  line-height: 1.15;
+}
+
+.hero-name-panel label {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.hero-name-panel input {
+  min-width: 0;
+  padding: 12px 13px;
+  color: #17212b;
+  background: #f7fbff;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 16px;
+}
+
+.hero-name-panel input:focus {
+  border-color: #e7bd55;
+  outline: none;
+}
+
+.hero-name-panel button {
+  justify-self: start;
+  margin-top: 8px;
+  padding: 11px 22px;
+  color: #39270e;
+  background: #f2ce70;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.hero-name-panel button:hover,
+.hero-name-panel button:focus-visible {
+  background: #ffe39a;
+  outline: 2px solid rgba(255, 255, 255, 0.72);
+  outline-offset: 3px;
+}
+
 .controls-legend {
   position: absolute;
   bottom: 20px;
@@ -33,6 +178,10 @@ canvas {
 .controls-legend.is-visible {
   opacity: 1;
   visibility: visible;
+}
+
+body:has(.player-health-hud.is-visible) .controls-legend {
+  bottom: 70px;
 }
 
 .legend-group {
@@ -74,6 +223,185 @@ kbd {
   text-transform: uppercase;
   letter-spacing: 1.5px;
   text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+}
+
+.legend-actions {
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  gap: 7px 16px;
+  align-content: center;
+}
+
+.legend-actions div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.legend-actions span {
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.health-hud {
+  position: fixed;
+  z-index: 1003;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #f7fbff;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 180ms ease, visibility 180ms ease;
+  pointer-events: none;
+}
+
+.health-hud.is-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.player-health-hud {
+  bottom: 18px;
+  left: 18px;
+  width: 190px;
+}
+
+.dragon-health-hud {
+  top: 18px;
+  left: 50%;
+  width: min(390px, calc(100vw - 36px));
+  transform: translateX(-50%);
+}
+
+.health-portrait {
+  display: grid;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  background: rgba(15, 25, 35, 0.92);
+  border: 1px solid rgba(247, 251, 255, 0.48);
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.dragon-health-hud .health-portrait {
+  width: 42px;
+  height: 42px;
+  border-color: rgba(255, 159, 93, 0.7);
+  font-size: 25px;
+}
+
+.health-details {
+  display: grid;
+  flex: 1;
+  gap: 4px;
+  min-width: 0;
+}
+
+.health-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.health-label output {
+  font: inherit;
+}
+
+.dragon-health-hud .health-label {
+  font-size: 12px;
+}
+
+.health-track {
+  height: 7px;
+  overflow: hidden;
+  background: rgba(8, 12, 16, 0.78);
+  border: 1px solid rgba(247, 251, 255, 0.36);
+  border-radius: 3px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.32);
+}
+
+.dragon-health-hud .health-track {
+  height: 11px;
+  border-color: rgba(255, 196, 146, 0.48);
+}
+
+.health-fill {
+  width: 100%;
+  height: 100%;
+  background: #53c96b;
+  transform-origin: left center;
+  transition: width 260ms ease, background-color 260ms ease;
+}
+
+.dragon-health-hud .health-fill {
+  background: #d84b3e;
+}
+
+.death-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(8, 10, 13, 0.88);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 220ms ease, visibility 220ms ease;
+}
+
+.death-overlay.is-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.death-panel {
+  width: min(360px, calc(100vw - 48px));
+  color: #f7fbff;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  text-align: center;
+}
+
+.death-kicker {
+  margin: 0 0 8px;
+  color: #e99a78;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.death-panel h1 {
+  margin: 0 0 28px;
+  font-size: 42px;
+  line-height: 1;
+}
+
+.respawn-button {
+  min-width: 150px;
+  padding: 11px 20px;
+  color: #16202a;
+  background: #f3f6f8;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.respawn-button:hover,
+.respawn-button:focus-visible {
+  background: #ffffff;
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 3px;
 }
 
 .mage-dialogue,
@@ -202,25 +530,6 @@ body:has(.story-dialogue.is-visible) .interaction-dialogue.is-visible:not(.story
   box-shadow: 0 0 26px rgba(255, 214, 112, 0.28);
 }
 
-.view-hint {
-  position: fixed;
-  top: 18px;
-  left: 50%;
-  z-index: 1000;
-  max-width: min(360px, calc(100vw - 32px));
-  padding: 10px 14px;
-  color: #f7fbff;
-  background: rgba(15, 25, 35, 0.82);
-  border: 1px solid rgba(102, 255, 255, 0.65);
-  border-radius: 8px;
-  box-shadow: 0 0 24px rgba(102, 255, 255, 0.28);
-  font-size: 15px;
-  line-height: 1.3;
-  text-align: center;
-  transform: translateX(-50%);
-  pointer-events: none;
-}
-
 .settings-menu {
   position: fixed;
   top: 18px;
@@ -287,11 +596,39 @@ body:has(.story-dialogue.is-visible) .interaction-dialogue.is-visible:not(.story
 }
 
 .settings-menu.is-open .settings-panel {
-  max-height: 260px;
+  max-height: min(620px, calc(100vh - 86px));
   padding: 14px;
+  overflow-y: auto;
   border-color: rgba(102, 255, 255, 0.42);
   opacity: 1;
   transform: translateY(0);
+}
+
+.settings-controls-legend {
+  display: grid;
+  gap: 12px;
+  padding-top: 13px;
+  border-top: 1px solid rgba(247, 251, 255, 0.2);
+}
+
+.settings-section-title {
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.settings-controls-legend .legend-group {
+  justify-content: space-between;
+}
+
+.settings-controls-legend .legend-label {
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-align: right;
+}
+
+.settings-controls-legend .legend-actions {
+  grid-template-columns: 1fr 1fr;
 }
 
 .settings-control {
@@ -747,6 +1084,17 @@ body:has(.story-dialogue.is-visible) .interaction-dialogue.is-visible:not(.story
 }
 
 @media (max-width: 620px) {
+  .player-health-hud {
+    bottom: 12px;
+    left: 12px;
+    width: 170px;
+  }
+
+  .dragon-health-hud {
+    top: 12px;
+    width: min(330px, calc(100vw - 24px));
+  }
+
   .settings-menu {
     top: 68px;
     right: 12px;

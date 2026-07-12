@@ -31,6 +31,10 @@ const shifuDialogueLines = [
   'Shifu: Take the axe, gather wood, and rebuild the bridge.'
 ];
 
+export function setShifuHeroName(name) {
+  shifuDialogueLines[0] = `Shifu: ${name}, the bridge to my tower has collapsed, and I cannot leave this place.`;
+}
+
 const shifuBridgeThanksLines = [
   'Shifu: You rebuilt the bridge. Thank you, the path is open again.',
   'Shifu: A storm is coming. Hurry back and use the portal.'

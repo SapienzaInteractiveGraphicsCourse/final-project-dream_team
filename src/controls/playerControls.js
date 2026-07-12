@@ -35,6 +35,13 @@ export function createPlayerController(playerObject, camera, colliders = []) {
   const firstPersonMaxPitch = THREE.MathUtils.degToRad(75);
 
   window.addEventListener('keydown', (event) => {
+    if (event.target.matches('input, textarea, select, [contenteditable="true"]')) {
+      Object.keys(keys).forEach((key) => {
+        keys[key] = false;
+      });
+      return;
+    }
+
     const key = event.key.toLowerCase();
     if (key in keys) {
       event.preventDefault();
@@ -43,6 +50,8 @@ export function createPlayerController(playerObject, camera, colliders = []) {
   });
 
   window.addEventListener('keyup', (event) => {
+    if (event.target.matches('input, textarea, select, [contenteditable="true"]')) return;
+
     const key = event.key.toLowerCase();
     if (key in keys) {
       event.preventDefault();

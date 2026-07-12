@@ -66,7 +66,7 @@ const shrekInteractionDistance = 4;
 const shrekWalkSpeed = 3.0;
 const shrekArmRestOffset = 0.48;
 
-const shrekDialogueText = 'Shrek: It is raining. Come with me to my house for the night.';
+const shrekDialogueText = "Shrek: It's raining. Come to my house so you can get out of the rain.";
 const shrekProblemDialogueText = 'Shrek: The door is stuck, and I need your help to open it.';
 const shrekDoorThanksText = "Shrek: Thank you for helping me. Now let's go inside and get some rest.";
 const shrekGoodbyeText = 'Shrek: Thank you for helping me. Have a good adventure, brave traveler.';

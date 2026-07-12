@@ -11,6 +11,7 @@ let mageMustLeaveBeforeTalkAgain = false;
 let mageCurrentDialogueText = '';
 let carpetObjectiveShown = false;
 let mageMaterials = [];
+let heroName = 'Hero';
 
 const mageTintColor = new THREE.Color(0xd9eeff);
 const mageEmissiveColor = new THREE.Color(0x2a4a66);
@@ -75,7 +76,11 @@ function getMageDialogueText() {
     return "Mage: Oh, you found the ancient Grimoire! Press F to hand it over to me!";
   }
 
-  return "Mage: Welcome! Finally you are here. The island has lost its magic and needs your help to restore it. Help us find the enchanted book.";
+  return `Mage: Welcome, ${heroName}! Finally you are here. The island has lost its magic and needs your help to restore it. Help us find the enchanted book.`;
+}
+
+export function setMageHeroName(name) {
+  heroName = name;
 }
 
 window.addEventListener('keydown', (event) => {

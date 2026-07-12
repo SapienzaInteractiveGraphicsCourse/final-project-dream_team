@@ -6,7 +6,13 @@ import {
   createRenderer,
   setupResize
 } from './base/sceneSetup.js';
-import { damageDragon, isDragonDefeated } from './imported_models/dragon.js';
+import {
+  damageDragon,
+  getDragonHealth,
+  getDragonObject,
+  isDragonDefeated,
+  resetDragon
+} from './imported_models/dragon.js';
 import { createLights } from './base/lights.js';
 import { materials } from './world/materials.js';
 import { createIsland } from './world/island.js';
@@ -27,20 +33,24 @@ import {
   updateCarpetTravel,
   tryStartCarpetTravel
 } from './world/carpetTravel.js';
-import { loadShifuTask, startShifuBridgeThanks, updateShifuTask } from './imported_models/shifu.js';
+import {
+  loadShifuTask,
+  setShifuHeroName,
+  startShifuBridgeThanks,
+  updateShifuTask
+} from './imported_models/shifu.js';
 import { loadWoodTask, updateWoodTask } from './imported_models/wood.js';
 import { getActiveTower, isBridgeBuilt, loadBridgeTask, updateBridgeTask } from './imported_models/bridge.js';
 import {
   createRain,
+  setRainAppearance,
+  setRainVolume,
   startStorm,
   stopStormAndRain,
   updateRain,
   updateStorm
 } from './world/rain.js';
-import {
-  createPortalPositionLogger,
-  updatePortalTeleport
-} from './world/portalTeleport.js';
+import { updatePortalTeleport } from './world/portalTeleport.js';
 import { updateTowerFall } from './world/towerFall.js';
 import {
   isTowerFallActive,
@@ -58,11 +68,84 @@ import {
 } from './world/final.js';
 import { loadDonkey, updateDonkey } from './world/donkey.js';
 import { createLampPosts, updateLampPosts } from './world/lampPosts.js';
+import { createDragonCombat } from './combat/dragonCombat.js';
+import { assetLoadingManager } from './base/loaders.js';
+import { setMageHeroName } from './imported_models/mage.js';
 
 const canvas = document.querySelector('#bg');
 const scene = createScene();
 const camera = createCamera();
 const renderer = createRenderer(canvas);
+
+const loadingMessages = [
+  'The hero is sailing toward the Lost Magic Isles...',
+  'Helping a roadside beggar find his missing boot...',
+  'Packing spellbooks that are definitely not cursed...',
+  'Asking the clouds for directions...',
+  'Convincing the ferryman that heroism counts as payment...',
+  'Polishing a sword that will probably not be used...'
+];
+const loadingOverlay = document.createElement('div');
+loadingOverlay.className = 'loading-overlay is-visible';
+loadingOverlay.innerHTML = `
+  <div class="loading-content" role="status" aria-live="polite">
+    <h1>Lost Magic Isles</h1>
+    <div class="loading-track" aria-label="Loading world">
+      <div class="loading-fill"></div>
+    </div>
+    <p class="loading-message">${loadingMessages[0]}</p>
+    <output class="loading-value">0%</output>
+  </div>
+`;
+document.body.appendChild(loadingOverlay);
+
+const loadingFill = loadingOverlay.querySelector('.loading-fill');
+const loadingMessage = loadingOverlay.querySelector('.loading-message');
+const loadingValue = loadingOverlay.querySelector('.loading-value');
+let lastLoadingMessageIndex = 0;
+let loadingCycleComplete = false;
+let worldGroupsReady = false;
+let displayedLoadingProgress = 0;
+
+function displayLoadingProgress(progress) {
+  displayedLoadingProgress = Math.max(displayedLoadingProgress, Math.min(progress, 1));
+  const percentage = Math.round(displayedLoadingProgress * 100);
+  loadingFill.style.transform = `scaleX(${displayedLoadingProgress})`;
+  loadingValue.textContent = `${percentage}%`;
+}
+
+function finishWorldLoading() {
+  if (!loadingCycleComplete || !worldGroupsReady) return;
+  displayLoadingProgress(1);
+  loadingMessage.textContent = 'The island is ready for its hero.';
+  window.setTimeout(() => loadingOverlay.classList.remove('is-visible'), 350);
+}
+
+assetLoadingManager.onStart = () => {
+  loadingCycleComplete = false;
+};
+
+assetLoadingManager.onProgress = (_url, loaded, total) => {
+  // New dependencies can increase `total` while loading. Capping intermediate
+  // progress keeps the bar honest and monotonic until every world group is ready.
+  const measuredProgress = total > 0 ? loaded / total : 0;
+  const progress = Math.min(measuredProgress, 0.95);
+  displayLoadingProgress(progress);
+
+  const messageIndex = Math.min(
+    loadingMessages.length - 1,
+    Math.floor(progress * loadingMessages.length)
+  );
+  if (messageIndex !== lastLoadingMessageIndex) {
+    lastLoadingMessageIndex = messageIndex;
+    loadingMessage.textContent = loadingMessages[messageIndex];
+  }
+};
+
+assetLoadingManager.onLoad = () => {
+  loadingCycleComplete = true;
+  finishWorldLoading();
+};
 
 const listener = new THREE.AudioListener();
 camera.add(listener);
@@ -74,12 +157,13 @@ const daySunColor = new THREE.Color(0xffffff);
 const nightSunColor = new THREE.Color(0x9db8ff);
 const worldSettings = {
   musicVolume: 0.4,
+  sfxVolume: 0.35,
   ambientBrightness: 1,
   isNight: false
 };
 
 let hasUserInteracted = false; 
-const audioLoader = new THREE.AudioLoader();
+const audioLoader = new THREE.AudioLoader(assetLoadingManager);
 console.log("Starting to load the music file...");
 
 audioLoader.load(
@@ -156,7 +240,7 @@ document.body.appendChild(carpetPrompt);
 
 const dragonPrompt = document.createElement('div');
 dragonPrompt.className = 'interaction-dialogue dragon-dialogue';
-dragonPrompt.textContent = 'Press R to fight the dragon!';
+dragonPrompt.textContent = 'Press R to cast a spell at the dragon!';
 document.body.appendChild(dragonPrompt);
 
 const dragonVictoryBanner = document.createElement('div');
@@ -164,10 +248,82 @@ dragonVictoryBanner.className = 'victory-banner';
 dragonVictoryBanner.textContent = '⚔️ YOU HAVE SLAIN THE DRAGON! ⚔️';
 document.body.appendChild(dragonVictoryBanner);
 
-const viewHint = document.createElement('div');
-viewHint.className = 'view-hint';
-viewHint.textContent = 'Press V to change view';
-document.body.appendChild(viewHint);
+const playerHealthHud = document.createElement('div');
+playerHealthHud.className = 'health-hud player-health-hud';
+playerHealthHud.innerHTML = `
+  <div class="health-portrait player-portrait" aria-hidden="true">🧑</div>
+  <div class="health-details">
+    <div class="health-label"><span>PLAYER</span><output>100</output></div>
+    <div class="health-track"><div class="health-fill"></div></div>
+  </div>
+`;
+document.body.appendChild(playerHealthHud);
+
+const dragonHealthHud = document.createElement('div');
+dragonHealthHud.className = 'health-hud dragon-health-hud';
+dragonHealthHud.innerHTML = `
+  <div class="health-portrait dragon-portrait" aria-hidden="true">🐲</div>
+  <div class="health-details">
+    <div class="health-label"><span>DRAGON</span><output>100</output></div>
+    <div class="health-track"><div class="health-fill"></div></div>
+  </div>
+`;
+document.body.appendChild(dragonHealthHud);
+
+const deathOverlay = document.createElement('div');
+deathOverlay.className = 'death-overlay';
+deathOverlay.innerHTML = `
+  <section class="death-panel" role="dialog" aria-modal="true" aria-labelledby="death-title">
+    <p class="death-kicker">The dragon defeated you</p>
+    <h1 id="death-title">You died</h1>
+    <button class="respawn-button" type="button">Respawn</button>
+  </section>
+`;
+document.body.appendChild(deathOverlay);
+
+let playerHealth = 100;
+let isPlayerDead = false;
+
+function setHealthHudValue(hud, health) {
+  const value = Math.max(0, Math.min(100, health));
+  hud.querySelector('.health-fill').style.width = `${value}%`;
+  hud.querySelector('output').textContent = Math.ceil(value);
+}
+
+function updateCombatHud() {
+  playerHealthHud.classList.toggle('is-visible', !isIntroActive && !isChoosingDifficulty);
+  dragonHealthHud.classList.toggle(
+    'is-visible',
+    isInsideCastle && !isPlayerDead && isBookDelivered() && !isDragonDefeated() && !isDragonPuzzleActive
+  );
+  setHealthHudValue(playerHealthHud, playerHealth);
+  setHealthHudValue(dragonHealthHud, getDragonHealth());
+}
+
+function createControlsLegendMarkup() {
+  return `
+    <div class="legend-group">
+      <div class="keys-cluster">
+        <div class="key-row"><kbd>W</kbd></div>
+        <div class="key-row"><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div>
+      </div>
+      <span class="legend-label">Move</span>
+    </div>
+    <div class="legend-group">
+      <div class="keys-cluster">
+        <div class="key-row"><kbd>▲</kbd></div>
+        <div class="key-row"><kbd>◄</kbd><kbd>▼</kbd><kbd>►</kbd></div>
+      </div>
+      <span class="legend-label">Adjust view</span>
+    </div>
+    <div class="legend-actions">
+      <div><kbd>V</kbd><span>Change view</span></div>
+      <div><kbd>E</kbd><span>Talk</span></div>
+      <div><kbd>F</kbd><span>Interact</span></div>
+      <div><kbd>R</kbd><span>Attack</span></div>
+    </div>
+  `;
+}
 
 const settingsMenu = document.createElement('div');
 settingsMenu.className = 'settings-menu';
@@ -185,6 +341,13 @@ settingsMenu.innerHTML = `
       </div>
     </label>
     <label class="settings-control">
+      <span>SFX volume</span>
+      <div class="settings-range">
+        <input class="sfx-volume-input" type="range" min="0" max="1" step="0.01" value="${worldSettings.sfxVolume}">
+        <output class="sfx-volume-value">${Math.round(worldSettings.sfxVolume * 100)}%</output>
+      </div>
+    </label>
+    <label class="settings-control">
       <span>Ambient brightness</span>
       <div class="settings-range">
         <input class="ambient-brightness-input" type="range" min="0.25" max="1.4" step="0.01" value="${worldSettings.ambientBrightness}">
@@ -199,6 +362,10 @@ settingsMenu.innerHTML = `
         <span class="day-night-icon night-icon">☾</span>
       </span>
     </label>
+    <div class="settings-controls-legend" aria-label="Game controls">
+      <span class="settings-section-title">Controls</span>
+      ${createControlsLegendMarkup()}
+    </div>
   </div>
 `;
 document.body.appendChild(settingsMenu);
@@ -206,6 +373,8 @@ document.body.appendChild(settingsMenu);
 const settingsToggle = settingsMenu.querySelector('.settings-toggle');
 const musicVolumeInput = settingsMenu.querySelector('.music-volume-input');
 const musicVolumeValue = settingsMenu.querySelector('.music-volume-value');
+const sfxVolumeInput = settingsMenu.querySelector('.sfx-volume-input');
+const sfxVolumeValue = settingsMenu.querySelector('.sfx-volume-value');
 const ambientBrightnessInput = settingsMenu.querySelector('.ambient-brightness-input');
 const ambientBrightnessValue = settingsMenu.querySelector('.ambient-brightness-value');
 const dayNightInput = settingsMenu.querySelector('.day-night-input');
@@ -226,6 +395,12 @@ musicVolumeInput.addEventListener('input', () => {
   backgroundMusic.setVolume(worldSettings.musicVolume);
 });
 
+sfxVolumeInput.addEventListener('input', () => {
+  worldSettings.sfxVolume = Number(sfxVolumeInput.value);
+  sfxVolumeValue.textContent = `${Math.round(worldSettings.sfxVolume * 100)}%`;
+  setRainVolume(worldSettings.sfxVolume);
+});
+
 ambientBrightnessInput.addEventListener('input', () => {
   worldSettings.ambientBrightness = Number(ambientBrightnessInput.value);
   ambientBrightnessValue.textContent = `${Math.round(worldSettings.ambientBrightness * 100)}%`;
@@ -237,23 +412,7 @@ dayNightInput.addEventListener('change', () => {
 
 const controlsLegend = document.createElement('div');
 controlsLegend.className = 'controls-legend'; 
-controlsLegend.innerHTML = `
-  <div class="legend-group">
-    <div class="keys-cluster">
-      <div class="key-row"><kbd>W</kbd></div>
-      <div class="key-row"><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div>
-    </div>
-    <span class="legend-label">Move</span>
-  </div>
-  
-  <div class="legend-group">
-    <div class="keys-cluster">
-      <div class="key-row"><kbd>▲</kbd></div>
-      <div class="key-row"><kbd>◄</kbd><kbd>▼</kbd><kbd>►</kbd></div>
-    </div>
-    <span class="legend-label">Orient</span>
-  </div>
-`;
+controlsLegend.innerHTML = createControlsLegendMarkup();
 document.body.appendChild(controlsLegend);
 
 const difficultyOverlay = document.createElement('div');
@@ -283,6 +442,19 @@ introOverlay.innerHTML = `
 `;
 document.body.appendChild(introOverlay);
 
+const heroNameOverlay = document.createElement('div');
+heroNameOverlay.className = 'hero-name-overlay';
+heroNameOverlay.innerHTML = `
+  <form class="hero-name-panel" aria-labelledby="hero-name-title">
+    <p class="hero-name-kicker">Before the journey begins</p>
+    <h1 id="hero-name-title">What should the island call you?</h1>
+    <label for="hero-name-input">Hero name</label>
+    <input id="hero-name-input" name="heroName" type="text" maxlength="20" autocomplete="nickname" required>
+    <button type="submit">Continue</button>
+  </form>
+`;
+document.body.appendChild(heroNameOverlay);
+
 let selectedDifficulty = 'medium';
 let isChoosingDifficulty = true;
 let isIntroActive = true;
@@ -290,6 +462,9 @@ let dragonPuzzle = null;
 let isDragonPuzzleActive = false;
 let dragonDirectHits = 0;
 let finalPuzzleStarted = false;
+let dragonCombat = null;
+const combatRespawnPosition = new THREE.Vector3();
+let hasCombatRespawnPosition = false;
 
 let gameplayModelsPromise = null;
 let worldTwoModelsPromise = null;
@@ -379,25 +554,75 @@ function startDragonPuzzle() {
 
 function attackDragon() {
   if (dragonDirectHits < DIRECT_HITS_BEFORE_FINAL_PUZZLE) {
-    dragonDirectHits += 1;
-    damageDragon(DRAGON_HIT_DAMAGE);
-    console.log(`You hit the dragon with magic! Hit ${dragonDirectHits}/${DIRECT_HITS_BEFORE_FINAL_PUZZLE}`);
-
-    if (dragonDirectHits === DIRECT_HITS_BEFORE_FINAL_PUZZLE) {
-      dragonPrompt.textContent = 'Press R to give the last hit to the dragon!';
-    }
+    dragonCombat?.launchPlayerMagic(playerData.group);
     return;
   }
 
   startDragonPuzzle();
 }
 
+function handleMagicHit() {
+  if (isPlayerDead || dragonDirectHits >= DIRECT_HITS_BEFORE_FINAL_PUZZLE) return;
+
+  dragonDirectHits += 1;
+  damageDragon(DRAGON_HIT_DAMAGE);
+  console.log(`Your spell hit the dragon! Hit ${dragonDirectHits}/${DIRECT_HITS_BEFORE_FINAL_PUZZLE}`);
+
+  if (dragonDirectHits === DIRECT_HITS_BEFORE_FINAL_PUZZLE) {
+    dragonPrompt.textContent = 'Press R to give the last hit to the dragon!';
+  }
+}
+
+function handlePlayerHit() {
+  if (isPlayerDead) return;
+
+  playerHealth = Math.max(0, playerHealth - 25);
+  setHealthHudValue(playerHealthHud, playerHealth);
+
+  if (playerHealth === 0) {
+    isPlayerDead = true;
+    deathOverlay.classList.add('is-visible');
+    dragonPrompt.classList.remove('is-visible');
+  }
+}
+
+function respawnDragonFight() {
+  playerHealth = 100;
+  isPlayerDead = false;
+  dragonDirectHits = 0;
+  finalPuzzleStarted = false;
+  dragonPrompt.textContent = 'Press R to cast a spell at the dragon!';
+  resetDragon();
+  dragonCombat?.reset();
+
+  if (hasCombatRespawnPosition) {
+    playerData.group.position.copy(combatRespawnPosition);
+  }
+
+  setHealthHudValue(playerHealthHud, playerHealth);
+  setHealthHudValue(dragonHealthHud, getDragonHealth());
+  deathOverlay.classList.remove('is-visible');
+}
+
+deathOverlay.querySelector('.respawn-button').addEventListener('click', respawnDragonFight);
+
 introOverlay.querySelector('.intro-start-button').addEventListener('click', () => {
-  isIntroActive = false;
   introOverlay.classList.remove('is-visible');
+  heroNameOverlay.classList.add('is-visible');
+  window.setTimeout(() => heroNameOverlay.querySelector('input').focus(), 0);
+});
+
+heroNameOverlay.querySelector('form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  const input = heroNameOverlay.querySelector('input');
+  const heroName = input.value.trim() || 'Hero';
+
+  playerHealthHud.querySelector('.health-label span').textContent = heroName.toUpperCase();
+  setMageHeroName(heroName);
+  setShifuHeroName(heroName);
+  isIntroActive = false;
+  heroNameOverlay.classList.remove('is-visible');
   difficultyOverlay.classList.add('is-visible');
-  
-  ensureGameplayModelsLoaded();
 });
 
 difficultyOverlay.querySelectorAll('[data-difficulty]').forEach((button) => {
@@ -452,7 +677,7 @@ function setFirstPersonMode(enable) {
 
 let isInsideCastle = false;
 window.addEventListener('keydown', (event) => {
-  if (isIntroActive || isChoosingDifficulty || isDragonPuzzleActive || isFinaleInputLocked()) {
+  if (isIntroActive || isChoosingDifficulty || isDragonPuzzleActive || isPlayerDead || isFinaleInputLocked()) {
     return;
   }
 
@@ -490,7 +715,6 @@ window.addEventListener('keyup', () => {
 });
 
 const playerData = createPlayer(scene);
-createPortalPositionLogger(playerData.group);
 
 const playerController = createPlayerController(
   playerData,
@@ -498,6 +722,13 @@ const playerController = createPlayerController(
   modelColliders
 );
 
+dragonCombat = createDragonCombat(scene, {
+  getDragon: getDragonObject,
+  onMagicHit: handleMagicHit,
+  onPlayerHit: handlePlayerHit
+});
+
+const introModelsPromise = loadIntroModels(scene).then(() => {
 if (towerSpawnMode) {
   playerData.group.position.copy(towerSpawnPosition);
   ensureWorldTwoModelsLoaded();
@@ -509,6 +740,16 @@ loadIntroModels(scene).then(() => {
     obstacleBounds: modelBounds,
     colliderTargets: modelColliders
   });
+});
+
+Promise.all([
+  introModelsPromise,
+  ensureGameplayModelsLoaded(),
+  ensureWorldTwoModelsLoaded(),
+  ensureFinaleModelsLoaded()
+]).then(() => {
+  worldGroupsReady = true;
+  finishWorldLoading();
 });
 
 if (debugMode) {
@@ -571,7 +812,9 @@ function applyWorldSettings() {
   const timeOfDayDarkness = worldSettings.isNight ? 1 : 0;
   const skyDarkness = timeOfDayDarkness;
   const brightness = worldSettings.ambientBrightness;
-  const stormLightProgress = worldSettings.isNight ? globalStormProgress : 0;
+  // Night always uses the same fully-dark lighting that was previously reached
+  // only after rebuilding the bridge. Weather no longer changes time of day.
+  const stormLightProgress = worldSettings.isNight ? 1 : 0;
   const nightLightFactor = worldSettings.isNight ? 0.22 : 1;
   const nightAmbientFactor = worldSettings.isNight ? 0.5 : 1;
   const weatherLightFactor = 1.0 - stormLightProgress;
@@ -583,6 +826,7 @@ function applyWorldSettings() {
 
   scene.environmentIntensity = weatherLightFactor * brightness * (worldSettings.isNight ? 0.42 : 1);
   scene.background = daySkyColor.clone().lerp(nightSkyColor, skyDarkness);
+  setRainAppearance(worldSettings.isNight);
 
   if (scene.backgroundBlurriness !== undefined) {
     scene.backgroundIntensity = Math.max(0.12, weatherLightFactor * brightness * (worldSettings.isNight ? 0.32 : 1));
@@ -625,6 +869,7 @@ function animate() {
     !isFalling &&
     !isChoosingDifficulty &&
     !isDragonPuzzleActive &&
+    !isPlayerDead &&
     !isFinaleInputLocked();
     
   playerController.update(deltaTime, canControlPlayer);
@@ -706,8 +951,12 @@ function animate() {
 
   if (isBookDelivered() && !isDragonDefeated() && !isDragonPuzzleActive && !isChoosingDifficulty) {
     if (castleTriggerBox.containsPoint(playerData.group.position)) {
+      if (!isInsideCastle) {
+        combatRespawnPosition.copy(playerData.group.position);
+        hasCombatRespawnPosition = true;
+      }
       isInsideCastle = true;
-      if (!dragonPrompt.classList.contains('is-visible')) {
+      if (!isPlayerDead && !dragonPrompt.classList.contains('is-visible')) {
         dragonPrompt.classList.add('is-visible');
       }
     } else {
@@ -718,6 +967,12 @@ function animate() {
     dragonPrompt.classList.remove('is-visible');
     isInsideCastle = false;
   }
+
+  const dragonFightActive = isInsideCastle && !isPlayerDead && !isDragonPuzzleActive && !isDragonDefeated();
+  dragonCombat.setActive(dragonFightActive);
+  dragonCombat.update(deltaTime, playerData.group);
+
+  updateCombatHud();
 
   renderer.render(scene, camera);
 
